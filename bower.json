@@ -1,19 +1,17 @@
 {
-  "name": "waveform-visualizer",
+  "name": "web-audio-api-player",
   "version": "0.0.1",
-  "description": "nodejs and web audio api waveform visualizer",
-  "homepage": "https://github.com/chrisweb/waveform-visualizer",
+  "description": "web audio api player",
+  "homepage": "https://github.com/chrisweb/web-audio-api-player",
   "authors": [
     "Chris Weber (chrisweb) <chris963@gmail.com>"
   ],
-  "main": "client/main.js",
+  "main": "source/player.js",
   "moduleType": [
-    "amd",
-    "node"
+    "amd"
   ],
   "keywords": [
-    "waveform",
-    "nodejs",
+    "player",
     "javascript",
     "web",
     "audio",
