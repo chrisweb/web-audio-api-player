@@ -12,3 +12,8 @@ Getting started
 * Use your command line tool and go to the root of this project (type: cd /LOCAL_PROJECT_PATH)
 * Install bower (http://bower.io/) using npm, go the root of this project using your command line tool and then type: npm install -g bower
 * type: bower install, to install the required vendor packages (dependencies)
+
+TODOs
+-----
+
+Create a web component UI (http://www.w3.org/TR/components-intro/)
