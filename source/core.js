@@ -20,7 +20,7 @@ define([
 ) {
 
     'use strict';
-    
+
     /**
      * 
      * player constructor
@@ -34,7 +34,6 @@ define([
         this.audioGraph;
         this.track;
         this.progressIntervalHandler;
-        this.bufferTimeoutHandler;
         
         this.createTrack();
         
@@ -53,9 +52,9 @@ define([
                 
             }
             
-            if (options.loadTrack !== undefined) {
+            if (options.trackUrl !== undefined) {
                 
-                this.loadTrack(options.loadTrack);
+                this.setTrackUrl(options.trackUrl);
                 
             }
             
@@ -88,6 +87,8 @@ define([
         
     };
     
+    var bufferingTimeoutHandler;
+    
     /**
      * 
      * play
@@ -98,21 +99,17 @@ define([
      */
     player.prototype.play = function playFunction(trackUrl) {
 
+        // if the track is already playing do nothing
         if (this.track.isPlaying) {
             
             return null;
             
         }
         
-        if (this.track.buffer === null) {
+        // clear the previous timeout handler if one exists
+        if (bufferingTimeoutHandler !== undefined) {
             
-            this.loadTrack(trackUrl);
-            
-        }
-        
-        if (this.bufferTimeoutHandler !== undefined) {
-            
-            clearTimeout(this.bufferTimeoutHandler);
+            clearTimeout(bufferingTimeoutHandler);
             
         }
         
@@ -120,12 +117,29 @@ define([
             
             var that = this;
             
-            // try to play in after a short break
-            // retry after 200 milliseconds
-            this.bufferTimeoutHandler = setTimeout(that.play(), 200);
+            bufferingTimeoutHandler = setTimeout(function() {
+                
+                that.play();
+                
+            }, 500);
+            
+            return;
             
         }
         
+        if (this.track.buffer === null) {
+            
+            var playOnceBuffered = true;
+            var silenceEvents = false;
+            
+            var that = this;
+            
+            this.loadTrack(trackUrl, playOnceBuffered, silenceEvents);
+            
+            return;
+            
+        }
+
         if (this.audioGraph === undefined) {
             
             this.createAudioGraph();
@@ -158,19 +172,20 @@ define([
      * 
      * @param {type} trackUrl
      * @param {type} playOnceBuffered
+     * @param {type} silenceEvents
      * @param {type} callback
      * 
      * @returns {undefined}
      */
-    player.prototype.loadTrack = function loadTrackFunction(trackUrl, playOnceBuffered, callback) {
+    player.prototype.loadTrack = function loadTrackFunction(trackUrl, playOnceBuffered, silenceEvents, callback) {
         
-        if (trackUrl === undefined) {
+        // set buffering mode to true
+        this.track.isBuffering = true;
+        
+        // check if we have a track url
+        if (trackUrl === undefined || trackUrl === '') {
             
-            if (this.track.url !== null) {
-            
-                trackUrl = this.track.url;
-                
-            } else {
+            if (this.track.url === null) {
                 
                 var error = 'error: track url not found';
                 
@@ -186,6 +201,10 @@ define([
                 
             }
             
+        } else {
+            
+            this.setTrackUrl(trackUrl);
+            
         }
         
         if (playOnceBuffered === undefined) {
@@ -200,17 +219,14 @@ define([
             
         }
         
-        this.track.isBuffering = true;
-        
         var that = this;
         
-        AjaxManager.getAudioBuffer(trackUrl, this.audioContext, function(error, trackBuffer) {
+        // load the array buffer
+        AjaxManager.getAudioBuffer(this.track.url, this.audioContext, silenceEvents, function(error, trackBuffer) {
             
             if (!error) {
                 
-                var createTrack = false;
-                
-                that.setBuffer(trackBuffer, createTrack);
+                that.setBuffer(trackBuffer);
                 
                 if (playOnceBuffered) {
                     
@@ -223,6 +239,10 @@ define([
                     callback(false, trackBuffer);
                     
                 }
+                
+            } else {
+                
+                console.log(error);
                 
             }
             
@@ -312,12 +332,66 @@ define([
      * 
      * set audio context
      * 
-     * @param {type} context
+     * @param {type} audioContext
      * @returns {undefined}
      */
-    player.prototype.setAudioContext = function setAudioContextFunction(context) {
+    player.prototype.setAudioContext = function setAudioContextFunction(audioContext) {
         
-        this.audioContext = context;
+        if (audioContext !== undefined) {
+        
+            this.audioContext = audioContext;
+            
+        } else {
+            
+            console.log('audioContext is undefined');
+            
+        }
+        
+    };
+    
+    /**
+     * 
+     * get audio context
+     * 
+     * @returns {core_L16.player.audioContext}
+     */
+    player.prototype.getAudioContext = function () {
+        
+        return this.audioContext;
+        
+    };
+    
+    /**
+     * 
+     * set track url
+     * 
+     * @param {type} trackUrl
+     * 
+     * @returns {undefined}
+     */
+    player.prototype.setTrackUrl = function (trackUrl) {
+
+        if (trackUrl !== undefined) {
+        
+            this.track.url = trackUrl;
+            
+        } else {
+            
+            console.log('trackUrl is undefined');
+            
+        }
+        
+    };
+    
+    /**
+     * 
+     * get track url
+     * 
+     * @returns {core_L16.player.track.url}
+     */
+    player.prototype.getTrackUrl = function () {
+        
+        return this.track.url;
         
     };
     
@@ -375,17 +449,11 @@ define([
      * set buffer
      * 
      * @param {type} buffer
-     * @param {type} createTrack
+     * 
      * @returns {undefined}
      */
-    player.prototype.setBuffer = function setBufferFunction(buffer, createTrack) {
-        
-        if (createTrack === undefined || createTrack === true) {
-        
-            this.createTrack();
-            
-        }
-        
+    player.prototype.setBuffer = function setBufferFunction(buffer) {
+
         this.track.isBuffering = false;
         
         this.track.buffer = buffer;

@@ -16,4 +16,5 @@ Getting started
 TODOs
 -----
 
-Create a web component UI (http://www.w3.org/TR/components-intro/)
+ * abort the loading of the track if the user clicks play and then (pause?) or stop before the end of the buffering process
+ * Create a web component UI (http://www.w3.org/TR/components-intro/)

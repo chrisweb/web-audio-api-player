@@ -26,10 +26,17 @@ define([
      * 
      * @param {type} trackUrl
      * @param {type} audioContext
+     * @param {type} silenceEvents
      * @param {type} callback
      * @returns {undefined}
      */
-    var getAudioBuffer = function (trackUrl, audioContext, callback) {
+    var getAudioBuffer = function (trackUrl, audioContext, silenceEvents, callback) {
+        
+        if (silenceEvents === undefined) {
+            
+            silenceEvents = false;
+            
+        }
         
         var xhr = new XMLHttpRequest();
         
@@ -47,7 +54,11 @@ define([
         
         xhr.onprogress = function(event) {
             
-            eventsManager.trigger(eventsManager.constants.bufferingEvent, event);
+            if (!silenceEvents) {
+            
+                eventsManager.trigger(eventsManager.constants.bufferingEvent, event);
+                
+            }
             
         };
         
