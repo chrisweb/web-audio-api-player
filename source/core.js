@@ -36,6 +36,8 @@ define([
         this.progressIntervalHandler;
         this.bufferTimeoutHandler;
         
+        this.createTrack();
+        
         // handle options
         if (options !== undefined) {
             
@@ -73,10 +75,11 @@ define([
         
         // create a new track object
         this.track = {
+            url: null,
             playTimeOffset: 0,
             currentTime: 0,
             buffer: null,
-            buffering: false,
+            isBuffering: false,
             startTime: 0,
             playTime: 0,
             playedTimePercentage: 0,
@@ -89,19 +92,21 @@ define([
      * 
      * play
      * 
-     * @returns {undefined}
+     * @param {type} trackUrl
+     * 
+     * @returns {Boolean}
      */
-    player.prototype.play = function playFunction() {
-        
-        if (this.track === undefined) {
-            
-            return false;
-            
-        }
-        
+    player.prototype.play = function playFunction(trackUrl) {
+
         if (this.track.isPlaying) {
             
             return null;
+            
+        }
+        
+        if (this.track.buffer === null) {
+            
+            this.loadTrack(trackUrl);
             
         }
         
@@ -159,13 +164,41 @@ define([
      */
     player.prototype.loadTrack = function loadTrackFunction(trackUrl, playOnceBuffered, callback) {
         
+        if (trackUrl === undefined) {
+            
+            if (this.track.url !== null) {
+            
+                trackUrl = this.track.url;
+                
+            } else {
+                
+                var error = 'error: track url not found';
+                
+                if (callback !== undefined) {
+                    
+                    callback(error);
+                    
+                } else {
+                
+                    console.log(error);
+                    
+                }
+                
+            }
+            
+        }
+        
+        if (playOnceBuffered === undefined) {
+            
+            playOnceBuffered = false;
+            
+        }
+        
         if (this.audioContext === undefined) {
             
             this.createAudioContext();
             
         }
-        
-        this.createTrack();
         
         this.track.isBuffering = true;
         
