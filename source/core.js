@@ -33,7 +33,8 @@ define([
         this.audioContext;
         this.audioGraph;
         this.track;
-        this.intervalHandler;
+        this.progressIntervalHandler;
+        this.bufferTimeoutHandler;
         
         // handle options
         if (options !== undefined) {
@@ -104,9 +105,9 @@ define([
             
         }
         
-        if (this.timeoutHandler !== undefined) {
+        if (this.bufferTimeoutHandler !== undefined) {
             
-            clearTimeout(this.timeoutHandler);
+            clearTimeout(this.bufferTimeoutHandler);
             
         }
         
@@ -116,7 +117,7 @@ define([
             
             // try to play in after a short break
             // retry after 200 milliseconds
-            this.timeoutHandler = setTimeout(that.play(), 200);
+            this.bufferTimeoutHandler = setTimeout(that.play(), 200);
             
         }
         
@@ -490,7 +491,7 @@ define([
         
         var triggerProgressEventBinded = triggerProgressEvent.bind(this);
         
-        this.intervalHandler = setInterval(triggerProgressEventBinded, 200);
+        this.progressIntervalHandler = setInterval(triggerProgressEventBinded, 200);
         
     };
     
@@ -502,7 +503,7 @@ define([
      */
     var stopTimer = function stopTimerFunction() {
         
-        clearInterval(this.intervalHandler);
+        clearInterval(this.progressIntervalHandler);
         
     };
     
