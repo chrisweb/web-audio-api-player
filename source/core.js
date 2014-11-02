@@ -104,9 +104,19 @@ define([
             
         }
         
+        if (this.timeoutHandler !== undefined) {
+            
+            clearTimeout(this.timeoutHandler);
+            
+        }
+        
         if (this.track.isBuffering) {
             
+            var that = this;
+            
             // try to play in after a short break
+            // retry after 200 milliseconds
+            this.timeoutHandler = setTimeout(that.play(), 200);
             
         }
         
@@ -142,9 +152,11 @@ define([
      * 
      * @param {type} trackUrl
      * @param {type} playOnceBuffered
+     * @param {type} callback
+     * 
      * @returns {undefined}
      */
-    player.prototype.loadTrack = function loadTrackFunction(trackUrl, playOnceBuffered) {
+    player.prototype.loadTrack = function loadTrackFunction(trackUrl, playOnceBuffered, callback) {
         
         if (this.audioContext === undefined) {
             
@@ -169,6 +181,12 @@ define([
                 if (playOnceBuffered) {
                     
                     that.play();
+                    
+                }
+                
+                if (callback !== undefined) {
+                    
+                    callback(false, trackBuffer);
                     
                 }
                 

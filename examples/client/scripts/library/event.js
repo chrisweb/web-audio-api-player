@@ -39,6 +39,7 @@ define([
         this.constants.volumeEvent = 'player:volume';
         this.constants.pannerEvent = 'player:panner';
         this.constants.playbackRateEvent = 'player:playbackRate';
+        this.constants.bufferingEvent = 'player:bufferingEvent';
         
     };
     

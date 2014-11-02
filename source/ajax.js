@@ -3,16 +3,22 @@
  * ajax
  * 
  * @param {type} $
+ * @param {type} EventsManager
+ * 
  * @returns {ajax_L7.ajaxAnonym$1}
  */
 define([
-    'jquery'
+    'jquery',
+    'event'
     
 ], function (
-    $
+    $,
+    EventsManager
 ) {
 
     'use strict';
+    
+    var eventsManager = new EventsManager();
     
     /**
      * 
@@ -30,6 +36,20 @@ define([
         xhr.open('GET', trackUrl, true);
         xhr.responseType = 'arraybuffer';
         xhr.send();
+        
+        xhr.onerror = function(event) {
+            
+            console.log(event);
+            
+            // TODO
+            
+        };
+        
+        xhr.onprogress = function(event) {
+            
+            eventsManager.trigger(eventsManager.constants.bufferingEvent, event);
+            
+        };
         
         xhr.onload = function() {
         
