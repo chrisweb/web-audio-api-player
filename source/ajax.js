@@ -9,7 +9,7 @@
  */
 define([
     'jquery',
-    'event'
+    'library.eventsManager'
     
 ], function (
     $,
@@ -17,8 +17,6 @@ define([
 ) {
 
     'use strict';
-    
-    var eventsManager = new EventsManager();
     
     /**
      * 
@@ -56,7 +54,7 @@ define([
             
             if (!silenceEvents) {
             
-                eventsManager.trigger(eventsManager.constants.bufferingEvent, event);
+                EventsManager.trigger(EventsManager.constants.bufferingEvent, event);
                 
             }
             

@@ -9,9 +9,9 @@
  * @returns {player_L7.player}
  */
 define([
-    'event',
-    'player.audio',
-    'player.ajax'
+    'library.eventsManager',
+    'chrisweb.player.audio',
+    'chrisweb.player.ajax'
     
 ], function (
     EventsManager,
@@ -20,7 +20,7 @@ define([
 ) {
 
     'use strict';
-
+    
     /**
      * 
      * player constructor
@@ -60,7 +60,7 @@ define([
             
         }
         
-        this.events = new EventsManager();
+        this.events = EventsManager;
         
     };
     
