@@ -53,8 +53,16 @@ define([
         xhr.onprogress = function(event) {
             
             if (!silenceEvents) {
+                
+                var percentage = 100/(event.total/event.loaded);
             
-                EventsManager.trigger(EventsManager.constants.bufferingEvent, event);
+                EventsManager.trigger(
+                    EventsManager.constants.TRACK_LOADING_PROGRESS,
+                    {
+                        originalEvent: event,
+                        percentage: percentage
+                    }
+                );
                 
             }
             

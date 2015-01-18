@@ -32,10 +32,10 @@ define([
         
         this.audioContext;
         this.audioGraph;
-        this.track;
         this.progressIntervalHandler;
         
-        this.createTrack();
+        // create a new track
+        this.track = createTrack();
         
         // handle options
         if (options !== undefined) {
@@ -60,6 +60,7 @@ define([
             
         }
         
+        // make the eventsmanager available everywhere
         this.events = EventsManager;
         
     };
@@ -70,10 +71,10 @@ define([
      * 
      * @returns {undefined}
      */
-    player.prototype.createTrack = function createTrackFunction() {
+    var createTrack = function createTrackFunction() {
         
         // create a new track object
-        this.track = {
+        var track = {
             url: null,
             playTimeOffset: 0,
             currentTime: 0,
@@ -84,6 +85,8 @@ define([
             playedTimePercentage: 0,
             isPlaying: false
         };
+        
+        return track;
         
     };
     
@@ -98,6 +101,12 @@ define([
      * @returns {Boolean}
      */
     player.prototype.play = function playFunction(trackUrl) {
+
+        if (!this.hasOwnProperty('track')) {
+            
+            throw 'initialize the player core with new Player()';
+            
+        }
 
         // if the track is already playing do nothing
         if (this.track.isPlaying) {
@@ -538,7 +547,9 @@ define([
         
         var that = this;
         
-        this.events.on(this.events.constants.positionEvent, function(trackPositionInPercent) {
+        this.events.on(this.events.constants.TRACK_POSITION_CHANGE, function(attributes) {
+            
+            var trackPositionInPercent = attributes.percentage;
             
             that.positionChange(trackPositionInPercent);
             
@@ -622,7 +633,13 @@ define([
         
         this.track.playedTimePercentage = (this.track.playTime / this.track.buffer.duration) * 100;
         
-        this.events.trigger(this.events.constants.progressEvent, this.track.playedTimePercentage);
+        this.events.trigger(
+            this.events.constants.TRACK_PLAYING_PROGRESS,
+            {
+                percentage: this.track.playedTimePercentage,
+                track: this.track
+            }
+        );
         
     };
 
