@@ -12,7 +12,7 @@ define([
     'library.eventsManager',
     'chrisweb.player.audio',
     'chrisweb.player.ajax'
-    
+
 ], function (
     EventsManager,
     AudioContextManager,
@@ -20,51 +20,40 @@ define([
 ) {
 
     'use strict';
+
+    var playerInstance;
     
+    var bufferingTimeoutHandler;
+
     /**
      * 
      * player constructor
      * 
-     * @param {type} options
      * @returns {player_L9.player}
      */
-    var player = function playerConstructor(options) {
-        
+    var player = function playerConstructor() {
+
         this.audioContext;
         this.audioGraph;
         this.progressIntervalHandler;
-        
+
+        // loop single track
+        this.loopTrack = false;
+
+        // loop playlist
+        this.loopPlaylist = false;
+
         // create a new track
         this.track = createTrack();
-        
-        // handle options
-        if (options !== undefined) {
-            
-            if (options.audioContext !== undefined) {
-                
-                this.setAudioContext(options.audioContext);
-                
-            }
-            
-            if (options.trackBuffer !== undefined) {
-                
-                this.setBuffer(options.trackBuffer);
-                
-            }
-            
-            if (options.trackUrl !== undefined) {
-                
-                this.setTrackUrl(options.trackUrl);
-                
-            }
-            
-        }
-        
+
         // make the eventsmanager available everywhere
         this.events = EventsManager;
-        
+
+        // start listening for events
+        this.startListening();
+
     };
-    
+
     /**
      * 
      * create a track
@@ -72,7 +61,7 @@ define([
      * @returns {undefined}
      */
     var createTrack = function createTrackFunction() {
-        
+
         // create a new track object
         var track = {
             url: null,
@@ -83,182 +72,247 @@ define([
             startTime: 0,
             playTime: 0,
             playedTimePercentage: 0,
-            isPlaying: false
+            isPlaying: false,
+            id: null,
+            playlistId: null
         };
-        
+
         return track;
-        
+
     };
-    
-    var bufferingTimeoutHandler;
-    
+
+    /**
+     * 
+     * setup the player
+     * 
+     * @param {type} oneOrMorePlayerOptions
+     * @returns {undefined}
+     */
+    player.prototype.setup = function setupFunction(oneOrMorePlayerOptions) {
+
+        // handle options
+        if (oneOrMorePlayerOptions !== undefined) {
+
+            if (oneOrMorePlayerOptions instanceof Array) {
+
+                var i;
+
+                for (i = 0; i < oneOrMorePlayerOptions.length; i++) {
+
+                    var option = oneOrMorePlayerOptions[i];
+
+                    this.setOption(option);
+
+                }
+
+            } else {
+
+                var option = oneOrMorePlayerOptions;
+
+                this.setOption(option);
+
+            }
+
+        }
+
+    };
+
+    /**
+     * 
+     * set an option
+     * 
+     * @param {type} option
+     * @returns {undefined}set an option
+     */
+    player.prototype.setOption = function setOptionFunction(option) {
+
+        var optionKey;
+
+        for (optionKey in option) {
+
+            switch (optionKey) {
+                case 'audioContext':
+                    this.setAudioContext(option[optionKey]);
+                    break;
+                case 'loopTrack':
+                    this.setLoopTrack(option[optionKey]);
+                    break;
+                case 'loopPlaylist':
+                    this.setLoopPlaylist(option[optionKey]);
+                    break;
+                default:
+                    throw 'unknown option "' + optionKey + '"';
+            }
+
+        }
+
+    };
+
     /**
      * 
      * play
      * 
-     * @param {type} trackUrl
+     * @param {type} attributes
      * 
      * @returns {Boolean}
      */
-    player.prototype.play = function playFunction(trackUrl) {
+    player.prototype.play = function playFunction(attributes) {
 
         if (!this.hasOwnProperty('track')) {
-            
-            throw 'initialize the player core with new Player()';
-            
+
+            throw 'run, forest run!';
+
         }
 
-        // if the track is already playing do nothing
-        if (this.track.isPlaying) {
-            
-            return null;
-            
+        if (attributes !== undefined) {
+
+            this.setupTrack(attributes);
+
         }
-        
+
         // clear the previous timeout handler if one exists
         if (bufferingTimeoutHandler !== undefined) {
-            
+
             clearTimeout(bufferingTimeoutHandler);
-            
+
         }
-        
+
         if (this.track.isBuffering) {
-            
+
             var that = this;
-            
-            bufferingTimeoutHandler = setTimeout(function() {
-                
+
+            bufferingTimeoutHandler = setTimeout(function () {
+
                 that.play();
-                
+
             }, 500);
-            
+
             return;
-            
+
         }
-        
+
         if (this.track.buffer === null) {
-            
+
             var playOnceBuffered = true;
             var silenceEvents = false;
-            
+
             var that = this;
-            
-            this.loadTrack(trackUrl, playOnceBuffered, silenceEvents);
-            
+
+            this.loadTrack(playOnceBuffered, silenceEvents);
+
             return;
-            
+
         }
 
         if (this.audioGraph === undefined) {
-            
+
             this.createAudioGraph();
-            
+
         }
-        
-        if (this.audioGraph.sourceNode.buffer === null) { 
-        
+
+        if (this.audioGraph.sourceNode.buffer === null) {
+
             // add a buffered song to the source node
             this.audioGraph.sourceNode.buffer = this.track.buffer;
-        
+
         }
-        
+
         // the time right now (since the this.audiocontext got created)
         this.track.startTime = this.audioGraph.sourceNode.context.currentTime;
 
         this.audioGraph.sourceNode.start(0, this.track.playTimeOffset);
-        
+
         startTimer.call(this);
-        
+
         this.track.isPlaying = true;
-        
+
         return true;
-        
+
     };
-    
+
     /**
      * 
      * load a track
      * 
-     * @param {type} trackUrl
      * @param {type} playOnceBuffered
      * @param {type} silenceEvents
      * @param {type} callback
      * 
      * @returns {undefined}
      */
-    player.prototype.loadTrack = function loadTrackFunction(trackUrl, playOnceBuffered, silenceEvents, callback) {
+    player.prototype.loadTrack = function loadTrackFunction(playOnceBuffered, silenceEvents, callback) {
+        
+        // check if we have a track url
+        if (this.track.url === null) {
+
+            var error = 'error: track url not found';
+
+            if (callback !== undefined) {
+
+                callback(error);
+
+            } else {
+
+                return error;
+
+            }
+
+        }
         
         // set buffering mode to true
         this.track.isBuffering = true;
-        
-        // check if we have a track url
-        if (trackUrl === undefined || trackUrl === '') {
-            
-            if (this.track.url === null) {
-                
-                var error = 'error: track url not found';
+
+        if (playOnceBuffered === undefined) {
+
+            playOnceBuffered = false;
+
+        }
+
+        if (this.audioContext === undefined) {
+
+            this.createAudioContext();
+
+        }
+
+        var that = this;
+
+        // load the array buffer
+        AjaxManager.getAudioBuffer(this.track.url, this.audioContext, silenceEvents, function (error, trackBuffer) {
+
+            if (!error) {
+
+                that.setBuffer(trackBuffer);
+
+                if (playOnceBuffered) {
+
+                    that.play();
+
+                }
+
+                if (callback !== undefined) {
+
+                    callback(false, trackBuffer);
+
+                }
+
+            } else {
                 
                 if (callback !== undefined) {
                     
                     callback(error);
                     
                 } else {
-                
-                    console.log(error);
+
+                    throw error;
                     
                 }
-                
+
             }
-            
-        } else {
-            
-            this.setTrackUrl(trackUrl);
-            
-        }
-        
-        if (playOnceBuffered === undefined) {
-            
-            playOnceBuffered = false;
-            
-        }
-        
-        if (this.audioContext === undefined) {
-            
-            this.createAudioContext();
-            
-        }
-        
-        var that = this;
-        
-        // load the array buffer
-        AjaxManager.getAudioBuffer(this.track.url, this.audioContext, silenceEvents, function(error, trackBuffer) {
-            
-            if (!error) {
-                
-                that.setBuffer(trackBuffer);
-                
-                if (playOnceBuffered) {
-                    
-                    that.play();
-                    
-                }
-                
-                if (callback !== undefined) {
-                    
-                    callback(false, trackBuffer);
-                    
-                }
-                
-            } else {
-                
-                console.log(error);
-                
-            }
-            
+
         });
-        
+
     };
-    
+
     /**
      * 
      * pause
@@ -266,29 +320,29 @@ define([
      * @returns {undefined}
      */
     player.prototype.pause = function pauseFunction() {
-        
+
         if (this.track === undefined) {
-            
+
             return false;
-            
+
         }
-        
+
         if (!this.track.isPlaying) {
-            
+
             return null;
-            
+
         }
-        
+
         var timeAtPause = this.audioGraph.sourceNode.context.currentTime;
-        
+
         this.track.playTimeOffset += timeAtPause - this.track.startTime;
-        
+
         this.stop();
-        
+
         return true;
-        
+
     };
-    
+
     /**
      * 
      * stop
@@ -296,35 +350,39 @@ define([
      * @returns {undefined}
      */
     player.prototype.stop = function stopFunction() {
-        
+
         if (this.track === undefined) {
-            
+
             return false;
-            
+
         }
-        
+
         if (!this.track.isPlaying) {
-            
+
             return null;
-            
+
         }
-        
+
         // stop the track playback
         this.audioGraph.sourceNode.stop(0);
-        
-        stopTimer.call(this);
-        
+
+        // change the track attributes
         this.track.isPlaying = false;
-        
+
+        this.track.playTime = 0;
+
         // after a stop you cant call a start again, you need to create a new
         // source node, this means that we unset the audiograph after a stop
         // so that it gets recreated on the next play
         this.audioGraph = undefined;
         
+        // stop the progress timer
+        stopTimer.call(this);
+
         return true;
-        
+
     };
-    
+
     /**
      * 
      * create a new audio context
@@ -332,11 +390,11 @@ define([
      * @returns {undefined}
      */
     player.prototype.createAudioContext = function createAudioContextFunction() {
-        
+
         this.audioContext = AudioContextManager.getContext();
-        
+
     };
-    
+
     /**
      * 
      * set audio context
@@ -345,65 +403,144 @@ define([
      * @returns {undefined}
      */
     player.prototype.setAudioContext = function setAudioContextFunction(audioContext) {
-        
+
         if (audioContext !== undefined) {
-        
+
             this.audioContext = audioContext;
-            
+
         } else {
-            
-            console.log('audioContext is undefined');
-            
+
+            throw 'audioContext is undefined';
+
         }
-        
+
     };
-    
+
     /**
      * 
      * get audio context
      * 
      * @returns {core_L16.player.audioContext}
      */
-    player.prototype.getAudioContext = function () {
-        
+    player.prototype.getAudioContext = function getAudioContextFunction() {
+
         return this.audioContext;
-        
+
+    };
+
+    /**
+     * 
+     * set the loop track option
+     * 
+     * @param {type} loopTrack
+     * @returns {undefined}
+     */
+    player.prototype.setLoopTrack = function setLoopTrackFunction(loopTrack) {
+
+        this.loopTrack = loopTrack;
+
+    };
+
+    /**
+     * 
+     * get the loop track option
+     * 
+     * @returns {core_L16.player.loopTrack}
+     */
+    player.prototype.getLoopTrack = function () {
+
+        return this.loopTrack;
+
+    };
+
+    /**
+     * 
+     * set the loop playlist option
+     * 
+     * @param {type} loopPlaylist
+     * @returns {undefined}
+     */
+    player.prototype.setLoopPlaylist = function setLoopPlaylistFunction(loopPlaylist) {
+
+        this.loopPlaylist = loopPlaylist;
+
+    };
+
+    /**
+     * 
+     * get the loop playlist option
+     * 
+     * @returns {type}
+     */
+    player.prototype.getLoopPlaylist = function getLoopPlaylistFunction() {
+
+        return this.loopPlaylist;
+
+    };
+
+    /**
+     * 
+     * set one or more track attribute(s)
+     * 
+     * @param {type} oneOrMoreTrackAttributes
+     * 
+     * @returns {undefined}
+     */
+    player.prototype.setupTrack = function setupTrackFunction(oneOrMoreTrackAttributes) {
+
+        if (oneOrMoreTrackAttributes instanceof Array) {
+
+            var i;
+
+            for (i = 0; i < oneOrMoreTrackAttributes.length; i++) {
+
+                var attribute = oneOrMoreTrackAttributes[i];
+                
+                this.setTrackAttribute(attribute);
+
+            }
+
+        } else {
+
+            var attribute = oneOrMoreTrackAttributes;
+
+            this.setTrackAttribute(attribute);
+
+        }
+
     };
     
     /**
      * 
-     * set track url
+     * set a track attribute
      * 
-     * @param {type} trackUrl
-     * 
+     * @param {type} attribute
      * @returns {undefined}
      */
-    player.prototype.setTrackUrl = function (trackUrl) {
-
-        if (trackUrl !== undefined) {
+    player.prototype.setTrackAttribute = function setTrackAttributeFunction(attribute) {
         
-            this.track.url = trackUrl;
-            
-        } else {
-            
-            console.log('trackUrl is undefined');
-            
+        var attributeKey;
+
+        for (attributeKey in attribute) {
+
+            this.track[attributeKey] = attribute[attributeKey];
+
         }
         
     };
     
     /**
      * 
-     * get track url
+     * get track
      * 
      * @returns {core_L16.player.track.url}
      */
-    player.prototype.getTrackUrl = function () {
-        
-        return this.track.url;
-        
+    player.prototype.getTrackSetup = function getTrackSetupFunction() {
+
+        return this.track;
+
     };
-    
+
     /**
      * 
      * create an audio graph
@@ -411,35 +548,35 @@ define([
      * @returns {undefined}
      */
     player.prototype.createAudioGraph = function createAudioGraphFunction() {
-        
+
         if (this.audioContext === undefined) {
-            
+
             this.createAudioContext();
-            
+
         }
-        
+
         this.audioGraph = {};
-        
+
         // create an audio buffer source node
         this.audioGraph.sourceNode = this.audioContext.createBufferSource();
-        
+
         // create a gain node
         this.audioGraph.gainNode = this.audioContext.createGain();
-        
+
         // connect the source node to the gain node
         this.audioGraph.sourceNode.connect(this.audioGraph.gainNode);
-        
+
         // create a panner node
         this.audioGraph.pannerNode = this.audioContext.createPanner();
-        
+
         // connect the gain node to the panner node
         this.audioGraph.gainNode.connect(this.audioGraph.pannerNode);
-        
+
         // connect to the panner node to the destination (speakers)
         this.audioGraph.pannerNode.connect(this.audioContext.destination);
-        
+
     };
-    
+
     /**
      * 
      * set an external audio graph
@@ -448,11 +585,11 @@ define([
      * @returns {undefined}
      */
     player.prototype.setAudioGraph = function setAudioGraphFunction(audioGraph) {
-        
+
         this.audioGraph = audioGraph;
-        
+
     };
-    
+
     /**
      * 
      * set buffer
@@ -464,11 +601,11 @@ define([
     player.prototype.setBuffer = function setBufferFunction(buffer) {
 
         this.track.isBuffering = false;
-        
+
         this.track.buffer = buffer;
-        
+
     };
-    
+
     /**
      * 
      * change the playback rate
@@ -477,12 +614,12 @@ define([
      * @returns {undefined}
      */
     player.prototype.playbackRateChange = function playbackRateChangeFunction(playbackRate) {
-        
+
         // < 1 slower, > 1 faster playback
         this.audioGraph.sourceNode.playbackRate = playbackRate;
-        
+
     };
-    
+
     /**
      * 
      * panner node change
@@ -492,13 +629,13 @@ define([
      * @returns {undefined}
      */
     player.prototype.pannerChange = function pannerChangeFunction(left, right) {
-        
+
         // https://developer.mozilla.org/en-US/docs/Web/API/PannerNode
-        
+
         this.audioGraph.pannerNode.setPosition(0, 0, 0);
-        
+
     };
-    
+
     /**
      * 
      * gain node volume change
@@ -507,13 +644,13 @@ define([
      * @returns {undefined}
      */
     player.prototype.volumeChange = function volumeChangeFunction(volumeInPercent) {
-        
+
         // https://developer.mozilla.org/en-US/docs/Web/API/GainNode
-        
+
         this.audioGraph.gainNode.value = volumeInPercent / 100;
-        
+
     };
-    
+
     /**
      * 
      * position change
@@ -523,8 +660,6 @@ define([
      */
     player.prototype.positionChange = function positionChangeFunction(trackPositionInPercent) {
         
-        //console.log(trackPositionInPercent);
-
         // stop the track playback
         this.stop();
 
@@ -534,9 +669,9 @@ define([
 
         // start the playback at the given position
         this.play();
-        
+
     };
-    
+
     /**
      * 
      * start listening for events
@@ -547,7 +682,10 @@ define([
         
         var that = this;
         
-        this.events.on(this.events.constants.TRACK_POSITION_CHANGE, function(attributes) {
+        // remove the previous listeners
+        this.stopListening();
+        
+        this.events.on(this.events.constants.PLAYER_POSITION_CHANGE, function (attributes) {
             
             var trackPositionInPercent = attributes.percentage;
             
@@ -555,26 +693,26 @@ define([
             
         });
         
-        this.events.on(this.events.constants.playEvent, function() {
+        this.events.on(this.events.constants.PLAYER_PLAY, function (attributes) {
             
-            that.play();
+            that.play(attributes);
             
         });
         
-        this.events.on(this.events.constants.pauseEvent, function() {
+        this.events.on(this.events.constants.PLAYER_PAUSE, function () {
             
             that.pause();
             
         });
         
-        this.events.on(this.events.constants.stopEvent, function() {
+        this.events.on(this.events.constants.PLAYER_STOP, function () {
             
             that.stop();
             
         });
         
     };
-    
+
     /**
      * 
      * stop listening for events
@@ -582,17 +720,17 @@ define([
      * @returns {undefined}
      */
     player.prototype.stopListening = function stopListeningFunction() {
-        
-        this.events.off(this.events.constants.positionEvent);
-        
-        this.events.off(this.events.constants.playEvent);
-        
-        this.events.off(this.events.constants.pauseEvent);
-        
-        this.events.off(this.events.constants.stopEvent);
-        
+
+        this.events.off(this.events.constants.PLAYER_POSITION_CHANGE);
+
+        this.events.off(this.events.constants.PLAYER_PLAY);
+
+        this.events.off(this.events.constants.PLAYER_PAUSE);
+
+        this.events.off(this.events.constants.PLAYER_STOP);
+
     };
-    
+
     /**
      * 
      * starts the timer that triggers the progress events
@@ -600,13 +738,13 @@ define([
      * @returns {undefined}
      */
     var startTimer = function startTimerFunction() {
-        
+
         var triggerProgressEventBinded = triggerProgressEvent.bind(this);
-        
+
         this.progressIntervalHandler = setInterval(triggerProgressEventBinded, 200);
-        
+
     };
-    
+
     /**
      * 
      * stops the timer that triggers the progress events
@@ -614,11 +752,11 @@ define([
      * @returns {undefined}
      */
     var stopTimer = function stopTimerFunction() {
-        
+
         clearInterval(this.progressIntervalHandler);
-        
+
     };
-    
+
     /**
      * 
      * trigger progress event
@@ -628,24 +766,68 @@ define([
     var triggerProgressEvent = function triggerProgressEventFunction() {
 
         var timeNow = this.audioGraph.sourceNode.context.currentTime;
-        
+
         this.track.playTime = (timeNow - this.track.startTime) + this.track.playTimeOffset;
-        
+
+        // if the player is at the end of the track
+        if (this.track.playTime >= this.track.buffer.duration) {
+
+            this.stop();
+
+            if (this.loopTrack) {
+
+                this.play();
+
+            } else {
+
+                if (this.track.playlistId !== null) {
+
+                    this.events.trigger(
+                        this.events.constants.PLAYLIST_NEXT,
+                        {
+                            track: this.track
+                        }
+                    );
+
+                }
+
+            }
+
+        }
+
         this.track.playedTimePercentage = (this.track.playTime / this.track.buffer.duration) * 100;
-        
+
         this.events.trigger(
-            this.events.constants.TRACK_PLAYING_PROGRESS,
+            this.events.constants.PLAYER_PLAYING_PROGRESS,
             {
                 percentage: this.track.playedTimePercentage,
                 track: this.track
             }
         );
-        
+
+    };
+
+    /**
+     * 
+     * get a player instance
+     * 
+     * @returns {core_L16.playerInstance}
+     */
+    var getPlayerInstance = function getPlayerInstanceFunction() {
+
+        if (playerInstance === undefined) {
+
+            playerInstance = new player();
+
+        }
+
+        return playerInstance;
+
     };
 
     /**
      * public functions
      */
-    return player;
+    return getPlayerInstance();
 
 });
