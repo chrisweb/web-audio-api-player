@@ -9,7 +9,7 @@
  * @returns {player_L7.player}
  */
 define([
-    'library.eventsManager',
+    'library.events',
     'chrisweb.player.audio',
     'chrisweb.player.ajax'
 

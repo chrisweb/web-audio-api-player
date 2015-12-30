@@ -6,7 +6,7 @@
  * @returns {ui_L7.playerUI}
  */
 define([
-    'event'
+    'library.events'
     
 ], function (
     EventsManager

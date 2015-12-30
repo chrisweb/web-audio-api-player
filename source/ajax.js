@@ -9,7 +9,7 @@
  */
 define([
     'jquery',
-    'library.eventsManager'
+    'library.events'
     
 ], function (
     $,
