@@ -1,0 +1,29 @@
+{
+  "author": "chrisweb <chris963@gmail.com> (https://chris.lu)",
+  "bugs": {
+    "url": "https://github.com/chrisweb/web-audio-api-player/issues"
+  },
+  "description": "web audio api player",
+  "directories": {
+    "example": "examples"
+  },
+  "homepage": "https://github.com/chrisweb/web-audio-api-player#readme",
+  "keywords": [
+    "player",
+    "javascript",
+    "web",
+    "audio",
+    "api"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "name": "web-audio-api-player",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrisweb/web-audio-api-player.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "1.0.0"
+}

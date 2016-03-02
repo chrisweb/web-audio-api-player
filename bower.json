@@ -4,7 +4,7 @@
   "description": "web audio api player",
   "homepage": "https://github.com/chrisweb/web-audio-api-player",
   "authors": [
-    "Chris Weber (chrisweb) <chris963@gmail.com>"
+    "chrisweb <chris963@gmail.com> (https://chris.lu)"
   ],
   "main": "source/player.js",
   "moduleType": [
