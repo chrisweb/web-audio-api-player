@@ -1,36 +1,31 @@
-/**
- * 
- * player
- * 
- * @param {type} EventsManager
- * @param {type} AudioContextManager
- * @param {type} AjaxManager
- * 
- * @returns {player_L7.player}
- */
-define([
-    'library.events',
-    'chrisweb.player.audio',
-    'chrisweb.player.ajax'
 
-], function (
-    EventsManager,
-    AudioContextManager,
-    AjaxManager
-) {
+'use strict';
 
-    'use strict';
+import * as Sound from './sound';
 
-    var playerInstance;
-    
-    var bufferingTimeoutHandler;
+export interface IOptions {
+    volume: boolean;
+    loop: boolean;
+    soundsBaseUrl: string;
+}
 
-    /**
-     * 
-     * player constructor
-     * 
-     * @returns {player_L9.player}
-     */
+export default class Player {
+
+    //private bufferingTimeoutHandler;
+
+    private options: IOptions;
+    private sounds: Sound.ISound[];
+
+    constructor(options: IOptions) {
+
+        this.options = options;
+
+    }
+
+
+
+
+    /*
     var player = function playerConstructor() {
 
         this.audioContext;
@@ -54,12 +49,7 @@ define([
 
     };
 
-    /**
-     * 
-     * create a track
-     * 
-     * @returns {undefined}
-     */
+
     var createTrack = function createTrackFunction() {
 
         // create a new track object
@@ -81,81 +71,7 @@ define([
 
     };
 
-    /**
-     * 
-     * setup the player
-     * 
-     * @param {type} oneOrMorePlayerOptions
-     * @returns {undefined}
-     */
-    player.prototype.setup = function setupFunction(oneOrMorePlayerOptions) {
 
-        // handle options
-        if (oneOrMorePlayerOptions !== undefined) {
-
-            if (oneOrMorePlayerOptions instanceof Array) {
-
-                var i;
-
-                for (i = 0; i < oneOrMorePlayerOptions.length; i++) {
-
-                    var option = oneOrMorePlayerOptions[i];
-
-                    this.setOption(option);
-
-                }
-
-            } else {
-
-                var option = oneOrMorePlayerOptions;
-
-                this.setOption(option);
-
-            }
-
-        }
-
-    };
-
-    /**
-     * 
-     * set an option
-     * 
-     * @param {type} option
-     * @returns {undefined}set an option
-     */
-    player.prototype.setOption = function setOptionFunction(option) {
-
-        var optionKey;
-
-        for (optionKey in option) {
-
-            switch (optionKey) {
-                case 'audioContext':
-                    this.setAudioContext(option[optionKey]);
-                    break;
-                case 'loopTrack':
-                    this.setLoopTrack(option[optionKey]);
-                    break;
-                case 'loopPlaylist':
-                    this.setLoopPlaylist(option[optionKey]);
-                    break;
-                default:
-                    throw 'unknown option "' + optionKey + '"';
-            }
-
-        }
-
-    };
-
-    /**
-     * 
-     * play
-     * 
-     * @param {type} attributes
-     * 
-     * @returns {Boolean}
-     */
     player.prototype.play = function playFunction(attributes) {
 
         if (!this.hasOwnProperty('track')) {
@@ -230,16 +146,6 @@ define([
 
     };
 
-    /**
-     * 
-     * load a track
-     * 
-     * @param {type} playOnceBuffered
-     * @param {type} silenceEvents
-     * @param {type} callback
-     * 
-     * @returns {undefined}
-     */
     player.prototype.loadTrack = function loadTrackFunction(playOnceBuffered, silenceEvents, callback) {
         
         // check if we have a track url
@@ -313,12 +219,6 @@ define([
 
     };
 
-    /**
-     * 
-     * pause
-     * 
-     * @returns {undefined}
-     */
     player.prototype.pause = function pauseFunction() {
 
         if (this.track === undefined) {
@@ -343,12 +243,6 @@ define([
 
     };
 
-    /**
-     * 
-     * stop
-     * 
-     * @returns {undefined}
-     */
     player.prototype.stop = function stopFunction() {
 
         if (this.track === undefined) {
@@ -383,25 +277,12 @@ define([
 
     };
 
-    /**
-     * 
-     * create a new audio context
-     * 
-     * @returns {undefined}
-     */
     player.prototype.createAudioContext = function createAudioContextFunction() {
 
         this.audioContext = AudioContextManager.getContext();
 
     };
 
-    /**
-     * 
-     * set audio context
-     * 
-     * @param {type} audioContext
-     * @returns {undefined}
-     */
     player.prototype.setAudioContext = function setAudioContextFunction(audioContext) {
 
         if (audioContext !== undefined) {
@@ -416,76 +297,36 @@ define([
 
     };
 
-    /**
-     * 
-     * get audio context
-     * 
-     * @returns {core_L16.player.audioContext}
-     */
     player.prototype.getAudioContext = function getAudioContextFunction() {
 
         return this.audioContext;
 
     };
 
-    /**
-     * 
-     * set the loop track option
-     * 
-     * @param {type} loopTrack
-     * @returns {undefined}
-     */
     player.prototype.setLoopTrack = function setLoopTrackFunction(loopTrack) {
 
         this.loopTrack = loopTrack;
 
     };
 
-    /**
-     * 
-     * get the loop track option
-     * 
-     * @returns {core_L16.player.loopTrack}
-     */
     player.prototype.getLoopTrack = function () {
 
         return this.loopTrack;
 
     };
 
-    /**
-     * 
-     * set the loop playlist option
-     * 
-     * @param {type} loopPlaylist
-     * @returns {undefined}
-     */
     player.prototype.setLoopPlaylist = function setLoopPlaylistFunction(loopPlaylist) {
 
         this.loopPlaylist = loopPlaylist;
 
     };
 
-    /**
-     * 
-     * get the loop playlist option
-     * 
-     * @returns {type}
-     */
     player.prototype.getLoopPlaylist = function getLoopPlaylistFunction() {
 
         return this.loopPlaylist;
 
     };
 
-    /**
-     * 
-     * set one or more track attribute(s)
-     * 
-     * @param {type} oneOrMoreTrackAttributes
-     * 
-     * @returns {undefined}
-     */
     player.prototype.setupTrack = function setupTrackFunction(oneOrMoreTrackAttributes) {
 
         if (oneOrMoreTrackAttributes instanceof Array) {
@@ -510,13 +351,6 @@ define([
 
     };
     
-    /**
-     * 
-     * set a track attribute
-     * 
-     * @param {type} attribute
-     * @returns {undefined}
-     */
     player.prototype.setTrackAttribute = function setTrackAttributeFunction(attribute) {
         
         var attributeKey;
@@ -528,25 +362,13 @@ define([
         }
         
     };
-    
-    /**
-     * 
-     * get track
-     * 
-     * @returns {core_L16.player.track.url}
-     */
+
     player.prototype.getTrackSetup = function getTrackSetupFunction() {
 
         return this.track;
 
     };
 
-    /**
-     * 
-     * create an audio graph
-     * 
-     * @returns {undefined}
-     */
     player.prototype.createAudioGraph = function createAudioGraphFunction() {
 
         if (this.audioContext === undefined) {
@@ -577,27 +399,12 @@ define([
 
     };
 
-    /**
-     * 
-     * set an external audio graph
-     * 
-     * @param {type} audioGraph
-     * @returns {undefined}
-     */
     player.prototype.setAudioGraph = function setAudioGraphFunction(audioGraph) {
 
         this.audioGraph = audioGraph;
 
     };
 
-    /**
-     * 
-     * set buffer
-     * 
-     * @param {type} buffer
-     * 
-     * @returns {undefined}
-     */
     player.prototype.setBuffer = function setBufferFunction(buffer) {
 
         this.track.isBuffering = false;
@@ -606,13 +413,6 @@ define([
 
     };
 
-    /**
-     * 
-     * change the playback rate
-     * 
-     * @param {type} playbackRate
-     * @returns {undefined}
-     */
     player.prototype.playbackRateChange = function playbackRateChangeFunction(playbackRate) {
 
         // < 1 slower, > 1 faster playback
@@ -620,14 +420,6 @@ define([
 
     };
 
-    /**
-     * 
-     * panner node change
-     * 
-     * @param {type} left
-     * @param {type} right
-     * @returns {undefined}
-     */
     player.prototype.pannerChange = function pannerChangeFunction(left, right) {
 
         // https://developer.mozilla.org/en-US/docs/Web/API/PannerNode
@@ -636,13 +428,6 @@ define([
 
     };
 
-    /**
-     * 
-     * gain node volume change
-     * 
-     * @param {type} volumeInPercent
-     * @returns {undefined}
-     */
     player.prototype.volumeChange = function volumeChangeFunction(volumeInPercent) {
 
         // https://developer.mozilla.org/en-US/docs/Web/API/GainNode
@@ -651,13 +436,6 @@ define([
 
     };
 
-    /**
-     * 
-     * position change
-     * 
-     * @param {type} trackPositionInPercent
-     * @returns {undefined}
-     */
     player.prototype.positionChange = function positionChangeFunction(trackPositionInPercent) {
         
         // stop the track playback
@@ -672,12 +450,6 @@ define([
 
     };
 
-    /**
-     * 
-     * start listening for events
-     * 
-     * @returns {undefined}
-     */
     player.prototype.startListening = function startListeningFunction() {
         
         var that = this;
@@ -713,12 +485,6 @@ define([
         
     };
 
-    /**
-     * 
-     * stop listening for events
-     * 
-     * @returns {undefined}
-     */
     player.prototype.stopListening = function stopListeningFunction() {
 
         this.events.off(this.events.constants.PLAYER_POSITION_CHANGE);
@@ -731,12 +497,6 @@ define([
 
     };
 
-    /**
-     * 
-     * starts the timer that triggers the progress events
-     * 
-     * @returns {undefined}
-     */
     var startTimer = function startTimerFunction() {
 
         var triggerProgressEventBinded = triggerProgressEvent.bind(this);
@@ -745,24 +505,12 @@ define([
 
     };
 
-    /**
-     * 
-     * stops the timer that triggers the progress events
-     * 
-     * @returns {undefined}
-     */
     var stopTimer = function stopTimerFunction() {
 
         clearInterval(this.progressIntervalHandler);
 
     };
 
-    /**
-     * 
-     * trigger progress event
-     * 
-     * @returns {undefined}
-     */
     var triggerProgressEvent = function triggerProgressEventFunction() {
 
         var timeNow = this.audioGraph.sourceNode.context.currentTime;
@@ -805,29 +553,6 @@ define([
             }
         );
 
-    };
+    };*/
 
-    /**
-     * 
-     * get a player instance
-     * 
-     * @returns {core_L16.playerInstance}
-     */
-    var getPlayerInstance = function getPlayerInstanceFunction() {
-
-        if (playerInstance === undefined) {
-
-            playerInstance = new player();
-
-        }
-
-        return playerInstance;
-
-    };
-
-    /**
-     * public functions
-     */
-    return getPlayerInstance();
-
-});
+}

@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "declaration": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "module": "umd",
+    "moduleResolution": "node",
+    "rootDir": ".",
+    "outDir": "./build",
+    "mapRoot": "./build/sourcemaps",
+    "inlineSourceMap": false,
+    "sourceMap": true,
+    "declarationDir": "./build/definitions",
+    "noImplicitAny": true,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+
+    },
+    "lib": [ "es5", "es2015" ],
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "target": "es5"
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
