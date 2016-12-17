@@ -11,7 +11,7 @@ export interface IOptions {
 
 }
 
-export default class Sound {
+export default class sound {
 
     private sound: ISound;
     private options: IOptions;

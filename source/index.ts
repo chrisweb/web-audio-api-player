@@ -1,7 +1,9 @@
 
 'use strict';
 
-import * as Sound from './sound';
+import * as Core from './library/core';
+import * as Sound from './library/sound';
+//import * as Audio from './library/audio';
 
 export interface IOptions {
     volume: boolean;

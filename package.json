@@ -4,9 +4,6 @@
     "url": "https://github.com/chrisweb/web-audio-api-player/issues"
   },
   "description": "web audio api player",
-  "directories": {
-    "example": "examples"
-  },
   "homepage": "https://github.com/chrisweb/web-audio-api-player#readme",
   "keywords": [
     "player",
@@ -15,6 +12,7 @@
     "audio",
     "api"
   ],
+  "main": "build/index.js",
   "license": "MIT",
   "name": "web-audio-api-player",
   "repository": {

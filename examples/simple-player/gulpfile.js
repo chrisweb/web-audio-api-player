@@ -16,7 +16,7 @@ gulp.task('lint', () => {
     const tslintConfig = require('./tslint.json');
     return gulp
         .src([
-            'source/**/*.ts'
+            'javascripts/**/*.ts'
         ])
         .pipe(
             tslint({
@@ -33,23 +33,37 @@ gulp.task('lint', () => {
 });
 
 // gulp typescript build
-gulp.task('build', () => {
+gulp.task('build', ['copy:player', 'copy:types'],  () => {
     var tsResult = tsProject.src()
         .pipe(sourcemaps.init())
         .pipe(tsProject());
 
     // merge the two output streams, this task is finished when the IO of both operations is done
     return merge([ 
-        tsResult.dts.pipe(gulp.dest('build/@types/web-audio-api-player')),
+        tsResult.dts.pipe(gulp.dest('build/@types/web-audio-api-player_simple-example')),
         tsResult.js
             // inline source maps or add directory as sting as first parameter of write
-            .pipe(sourcemaps.write()) 
+            .pipe(sourcemaps.write())
             .pipe(gulp.dest('build'))
     ]);
 });
 
+// copy the player library into the example node_modules directory
+gulp.task('copy:player', () => {
+    return gulp
+        .src(['../../build/**', '!../../build/{@types,@types/**}'])
+        .pipe(gulp.dest('node_modules/web-audio-api-player'));
+});
+
+// copy the player declaration files into the example node_modules directory
+gulp.task('copy:types', () => {
+    return gulp
+        .src('../../build/@types/**')
+        .pipe(gulp.dest('node_modules/@types'));
+});
+
 gulp.task('watch', ['build'], function () {
     gulp.watch([
-		'source/**/*.ts'
+		'javascripts/**/*.ts'
 	], ['build']);
 });

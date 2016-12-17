@@ -1,25 +1,30 @@
-lib-cov
-*.seed
+# Logs
+logs
 *.log
-*.csv
-*.dat
-*.out
-*.pid
-*.gz
+npm-debug.log*
 
-.DS_Store
-
+# Runtime data
 pids
-results
+*.pid
+*.seed
 
-npm-debug.log
-Thumbs.db
-desktop.ini
+# Compiled binary addons (http://nodejs.org/api/addons.html)
+build/Release
 
+# Dependency directories
 node_modules
-vendor
-yeoman
-nbproject
-.sass-cache
+jspm_packages
 
-configuration.js
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# visual studio
+.vs
+*.njsproj
+*.sln
+
+# build
+build

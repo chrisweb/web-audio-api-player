@@ -1,17 +1,19 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "declaration": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "module": "umd",
     "moduleResolution": "node",
-    "rootDir": "./source",
-    "outDir": "./build",
     "inlineSourceMap": true,
     "sourceMap": true,
-    "declarationDir": "./build/@types/web-audio-api-player",
+    "declarationDir": "./definitions",
     "noImplicitAny": true,
     "noFallthroughCasesInSwitch": true,
+    "paths": {
+
+    },
     "lib": [ "es5", "es2015" ],
     "skipDefaultLibCheck": true,
     "skipLibCheck": true,
