@@ -12,9 +12,9 @@
     "declarationDir": "./build/@types/web-audio-api-player",
     "noImplicitAny": true,
     "noFallthroughCasesInSwitch": true,
-    "lib": [ "es5", "es2015" ],
     "skipDefaultLibCheck": true,
     "skipLibCheck": true,
+    "lib": [ "es5", "dom", "es2015" ],
     "target": "es5"
   },
   "exclude": [

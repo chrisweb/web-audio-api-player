@@ -1,6 +1,14 @@
 
 'use strict';
-    
+
+export class Request {
+
+    // TODO: add possibility to abort http request
+
+
+
+}
+
 /*
 var getAudioBuffer = function (trackUrl, audioContext, silenceEvents, callback) {
         

@@ -11,16 +11,12 @@
     "declarationDir": "./definitions",
     "noImplicitAny": true,
     "noFallthroughCasesInSwitch": true,
-    "paths": {
-
-    },
-    "lib": [ "es5", "es2015" ],
+    "lib": [ "es5", "dom", "es2015" ],
     "skipDefaultLibCheck": true,
     "skipLibCheck": true,
     "target": "es5"
   },
   "exclude": [
-    "node_modules",
-    "examples"
+    "node_modules"
   ]
 }

@@ -1,48 +1,76 @@
 
 'use strict';
 
-export interface IOptions {
+import { Sound, ISoundAttribtes } from './sound';
+import { Audio } from './audio';
+import { Request } from './request';
 
+export interface ICoreOptions {
+    volume?: number;
+    loopQueue?: boolean;
+    soundsBaseUrl?: string;
 }
 
-export default class Core {
+export class Core {
 
-    private options: IOptions;
+    // private bufferingTimeoutHandler;
 
-    constructor(options: IOptions) {
+    protected queue: Sound[];
+    protected volume: number;
+    protected loopQueue: boolean;
+    protected soundsBaseUrl: string;
 
-        this.options = options;
+    constructor(options: ICoreOptions = {
+        volume: 80,
+        loopQueue: false,
+        soundsBaseUrl: '.'
+    }) {
+
+        this.volume = options.volume;
+        this.loopQueue = options.loopQueue;
+        this.soundsBaseUrl = options.soundsBaseUrl;
+
+        this._initialize();
 
     }
 
+    protected _initialize() {
+
+        // TODO: check if web audio api is available
+        let webAudioApi = true;
+
+        if (webAudioApi) {
 
 
 
-    /*
-    var player = function playerConstructor() {
+        } else {
 
-        this.audioContext;
-        this.audioGraph;
-        this.progressIntervalHandler;
-
-        // loop single track
-        this.loopTrack = false;
-
-        // loop playlist
-        this.loopPlaylist = false;
-
-        // create a new track
-        this.track = createTrack();
-
-        // make the eventsmanager available everywhere
-        this.events = EventsManager;
-
-        // start listening for events
-        this.startListening();
-
-    };
+            // use the html5 audio element
 
 
+        }
+
+    }
+
+    public addSoundToQueue(soundAttributes: ISoundAttribtes): void {
+
+        this.queue.push(new Sound(soundAttributes));
+
+    }
+
+    public setVolume(volume: number): void {
+
+        this.volume = volume;
+
+    }
+
+    public getVolume(): number {
+
+        return this.volume;
+
+    }
+
+/*
     var createTrack = function createTrackFunction() {
 
         // create a new track object

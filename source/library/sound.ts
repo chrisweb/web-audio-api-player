@@ -1,24 +1,51 @@
 
 'use strict';
 
+export interface ISource {
+    url: string;
+}
+
 export interface ISound {
     buffered: boolean;
-    url: string;
-    playing: boolean;
+    isBuffering: boolean;
+    buffer: AudioBuffer;
+    sources: ISource[];
+    playTimeOffset: number;
+    startTime: number;
+    playTime: number;
+    playedTimePercentage: number;
+    isPlaying: boolean;
+    id: number;
+    playlistId: number | null;
+    loop: boolean;
+}
+
+export interface ISoundAttribtes {
+    sources: ISource[];
+    id: number;
+    playlistId?: number | null;
+    loop?: boolean;
 }
 
 export interface IOptions {
 
 }
 
-export default class sound {
+export class Sound {
 
     private sound: ISound;
-    private options: IOptions;
 
-    constructor(options: IOptions) {
+    constructor(soundAttributes: ISoundAttribtes) {
 
-        this.options = options;
+        if (typeof soundAttributes.sources === 'string') {
+            this.sound.sources = [soundAttributes.sources];
+        } else {
+            this.sound.sources = soundAttributes.sources;
+        }
+
+        this.sound.id = soundAttributes.id;
+        this.sound.playlistId = soundAttributes.playlistId || null;
+        this.sound.loop = soundAttributes.loop || false;
 
     }
 

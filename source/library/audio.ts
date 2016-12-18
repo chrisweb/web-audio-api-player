@@ -1,14 +1,16 @@
 
 'use strict';
 
-/*
-var getContext = function getContextFunction() {
-        
-    var AudioContext = window.AudioContext || window.webkitAudioContext;
-        
-    var audioContext = new AudioContext();
-        
-    return audioContext;
-        
-};
-*/
+export class Audio {
+
+    protected getContext(): AudioContext {
+
+        let AudioContext = window.AudioContext || (<any>window).webkitAudioContext;
+
+        let audioContext = new AudioContext();
+
+        return audioContext;
+
+    }
+
+}
