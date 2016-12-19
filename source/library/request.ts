@@ -1,51 +1,62 @@
 
 'use strict';
 
+export interface IRequested {
+    url: string;
+    loadingProgress: number;
+}
+
 export class Request {
 
     // TODO: add possibility to abort http request
 
-    public getAudioBuffer(soundUrl: string, audioContext: AudioContext, callback: (error: Error | boolean, buffer: AudioBuffer) => void): void {
+    public getArryBuffer(requested: IRequested): Promise {
+        
+        return new Promise(function (resolve, reject) {
 
-        var xhr = new XMLHttpRequest();
-
-        xhr.open('GET', soundUrl, true);
-        xhr.responseType = 'arraybuffer';
-        xhr.send();
-
-        xhr.onerror = function (event) {
-
-            console.log(event);
-
-            // TODO: request error
-
-            callback(new Error(), null);
-
-        };
-
-        xhr.onprogress = function (event) {
+            var xhr = new XMLHttpRequest();
+            // thirs parameter is for "async", default true but who knows if prefer to explicitly set it just in case
+            xhr.open('GET', requested.url, true);
+            // set the expected response type from the server to arraybuffer
+            xhr.responseType = 'arraybuffer';
             
-            var percentage = 100 / (event.total / event.loaded);
+            xhr.onload = function () {
 
-            // TODO: report back the loaded progressor set / update value on sound object?
+                // gets called even on for example 404, so check the status
+                if (xhr.status === 200) {
 
-        };
+                    // successful request so now we can resolve the promise
+                    resolve(xhr.response);
 
-        xhr.onload = function () {
+                } else {
 
-            audioContext.decodeAudioData(xhr.response, function onSuccess(decodedBuffer) {
+                    // something went wrong so we reject with an error
+                    reject(Error(xhr.statusText));
 
-                callback(false, decodedBuffer);
+                }
 
-            }, function onFailure() {
+            };
 
-                // TODO: decoding error
+            xhr.onprogress = function (event) {
 
-                callback(new Error(), null);
+                var percentage = 100 / (event.total / event.loaded);
 
-            });
+                // update value on sound object
+                requested.loadingProgress = percentage;
 
-        };
+            };
+
+            // also reject for any kind of network errors
+            xhr.onerror = function () {
+
+                reject(Error("Network Error"));
+
+            };
+
+            // now make the request
+            xhr.send();
+
+        });
 
     }
 

@@ -1,7 +1,9 @@
 
 'use strict';
 
-export interface ISound {
+import { IRequested } from './request';
+
+export interface ISound extends IRequested {
     buffered: boolean;
     isBuffering: boolean;
     buffer: AudioBuffer;
@@ -44,7 +46,5 @@ export class Sound {
         this.sound.loop = soundAttributes.loop || false;
 
     }
-
-
-
+    
 }

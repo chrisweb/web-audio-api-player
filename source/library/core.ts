@@ -106,7 +106,26 @@ export class Core {
         // TODO: source can be on object where the property name is the codec and the value is the sound url
         // if sound isnt an object try to detect sound source extension by file extention or by checking the file mime type
 
-        
+        // if whichSound is undefined we take the first song in the queue
+        if (whichSound === undefined && this.queue.length > 0) {
+
+            // TODO: should I do something if the queue is empty? throw an error or do nothing?
+
+            let sound = this.queue[0];
+
+            let request = new Request();
+
+            request.getArryBuffer(sound).then(() => {
+
+
+
+            }).catch(() => {
+
+
+
+            });
+
+        }
 
     }
 
