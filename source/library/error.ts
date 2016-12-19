@@ -1,9 +1,9 @@
 ﻿
-interface IPlayerError extends Error {
-    code?: number;
+export interface IPlayerError extends Error {
+    code: number | null;
 }
 
-class PlayerError extends Error implements IPlayerError {
+export class PlayerError extends Error {
 
     public code: number;
 
@@ -11,7 +11,7 @@ class PlayerError extends Error implements IPlayerError {
 
         super(message);
 
-        this.code = code;
+        this.code = code || null;
 
         // Set the prototype explictilly
         Object.setPrototypeOf(this, PlayerError.prototype);

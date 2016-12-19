@@ -37,7 +37,7 @@ export class Request {
                 } else {
 
                     // something went wrong so we reject with an error
-                    reject(PlayerError(xhr.statusText, xhr.status));
+                    reject(new PlayerError(xhr.statusText, xhr.status));
 
                 }
 
@@ -55,7 +55,7 @@ export class Request {
             // also reject for any kind of network errors
             xhr.onerror = function () {
 
-                reject(PlayerError('xhr network error'));
+                reject(new PlayerError('xhr network error'));
 
             };
 
