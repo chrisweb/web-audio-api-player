@@ -4,9 +4,9 @@
 import { IRequested } from './request';
 
 export interface ISound extends IRequested {
-    buffered: boolean;
+    isBuffered: boolean;
     isBuffering: boolean;
-    buffer: AudioBuffer;
+    audioBuffer: AudioBuffer | null;
     sources: string[];
     playTimeOffset: number;
     startTime: number;
@@ -33,7 +33,11 @@ export class Sound {
 
     private sound: ISound;
 
-    constructor(soundAttributes: ISoundAttribtes) {
+    constructor() {
+        
+    }
+
+    public create(soundAttributes: ISoundAttribtes) {
 
         if (typeof soundAttributes.sources === 'string') {
             this.sound.sources = [soundAttributes.sources];
@@ -44,6 +48,18 @@ export class Sound {
         this.sound.id = soundAttributes.id;
         this.sound.playlistId = soundAttributes.playlistId || null;
         this.sound.loop = soundAttributes.loop || false;
+
+        // default values
+        this.sound.isBuffered = false;
+        this.sound.isBuffering = false;
+        this.sound.audioBuffer = null;
+        this.sound.playTimeOffset = 0;
+        this.sound.startTime = 0;
+        this.sound.playTime = 0;
+        this.sound.playedTimePercentage = 0;
+        this.sound.isPlaying = false;
+
+        return this.sound;
 
     }
     

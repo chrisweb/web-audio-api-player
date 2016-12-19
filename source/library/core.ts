@@ -1,7 +1,7 @@
 
 'use strict';
 
-import { Sound, ISoundAttribtes } from './sound';
+import { Sound, ISound, ISoundAttribtes } from './sound';
 import { Audio } from './audio';
 import { Request } from './request';
 
@@ -16,7 +16,7 @@ export class Core {
     // private bufferingTimeoutHandler;
 
     protected isWebAudioApiSupported: boolean;
-    protected queue: Sound[] | null;
+    protected queue: ISound[] | null;
     protected volume: number;
     protected loopQueue: boolean;
     protected soundsBaseUrl: string;
@@ -70,7 +70,9 @@ export class Core {
 
     public addSoundToQueue(soundAttributes: ISoundAttribtes): void {
 
-        this.queue.push(new Sound(soundAttributes));
+        let sound = new Sound();
+        
+        this.queue.push(sound.create(soundAttributes));
 
         // TODO: is queue just an array of sounds, or do we need something more complex with a position tracker?
 
@@ -111,9 +113,11 @@ export class Core {
 
             // TODO: should I do something if the queue is empty? throw an error or do nothing?
 
-            let sound = this.queue[0];
+            let sound: ISound = this.queue[0];
 
             let request = new Request();
+
+            sound.url = '';
 
             request.getArryBuffer(sound).then(() => {
 
