@@ -70,9 +70,11 @@ export class Core {
 
     public addSoundToQueue(soundAttributes: ISoundAttribtes): void {
 
-        let sound = new Sound();
+        let sound: ISound = new Sound(soundAttributes);
+
+        this.queue.push(sound);
         
-        this.queue.push(sound.create(soundAttributes));
+        //this.queue.push(sound.create(soundAttributes));
 
         // TODO: is queue just an array of sounds, or do we need something more complex with a position tracker?
 

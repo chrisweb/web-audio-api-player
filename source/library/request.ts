@@ -1,16 +1,22 @@
 
 'use strict';
 
+import { PlayerError, IPlayerError } from './error';
+
 export interface IRequested {
     url: string;
     loadingProgress: number;
+}
+
+export interface IRequestResponse {
+    arrayBuffer: ArrayBuffer;
 }
 
 export class Request {
 
     // TODO: add possibility to abort http request
 
-    public getArryBuffer(requested: IRequested): Promise {
+    public getArryBuffer(requested: IRequested): Promise<IRequestResponse | IPlayerError> {
         
         return new Promise(function (resolve, reject) {
 
@@ -31,7 +37,7 @@ export class Request {
                 } else {
 
                     // something went wrong so we reject with an error
-                    reject(Error(xhr.statusText));
+                    reject(PlayerError(xhr.statusText, xhr.status));
 
                 }
 
@@ -49,7 +55,7 @@ export class Request {
             // also reject for any kind of network errors
             xhr.onerror = function () {
 
-                reject(Error("Network Error"));
+                reject(PlayerError('xhr network error'));
 
             };
 

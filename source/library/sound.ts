@@ -29,37 +29,44 @@ export interface IOptions {
 
 }
 
-export class Sound {
+export class Sound implements ISound {
 
-    private sound: ISound;
+    public isBuffered: boolean;
+    public isBuffering: boolean;
+    public audioBuffer: AudioBuffer | null;
+    public sources: string[];
+    public playTimeOffset: number;
+    public startTime: number;
+    public playTime: number;
+    public playedTimePercentage: number;
+    public isPlaying: boolean;
+    public id: number;
+    public playlistId: number | null;
+    public loop: boolean;
+    public url: string;
+    public loadingProgress: number;
 
-    constructor() {
-        
-    }
-
-    public create(soundAttributes: ISoundAttribtes) {
+    constructor(soundAttributes: ISoundAttribtes) {
 
         if (typeof soundAttributes.sources === 'string') {
-            this.sound.sources = [soundAttributes.sources];
+            this.sources = [soundAttributes.sources];
         } else {
-            this.sound.sources = soundAttributes.sources;
+            this.sources = soundAttributes.sources;
         }
 
-        this.sound.id = soundAttributes.id;
-        this.sound.playlistId = soundAttributes.playlistId || null;
-        this.sound.loop = soundAttributes.loop || false;
+        this.id = soundAttributes.id;
+        this.playlistId = soundAttributes.playlistId || null;
+        this.loop = soundAttributes.loop || false;
 
         // default values
-        this.sound.isBuffered = false;
-        this.sound.isBuffering = false;
-        this.sound.audioBuffer = null;
-        this.sound.playTimeOffset = 0;
-        this.sound.startTime = 0;
-        this.sound.playTime = 0;
-        this.sound.playedTimePercentage = 0;
-        this.sound.isPlaying = false;
-
-        return this.sound;
+        this.isBuffered = false;
+        this.isBuffering = false;
+        this.audioBuffer = null;
+        this.playTimeOffset = 0;
+        this.startTime = 0;
+        this.playTime = 0;
+        this.playedTimePercentage = 0;
+        this.isPlaying = false;
 
     }
     
