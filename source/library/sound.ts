@@ -3,26 +3,22 @@
 
 import { IRequested } from './request';
 
-export interface ISound extends IRequested {
+export interface ISoundAttributes {
+    sources: string[] | string;
+    id: number;
+    playlistId?: number | null;
+    loop?: boolean;
+}
+
+export interface ISound extends IRequested, ISoundAttributes {
     isBuffered: boolean;
     isBuffering: boolean;
     audioBuffer: AudioBuffer | null;
-    sources: string[];
     playTimeOffset: number;
     startTime: number;
     playTime: number;
     playedTimePercentage: number;
     isPlaying: boolean;
-    id: number;
-    playlistId: number | null;
-    loop: boolean;
-}
-
-export interface ISoundAttribtes {
-    sources: string[] | string;
-    id: number;
-    playlistId?: number | null;
-    loop?: boolean;
 }
 
 export interface IOptions {
@@ -46,7 +42,7 @@ export class Sound implements ISound {
     public url: string;
     public loadingProgress: number;
 
-    constructor(soundAttributes: ISoundAttribtes) {
+    constructor(soundAttributes: ISoundAttributes) {
 
         if (typeof soundAttributes.sources === 'string') {
             this.sources = [soundAttributes.sources];

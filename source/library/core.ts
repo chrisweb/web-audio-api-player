@@ -1,7 +1,7 @@
 
 'use strict';
 
-import { Sound, ISound, ISoundAttribtes } from './sound';
+import { Sound, ISound, ISoundAttributes } from './sound';
 import { Audio } from './audio';
 import { Request } from './request';
 
@@ -68,7 +68,7 @@ export class Core {
 
     }
 
-    public addSoundToQueue(soundAttributes: ISoundAttribtes): void {
+    public addSoundToQueue(soundAttributes: ISoundAttributes): void {
 
         let sound: ISound = new Sound(soundAttributes);
 
@@ -121,7 +121,7 @@ export class Core {
 
             sound.url = '';
 
-            request.getArryBuffer(sound).then(() => {
+            request.getArrayBuffer(sound).then(() => {
 
 
 

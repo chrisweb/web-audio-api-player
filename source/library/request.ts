@@ -16,7 +16,7 @@ export class Request {
 
     // TODO: add possibility to abort http request
 
-    public getArryBuffer(requested: IRequested): Promise<IRequestResponse | IPlayerError> {
+    public getArrayBuffer(requested: IRequested): Promise<IRequestResponse | IPlayerError> {
         
         return new Promise(function (resolve, reject) {
 
