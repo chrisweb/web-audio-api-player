@@ -3,6 +3,7 @@ export interface IPlayerError extends Error {
     code: number | null;
 }
 
+// https://github.com/Microsoft/TypeScript/issues/12123
 export class PlayerError extends Error {
 
     public code: number;
