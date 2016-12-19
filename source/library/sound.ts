@@ -1,15 +1,11 @@
 
 'use strict';
 
-export interface ISource {
-    url: string;
-}
-
 export interface ISound {
     buffered: boolean;
     isBuffering: boolean;
     buffer: AudioBuffer;
-    sources: ISource[];
+    sources: string[];
     playTimeOffset: number;
     startTime: number;
     playTime: number;
@@ -21,7 +17,7 @@ export interface ISound {
 }
 
 export interface ISoundAttribtes {
-    sources: ISource[];
+    sources: string[] | string;
     id: number;
     playlistId?: number | null;
     loop?: boolean;

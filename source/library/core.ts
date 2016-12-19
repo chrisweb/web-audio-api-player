@@ -15,10 +15,18 @@ export class Core {
 
     // private bufferingTimeoutHandler;
 
-    protected queue: Sound[];
+    protected isWebAudioApiSupported: boolean;
+    protected queue: Sound[] | null;
     protected volume: number;
     protected loopQueue: boolean;
     protected soundsBaseUrl: string;
+    // make public to allow injection of external audioContext?
+    protected audioContext: AudioContext;
+
+    // callback hooks
+    public onPlayStart: () => void;
+    public onPlaying: () => void;
+    public onBuffering: () => void;
 
     constructor(options: ICoreOptions = {
         volume: 80,
@@ -41,20 +49,38 @@ export class Core {
 
         if (webAudioApi) {
 
+            this.isWebAudioApiSupported = true;
+
+            let audio = new Audio();
+
+            this.audioContext = audio.getContext();
+
 
 
         } else {
 
             // use the html5 audio element
-
+            this.isWebAudioApiSupported = false;
 
         }
+
+
 
     }
 
     public addSoundToQueue(soundAttributes: ISoundAttribtes): void {
 
         this.queue.push(new Sound(soundAttributes));
+
+        // TODO: is queue just an array of sounds, or do we need something more complex with a position tracker?
+
+    }
+
+    public resetQueue() {
+
+        this.queue = null;
+
+        // TODO: check if a song is getting played and stop it
 
     }
 
@@ -70,36 +96,44 @@ export class Core {
 
     }
 
+    public play(whichSound?: number | string): void {
+
+        // TODO: whichSound is optional, if set it can be the id of the sound or next / previous / first / last
+
+        // TODO: check the available codecs and defined sources, play the first one that has matches and available codec
+        // TODO: let user define order of preferred codecs for playerback
+
+        // TODO: source can be on object where the property name is the codec and the value is the sound url
+        // if sound isnt an object try to detect sound source extension by file extention or by checking the file mime type
+
+        
+
+    }
+
+    public pause() {
+
+        // TODO: do we ctx.suspend() and resume the context on pause to free device resources?
+
+    }
+
+    public stop() {
+
+        // stop placeholder
+        // TODO: do we need a stop method (or is pause enough)
+
+    }
+
+    public next() {
+
+        // TODO: add aliases for play('next') / previous / first / last?
+
+    }
+
 /*
-    var createTrack = function createTrackFunction() {
-
-        // create a new track object
-        var track = {
-            url: null,
-            playTimeOffset: 0,
-            currentTime: 0,
-            buffer: null,
-            isBuffering: false,
-            startTime: 0,
-            playTime: 0,
-            playedTimePercentage: 0,
-            isPlaying: false,
-            id: null,
-            playlistId: null
-        };
-
-        return track;
-
-    };
-
 
     player.prototype.play = function playFunction(attributes) {
 
-        if (!this.hasOwnProperty('track')) {
 
-            throw 'run, forest run!';
-
-        }
 
         if (attributes !== undefined) {
 
@@ -468,53 +502,6 @@ export class Core {
 
         // start the playback at the given position
         this.play();
-
-    };
-
-    player.prototype.startListening = function startListeningFunction() {
-        
-        var that = this;
-        
-        // remove the previous listeners
-        this.stopListening();
-        
-        this.events.on(this.events.constants.PLAYER_POSITION_CHANGE, function (attributes) {
-            
-            var trackPositionInPercent = attributes.percentage;
-            
-            that.positionChange(trackPositionInPercent);
-            
-        });
-        
-        this.events.on(this.events.constants.PLAYER_PLAY, function (attributes) {
-            
-            that.play(attributes);
-            
-        });
-        
-        this.events.on(this.events.constants.PLAYER_PAUSE, function () {
-            
-            that.pause();
-            
-        });
-        
-        this.events.on(this.events.constants.PLAYER_STOP, function () {
-            
-            that.stop();
-            
-        });
-        
-    };
-
-    player.prototype.stopListening = function stopListeningFunction() {
-
-        this.events.off(this.events.constants.PLAYER_POSITION_CHANGE);
-
-        this.events.off(this.events.constants.PLAYER_PLAY);
-
-        this.events.off(this.events.constants.PLAYER_PAUSE);
-
-        this.events.off(this.events.constants.PLAYER_STOP);
 
     };
 

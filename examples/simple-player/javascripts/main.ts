@@ -23,6 +23,8 @@ $(function () {
 
     player.addSoundToQueue(soundAttributes);
 
-    player.setVolume(volume: number);
+    let volume = 90;
+
+    player.setVolume(volume);
 
 });

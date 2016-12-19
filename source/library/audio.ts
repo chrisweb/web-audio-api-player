@@ -3,7 +3,7 @@
 
 export class Audio {
 
-    protected getContext(): AudioContext {
+    public getContext(): AudioContext {
 
         let AudioContext = window.AudioContext || (<any>window).webkitAudioContext;
 
