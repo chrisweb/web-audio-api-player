@@ -8,21 +8,19 @@ export interface IRequested {
     loadingProgress: number;
 }
 
-export interface IRequestResponse {
-    arrayBuffer: ArrayBuffer;
-}
-
 export class Request {
 
     // TODO: add possibility to abort http request
 
-    public getArrayBuffer(requested: IRequested): Promise<IRequestResponse | IPlayerError> {
+    public getArrayBuffer(requested: IRequested): Promise<ArrayBuffer | IPlayerError> {
         
         return new Promise(function (resolve, reject) {
 
             var xhr = new XMLHttpRequest();
+
             // thirs parameter is for "async", default true but who knows if prefer to explicitly set it just in case
             xhr.open('GET', requested.url, true);
+
             // set the expected response type from the server to arraybuffer
             xhr.responseType = 'arraybuffer';
             

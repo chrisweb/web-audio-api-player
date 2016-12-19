@@ -1,9 +1,10 @@
 
 'use strict';
 
-import { Sound, ISound, ISoundAttributes } from './sound';
+import { Sound, ISound, ISoundAttributes, ISoundSource } from './sound';
 import { Audio } from './audio';
 import { Request } from './request';
+import { PlayerError, IPlayerError } from './error';
 
 export interface ICoreOptions {
     volume?: number;
@@ -51,12 +52,6 @@ export class Core {
 
             this.isWebAudioApiSupported = true;
 
-            let audio = new Audio();
-
-            this.audioContext = audio.getContext();
-
-
-
         } else {
 
             // use the html5 audio element
@@ -64,19 +59,19 @@ export class Core {
 
         }
 
-
-
     }
 
-    public addSoundToQueue(soundAttributes: ISoundAttributes): void {
+    public addSoundToQueue(soundAttributes: ISoundAttributes): ISound {
 
         let sound: ISound = new Sound(soundAttributes);
 
         this.queue.push(sound);
-        
+
         //this.queue.push(sound.create(soundAttributes));
 
         // TODO: is queue just an array of sounds, or do we need something more complex with a position tracker?
+
+        return sound;
 
     }
 
@@ -107,31 +102,92 @@ export class Core {
         // TODO: check the available codecs and defined sources, play the first one that has matches and available codec
         // TODO: let user define order of preferred codecs for playerback
 
-        // TODO: source can be on object where the property name is the codec and the value is the sound url
-        // if sound isnt an object try to detect sound source extension by file extention or by checking the file mime type
-
         // if whichSound is undefined we take the first song in the queue
         if (whichSound === undefined && this.queue.length > 0) {
 
             // TODO: should I do something if the queue is empty? throw an error or do nothing?
 
             let sound: ISound = this.queue[0];
+            
+            let { url, codec = null } = this._sourceToVariables(sound.sources);
 
-            let request = new Request();
+            sound.url = url;
+            sound.codec = codec;
 
-            sound.url = '';
+            // TODO: would be good to cache buffers, so need to check if is in cache, let user choose through options the amount of cached sounds
 
-            request.getArrayBuffer(sound).then(() => {
+            if (sound.url !== null) {
 
+                let request = new Request();
 
+                request.getArrayBuffer(sound).then((arrayBuffer: ArrayBuffer) => {
 
-            }).catch(() => {
+                    let audio = new Audio();
 
+                    audio.decodeAudio(arrayBuffer).then((audioBuffer: AudioBuffer) => {
 
+                        sound.audioBuffer = audioBuffer;
 
-            });
+                    }).catch((decodeAudioError: IPlayerError) => {
+
+                        // TODO: handle error decodeAudioError
+
+                    });
+
+                }).catch((requestError: IPlayerError) => {
+
+                    // TODO: handle error requestError
+
+                });
+
+            } else {
+
+                // TODO: handle error no sound url
+
+            }
 
         }
+
+    }
+
+    protected _sourceToVariables(sources: (ISoundSource | string)[]): { url: string | null, codec?: string | null } {
+
+        // TODO: source can be on object where the property name is the codec and the value is the sound url
+        // if sound isnt an object try to detect sound source extension by file extention or by checking the file mime type
+
+        // TODO: get a list of supported codecs by this device
+
+        let firstMatchingSource: { url: string | null, codec?: string | null } = {
+            url: null,
+            codec: null
+        };
+
+        sources.forEach((source) => {
+
+            // TODO: find out what the source codec is
+
+            // TODO: check if the source codec is among the ones that are supported by this device
+            //if () {
+
+            // two kind of source are possible, a string (the url) or an object (key is the codec and value is the url)
+            if (typeof source === 'string') {
+
+                firstMatchingSource = {
+                    url: source
+                };
+
+            } else {
+
+                firstMatchingSource = {
+                    url: source.url,
+                    codec: source.codec
+                };
+
+            }
+
+        });
+
+        return firstMatchingSource;
 
     }
 
@@ -226,78 +282,7 @@ export class Core {
 
     };
 
-    player.prototype.loadTrack = function loadTrackFunction(playOnceBuffered, silenceEvents, callback) {
-        
-        // check if we have a track url
-        if (this.track.url === null) {
 
-            var error = 'error: track url not found';
-
-            if (callback !== undefined) {
-
-                callback(error);
-
-            } else {
-
-                return error;
-
-            }
-
-        }
-        
-        // set buffering mode to true
-        this.track.isBuffering = true;
-
-        if (playOnceBuffered === undefined) {
-
-            playOnceBuffered = false;
-
-        }
-
-        if (this.audioContext === undefined) {
-
-            this.createAudioContext();
-
-        }
-
-        var that = this;
-
-        // load the array buffer
-        AjaxManager.getAudioBuffer(this.track.url, this.audioContext, silenceEvents, function (error, trackBuffer) {
-
-            if (!error) {
-
-                that.setBuffer(trackBuffer);
-
-                if (playOnceBuffered) {
-
-                    that.play();
-
-                }
-
-                if (callback !== undefined) {
-
-                    callback(false, trackBuffer);
-
-                }
-
-            } else {
-                
-                if (callback !== undefined) {
-                    
-                    callback(error);
-                    
-                } else {
-
-                    throw error;
-                    
-                }
-
-            }
-
-        });
-
-    };
 
     player.prototype.pause = function pauseFunction() {
 
