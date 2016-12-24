@@ -33,7 +33,7 @@ gulp.task('lint', () => {
 });
 
 // gulp typescript build
-gulp.task('build', () => {
+gulp.task('build', ['lint'], () => {
     var tsResult = tsProject.src()
         .pipe(sourcemaps.init())
         .pipe(tsProject());

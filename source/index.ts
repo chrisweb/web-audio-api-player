@@ -1,5 +1,5 @@
 
 'use strict';
 
-export { Core, ICoreOptions } from './library/core';
-export { Sound, ISoundAttributes } from './library/sound';
+export { PlayerCore, ICoreOptions } from './library/core';
+export { PlayerSound, ISoundAttributes } from './library/sound';

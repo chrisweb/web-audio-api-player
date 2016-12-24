@@ -1,9 +1,9 @@
 
 'use strict';
 
-import { Sound, ISound, ISoundAttributes, ISoundSource } from './sound';
-import { Audio } from './audio';
-import { Request } from './request';
+import { PlayerSound, ISound, ISoundAttributes, ISoundSource } from './sound';
+import { PlayerAudio, IAudioGraph } from './audio';
+import { PlayerRequest } from './request';
 import { PlayerError, IPlayerError } from './error';
 
 export interface ICoreOptions {
@@ -12,32 +12,50 @@ export interface ICoreOptions {
     soundsBaseUrl?: string;
 }
 
-export class Core {
+export class PlayerCore {
 
-    // private bufferingTimeoutHandler;
-
-    protected isWebAudioApiSupported: boolean;
-    protected queue: ISound[] | null;
-    protected volume: number;
-    protected loopQueue: boolean;
-    protected soundsBaseUrl: string;
-    // make public to allow injection of external audioContext?
-    protected audioContext: AudioContext;
+    // is the web audio API supported
+    protected _isWebAudioApiSupported: boolean;
+    // the sounds queue
+    protected _queue: ISound[];
+    // the queue index of the song to play if none got defined 
+    protected _queueIndex: number;
+    // the volume (0 to 100)
+    protected _volume: number;
+    // the base url that all sounds will have in common
+    protected _soundsBaseUrl: string;
+    // the current sound in queue index
+    protected _currentIndex: number;
+    // instance of the audio library class
+    protected _playerAudio: PlayerAudio;
+    // custom audio graph
+    protected _audioGraph: IAudioGraph;
 
     // callback hooks
     public onPlayStart: () => void;
     public onPlaying: () => void;
     public onBuffering: () => void;
 
+    // constants
+    readonly WHERE_IN_QUEUE_AT_END: string = 'append';
+    readonly WHERE_IN_QUEUE_AT_START: string = 'prepend';
+    readonly WHERE_IN_QUEUE_AFTER_CURRENT: string = 'afterCurrent';
+
+    readonly PLAY_SOUND_NEXT = 'next';
+    readonly PLAY_SOUND_PREVIOUS = 'previous';
+    readonly PLAY_SOUND_FIRST = 'first';
+    readonly PLAY_SOUND_LAST = 'last';
+
     constructor(options: ICoreOptions = {
         volume: 80,
         loopQueue: false,
-        soundsBaseUrl: '.'
+        soundsBaseUrl: ''
     }) {
 
-        this.volume = options.volume;
-        this.loopQueue = options.loopQueue;
-        this.soundsBaseUrl = options.soundsBaseUrl;
+        this._volume = options.volume;
+        this._soundsBaseUrl = options.soundsBaseUrl;
+        this._queue = [];
+        this._currentIndex = 0;
 
         this._initialize();
 
@@ -50,103 +68,281 @@ export class Core {
 
         if (webAudioApi) {
 
-            this.isWebAudioApiSupported = true;
+            this._isWebAudioApiSupported = true;
 
         } else {
 
             // use the html5 audio element
-            this.isWebAudioApiSupported = false;
+            this._isWebAudioApiSupported = false;
 
         }
 
+        // TODO: initialize the audio graph when initializing the player
+        // suspend the audio context while not playing any sound?
+
+        this._playerAudio = new PlayerAudio();
+
+        this._audioGraph = this._playerAudio.createAudioGraph();
+
     }
 
-    public addSoundToQueue(soundAttributes: ISoundAttributes): ISound {
+    public addSoundToQueue(soundAttributes: ISoundAttributes, whereInQueue: string = this.WHERE_IN_QUEUE_AT_END): ISound {
 
-        let sound: ISound = new Sound(soundAttributes);
-
-        this.queue.push(sound);
-
-        //this.queue.push(sound.create(soundAttributes));
+        let sound: ISound = new PlayerSound(soundAttributes);
 
         // TODO: is queue just an array of sounds, or do we need something more complex with a position tracker?
+
+        // TODO: allow array of soundAttributes to be injected, to create several at once, if input is an array output should be too
+
+        switch (whereInQueue) {
+            case this.WHERE_IN_QUEUE_AT_END:
+                this._appendSoundToQueue(sound);
+                break;
+            case this.WHERE_IN_QUEUE_AT_START:
+                this._prependSoundToQueue(sound);
+                break;
+            case this.WHERE_IN_QUEUE_AFTER_CURRENT:
+                this._prependSoundToQueue(sound);
+                break;
+        }
 
         return sound;
 
     }
 
+    public _appendSoundToQueue(sound: ISound): void {
+
+        this._queue.push(sound);
+
+    }
+
+    public _prependSoundToQueue(sound: ISound): void {
+
+        this._queue.unshift(sound);
+
+    }
+
+    public _addSoundToQueueAfterCurrent(sound: ISound): void {
+
+        // TODO: add option to play after being added or user uses play method?
+
+        let afterCurrentIndex = this._currentIndex + 1;
+
+        this._queue.splice(afterCurrentIndex, 0, sound);
+
+    }
+
     public resetQueue() {
 
-        this.queue = null;
+        this._queue = [];
+        this._queueIndex = 0;
 
         // TODO: check if a song is getting played and stop it
 
     }
 
+    /*public getQueue() {
+
+        // TODO: is the needed?
+
+        return this._queue;
+
+    }*/
+
     public setVolume(volume: number): void {
 
-        this.volume = volume;
+        this._volume = volume;
+
+        // https://developer.mozilla.org/en-US/docs/Web/API/GainNode
+
+        //this._audioGraph.gainNode.value = this._volume / 100;
 
     }
 
     public getVolume(): number {
 
-        return this.volume;
+        return this._volume;
 
     }
 
-    public play(whichSound?: number | string): void {
 
-        // TODO: whichSound is optional, if set it can be the id of the sound or next / previous / first / last
+    public setPlaybackRate(playbackRate: number): void {
+
+        // < 1 slower, > 1 faster playback
+        //this._audioGraph.sourceNode.setPlaybackRate(playbackRate);
+
+    };
+
+    public getPlaybackRate(): number {
+
+        //return this._audioGraph.sourceNode.playbackRate;
+
+        return 0;
+
+    };
+
+    public resetPlaybackRate(): void {
+
+
+
+    }
+
+    public setPanner(left: number, right: number): void {
+
+        // https://developer.mozilla.org/en-US/docs/Web/API/PannerNode
+
+        //this.audioGraph.pannerNode.setPosition(0, 0, 0);
+
+    };
+
+    public getPanner(): { left: number, right: number } {
+
+        //return this.audioGraph.pannerNode.getPosition();
+
+        return { left: 0, right: 0 };
+
+    };
+
+    public resetPanner(): void {
+
+
+
+    }
+
+    public play(whichSound?: number | string | undefined): void {
 
         // TODO: check the available codecs and defined sources, play the first one that has matches and available codec
         // TODO: let user define order of preferred codecs for playerback
 
-        // if whichSound is undefined we take the first song in the queue
-        if (whichSound === undefined && this.queue.length > 0) {
+        // check if the queue is empty
+        if (this._queue.length === 0) {
 
-            // TODO: should I do something if the queue is empty? throw an error or do nothing?
+            // TODO: should we do something if the queue is empty? throw an error or do nothing?
 
-            let sound: ISound = this.queue[0];
-            
-            let { url, codec = null } = this._sourceToVariables(sound.sources);
+        }
 
-            sound.url = url;
-            sound.codec = codec;
+        // whichSound is optional, if set it can be the id of the sound or next / previous / first / last
+        let sound: ISound | null = this._getSoundFromQueue(whichSound);
 
-            // TODO: would be good to cache buffers, so need to check if is in cache, let user choose through options the amount of cached sounds
+        // extract the url and codec from sources
+        let { url, codec = null } = this._sourceToVariables(sound.sources);
 
-            if (sound.url !== null) {
+        sound.url = url;
+        sound.codec = codec;
 
-                let request = new Request();
+        // TODO: would be good to cache buffers, so need to check if is in cache
+        // let the user choose (by setting an option) what amount of sounds will be cached
+        // add a cached date / timestamp to be able to clear cache by oldest first
+        // or even better add a played counter to cache by least played and date
 
-                request.getArrayBuffer(sound).then((arrayBuffer: ArrayBuffer) => {
+        if (sound.url !== null) {
 
-                    let audio = new Audio();
+            let request = new PlayerRequest();
 
-                    audio.decodeAudio(arrayBuffer).then((audioBuffer: AudioBuffer) => {
+            // change buffering state
+            sound.isBuffering = true;
 
-                        sound.audioBuffer = audioBuffer;
+            request.getArrayBuffer(sound).then((arrayBuffer: ArrayBuffer) => {
 
-                    }).catch((decodeAudioError: IPlayerError) => {
+                this._playerAudio.decodeAudio(arrayBuffer).then((audioBuffer: AudioBuffer) => {
 
-                        // TODO: handle error decodeAudioError
+                    sound.audioBuffer = audioBuffer;
+                    sound.isBuffering = false;
+                    sound.isBuffered = true;
+                    sound.audioBufferDate = new Date();
 
-                    });
+                    this._startPlaying(sound);
 
-                }).catch((requestError: IPlayerError) => {
+                }).catch((decodeAudioError: IPlayerError) => {
 
-                    // TODO: handle error requestError
+                    // TODO: handle error decodeAudioError
 
                 });
 
-            } else {
+            }).catch((requestError: IPlayerError) => {
 
-                // TODO: handle error no sound url
+                // TODO: handle error requestError
+
+            });
+
+        } else {
+
+            // TODO: handle error no sound url
+
+        }
+
+    }
+
+    protected _startPlaying(sound: ISound): void {
+
+        this._audioGraph.sourceNode.buffer = sound.audioBuffer;
+
+        // the audiocontext time right now (since the audiocontext got created)
+        sound.startTime = this._audioGraph.sourceNode.context.currentTime;
+
+        this._audioGraph.sourceNode.start(0, sound.playTimeOffset);
+
+        sound.isPlaying = true;
+
+    }
+
+    protected _getSoundFromQueue(whichSound?: string | number): ISound | null {
+
+        let sound: ISound | null = null;
+
+        // if which song to play did not get specified, play one based from the queue based on the queue index position marker
+        if (whichSound === undefined && this._queue[this._currentIndex] !== undefined) {
+
+            sound = this._queue[this._currentIndex];
+
+        } else if (typeof whichSound === 'number') {
+
+            // if which song to play is a song ID
+            let foundInArray = this._queue.some((soundFromQueue: ISound, queueIndex: number) => {
+
+                if (soundFromQueue.id === whichSound) {
+
+                    sound = soundFromQueue;
+                    this._currentIndex = queueIndex;
+
+                    return true;
+
+                }
+
+            });
+
+        } else {
+
+            // if which song to play is a constant
+            switch (whichSound) {
+                case this.PLAY_SOUND_NEXT:
+                    if (this._queue[this._currentIndex + 1] !== undefined) {
+                        this._currentIndex = this._currentIndex + 1;
+                    }
+                    break;
+                case this.PLAY_SOUND_PREVIOUS:
+                    if (this._queue[this._currentIndex - 1] !== undefined) {
+                        this._currentIndex = this._currentIndex + 1;
+                    }
+                    break;
+                case this.PLAY_SOUND_FIRST:
+                    if (this._queue.length > 0) {
+                        this._currentIndex = 0;
+                    }
+                    break;
+                case this.PLAY_SOUND_LAST:
+                    if (this._queue.length > 0) {
+                        this._currentIndex = this._queue.length - 1;
+                    }
+                    break;
 
             }
 
+            sound = this._queue[this._currentIndex];
+
         }
+
+        return sound;
 
     }
 
@@ -169,17 +365,28 @@ export class Core {
             // TODO: check if the source codec is among the ones that are supported by this device
             //if () {
 
+            let soundUrl = '';
+
+            // if the player had as option a baseUrl for sounds add it now
+            if (this._soundsBaseUrl !== '') {
+                soundUrl = this._soundsBaseUrl;
+            }
+
             // two kind of source are possible, a string (the url) or an object (key is the codec and value is the url)
             if (typeof source === 'string') {
 
+                soundUrl += source;
+
                 firstMatchingSource = {
-                    url: source
+                    url: soundUrl
                 };
 
             } else {
 
+                soundUrl += source.url;
+
                 firstMatchingSource = {
-                    url: source.url,
+                    url: soundUrl,
                     codec: source.codec
                 };
 
@@ -195,12 +402,26 @@ export class Core {
 
         // TODO: do we ctx.suspend() and resume the context on pause to free device resources?
 
+        let sound: ISound | null = this._getSoundFromQueue();
+
+        let timeAtPause = this._audioGraph.sourceNode.context.currentTime;
+
+        sound.playTimeOffset += timeAtPause - sound.startTime;
+
+        this._stopPlaying();
+
     }
 
     public stop() {
 
         // stop placeholder
         // TODO: do we need a stop method (or is pause enough)
+
+    }
+
+    protected _stopPlaying() {
+
+        this._audioGraph.sourceNode.stop(0);
 
     }
 
@@ -211,102 +432,6 @@ export class Core {
     }
 
 /*
-
-    player.prototype.play = function playFunction(attributes) {
-
-
-
-        if (attributes !== undefined) {
-
-            this.setupTrack(attributes);
-
-        }
-
-        // clear the previous timeout handler if one exists
-        if (bufferingTimeoutHandler !== undefined) {
-
-            clearTimeout(bufferingTimeoutHandler);
-
-        }
-
-        if (this.track.isBuffering) {
-
-            var that = this;
-
-            bufferingTimeoutHandler = setTimeout(function () {
-
-                that.play();
-
-            }, 500);
-
-            return;
-
-        }
-
-        if (this.track.buffer === null) {
-
-            var playOnceBuffered = true;
-            var silenceEvents = false;
-
-            var that = this;
-
-            this.loadTrack(playOnceBuffered, silenceEvents);
-
-            return;
-
-        }
-
-        if (this.audioGraph === undefined) {
-
-            this.createAudioGraph();
-
-        }
-
-        if (this.audioGraph.sourceNode.buffer === null) {
-
-            // add a buffered song to the source node
-            this.audioGraph.sourceNode.buffer = this.track.buffer;
-
-        }
-
-        // the time right now (since the this.audiocontext got created)
-        this.track.startTime = this.audioGraph.sourceNode.context.currentTime;
-
-        this.audioGraph.sourceNode.start(0, this.track.playTimeOffset);
-
-        startTimer.call(this);
-
-        this.track.isPlaying = true;
-
-        return true;
-
-    };
-
-
-
-    player.prototype.pause = function pauseFunction() {
-
-        if (this.track === undefined) {
-
-            return false;
-
-        }
-
-        if (!this.track.isPlaying) {
-
-            return null;
-
-        }
-
-        var timeAtPause = this.audioGraph.sourceNode.context.currentTime;
-
-        this.track.playTimeOffset += timeAtPause - this.track.startTime;
-
-        this.stop();
-
-        return true;
-
-    };
 
     player.prototype.stop = function stopFunction() {
 
@@ -392,84 +517,6 @@ export class Core {
 
     };
 
-    player.prototype.setupTrack = function setupTrackFunction(oneOrMoreTrackAttributes) {
-
-        if (oneOrMoreTrackAttributes instanceof Array) {
-
-            var i;
-
-            for (i = 0; i < oneOrMoreTrackAttributes.length; i++) {
-
-                var attribute = oneOrMoreTrackAttributes[i];
-                
-                this.setTrackAttribute(attribute);
-
-            }
-
-        } else {
-
-            var attribute = oneOrMoreTrackAttributes;
-
-            this.setTrackAttribute(attribute);
-
-        }
-
-    };
-    
-    player.prototype.setTrackAttribute = function setTrackAttributeFunction(attribute) {
-        
-        var attributeKey;
-
-        for (attributeKey in attribute) {
-
-            this.track[attributeKey] = attribute[attributeKey];
-
-        }
-        
-    };
-
-    player.prototype.getTrackSetup = function getTrackSetupFunction() {
-
-        return this.track;
-
-    };
-
-    player.prototype.createAudioGraph = function createAudioGraphFunction() {
-
-        if (this.audioContext === undefined) {
-
-            this.createAudioContext();
-
-        }
-
-        this.audioGraph = {};
-
-        // create an audio buffer source node
-        this.audioGraph.sourceNode = this.audioContext.createBufferSource();
-
-        // create a gain node
-        this.audioGraph.gainNode = this.audioContext.createGain();
-
-        // connect the source node to the gain node
-        this.audioGraph.sourceNode.connect(this.audioGraph.gainNode);
-
-        // create a panner node
-        this.audioGraph.pannerNode = this.audioContext.createPanner();
-
-        // connect the gain node to the panner node
-        this.audioGraph.gainNode.connect(this.audioGraph.pannerNode);
-
-        // connect to the panner node to the destination (speakers)
-        this.audioGraph.pannerNode.connect(this.audioContext.destination);
-
-    };
-
-    player.prototype.setAudioGraph = function setAudioGraphFunction(audioGraph) {
-
-        this.audioGraph = audioGraph;
-
-    };
-
     player.prototype.setBuffer = function setBufferFunction(buffer) {
 
         this.track.isBuffering = false;
@@ -478,35 +525,12 @@ export class Core {
 
     };
 
-    player.prototype.playbackRateChange = function playbackRateChangeFunction(playbackRate) {
-
-        // < 1 slower, > 1 faster playback
-        this.audioGraph.sourceNode.playbackRate = playbackRate;
-
-    };
-
-    player.prototype.pannerChange = function pannerChangeFunction(left, right) {
-
-        // https://developer.mozilla.org/en-US/docs/Web/API/PannerNode
-
-        this.audioGraph.pannerNode.setPosition(0, 0, 0);
-
-    };
-
-    player.prototype.volumeChange = function volumeChangeFunction(volumeInPercent) {
-
-        // https://developer.mozilla.org/en-US/docs/Web/API/GainNode
-
-        this.audioGraph.gainNode.value = volumeInPercent / 100;
-
-    };
-
     player.prototype.positionChange = function positionChangeFunction(trackPositionInPercent) {
         
         // stop the track playback
         this.stop();
 
-        var trackPositionInSeconds = (this.track.buffer.duration / 100) * trackPositionInPercent;
+        let trackPositionInSeconds = (this.track.buffer.duration / 100) * trackPositionInPercent;
 
         this.track.playTimeOffset = trackPositionInSeconds;
 
@@ -515,23 +539,10 @@ export class Core {
 
     };
 
-    var startTimer = function startTimerFunction() {
 
-        var triggerProgressEventBinded = triggerProgressEvent.bind(this);
+    let triggerProgressEvent = function triggerProgressEventFunction() {
 
-        this.progressIntervalHandler = setInterval(triggerProgressEventBinded, 200);
-
-    };
-
-    var stopTimer = function stopTimerFunction() {
-
-        clearInterval(this.progressIntervalHandler);
-
-    };
-
-    var triggerProgressEvent = function triggerProgressEventFunction() {
-
-        var timeNow = this.audioGraph.sourceNode.context.currentTime;
+        let timeNow = this.audioGraph.sourceNode.context.currentTime;
 
         this.track.playTime = (timeNow - this.track.startTime) + this.track.playTimeOffset;
 

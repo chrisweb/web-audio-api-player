@@ -33,7 +33,7 @@ gulp.task('lint', () => {
 });
 
 // gulp typescript build
-gulp.task('build', ['copy:player', 'copy:types'],  () => {
+gulp.task('build', ['copy:html', 'copy:player', 'copy:types'],  () => {
     var tsResult = tsProject.src()
         .pipe(sourcemaps.init())
         .pipe(tsProject());
@@ -60,6 +60,12 @@ gulp.task('copy:types', () => {
     return gulp
         .src('../../build/@types/**')
         .pipe(gulp.dest('node_modules/@types'));
+});
+
+gulp.task('copy:html', () => {
+    return gulp
+        .src('./html/**')
+        .pipe(gulp.dest('build/html'));
 });
 
 gulp.task('watch', ['build'], function () {

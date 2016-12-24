@@ -4,17 +4,21 @@
 <head>
     <meta charset="utf-8" />
     <title>web audio api player - simple example</title>
-    <script src="./node-modules/systemjs/dist/system.js"></script>
+    <script src="./javascripts/vendor/systemjs/dist/system.js"></script>
     <script>
         SystemJS.config({
             baseURL: './javascripts',
+            packages: {
+                '.': {
+                    defaultJSExtensions: 'js'
+                }
+            },
             map: {
-                'jquery': '../node-modules/jquery/dist/jquery.js',
-                'sound': '../../../../build/sound.js',
-                'player': '../../../../build/player.js'
+                'jquery': 'vendor/jquery/dist/jquery.js',
+                'web-audio-api-player': 'vendor/web-audio-api-player/index.js'
             }
         });
-        SystemJS.import('main.js');
+        SystemJS.import('bootstrap.js');
     </script>
 </head>
 <body>

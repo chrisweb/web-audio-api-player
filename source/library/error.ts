@@ -18,5 +18,5 @@ export class PlayerError extends Error {
         Object.setPrototypeOf(this, PlayerError.prototype);
 
     }
-    
+
 }
