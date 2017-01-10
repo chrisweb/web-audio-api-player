@@ -8,7 +8,6 @@
     "rootDir": "./source",
     "outDir": "./build",
     "inlineSourceMap": true,
-    "sourceMap": true,
     "declarationDir": "./build/@types/web-audio-api-player",
     "noImplicitAny": true,
     "noFallthroughCasesInSwitch": true,

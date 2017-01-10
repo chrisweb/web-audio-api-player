@@ -22,7 +22,7 @@ $(function () {
     };
 
     // add the first song to queue
-    let firstSound = player.addSoundToQueue(firstSoundAttributes);
+    //let firstSound = player.addSoundToQueue(firstSoundAttributes);
 
     let secondSoundAttributes: ISoundAttributes = {
         sources: '1214935&format=ogg1',
@@ -33,9 +33,9 @@ $(function () {
     // add another song
     let secondSound = player.addSoundToQueue(secondSoundAttributes);
 
-    let volume = 90;
+    //let volume = 90;
 
-    player.setVolume(volume);
+    //player.setVolume(volume);
 
     // play first song in the queue
     //player.play();

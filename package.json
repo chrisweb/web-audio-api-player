@@ -13,6 +13,7 @@
     "api"
   ],
   "main": "build/index.js",
+  "types": "./build/@types/web-audio-api-player/index.d.ts",
   "license": "MIT",
   "name": "web-audio-api-player",
   "repository": {

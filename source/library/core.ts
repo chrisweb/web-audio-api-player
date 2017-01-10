@@ -467,64 +467,6 @@ export class PlayerCore {
 
     };
 
-    player.prototype.createAudioContext = function createAudioContextFunction() {
-
-        this.audioContext = AudioContextManager.getContext();
-
-    };
-
-    player.prototype.setAudioContext = function setAudioContextFunction(audioContext) {
-
-        if (audioContext !== undefined) {
-
-            this.audioContext = audioContext;
-
-        } else {
-
-            throw 'audioContext is undefined';
-
-        }
-
-    };
-
-    player.prototype.getAudioContext = function getAudioContextFunction() {
-
-        return this.audioContext;
-
-    };
-
-    player.prototype.setLoopTrack = function setLoopTrackFunction(loopTrack) {
-
-        this.loopTrack = loopTrack;
-
-    };
-
-    player.prototype.getLoopTrack = function () {
-
-        return this.loopTrack;
-
-    };
-
-    player.prototype.setLoopPlaylist = function setLoopPlaylistFunction(loopPlaylist) {
-
-        this.loopPlaylist = loopPlaylist;
-
-    };
-
-    player.prototype.getLoopPlaylist = function getLoopPlaylistFunction() {
-
-        return this.loopPlaylist;
-
-    };
-
-    player.prototype.setBuffer = function setBufferFunction(buffer) {
-
-        this.track.isBuffering = false;
-
-        this.track.buffer = buffer;
-
-    };
-
     player.prototype.positionChange = function positionChangeFunction(trackPositionInPercent) {
         
         // stop the track playback
@@ -538,7 +480,6 @@ export class PlayerCore {
         this.play();
 
     };
-
 
     let triggerProgressEvent = function triggerProgressEventFunction() {
 
