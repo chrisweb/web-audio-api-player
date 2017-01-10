@@ -7,7 +7,6 @@
     "module": "umd",
     "moduleResolution": "node",
     "inlineSourceMap": true,
-    "sourceMap": true,
     "declarationDir": "./definitions",
     "noImplicitAny": true,
     "noFallthroughCasesInSwitch": true,

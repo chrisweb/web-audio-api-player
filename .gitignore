@@ -25,6 +25,4 @@ jspm_packages
 .vs
 *.njsproj
 *.sln
-
-# build
-build
+obj

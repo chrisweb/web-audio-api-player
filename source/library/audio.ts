@@ -140,10 +140,13 @@ export class PlayerAudio {
         audioGraph.sourceNode.connect(audioGraph.gainNode);
 
         // connect the gain node to the panner node
-        audioGraph.gainNode.connect(audioGraph.pannerNode);
+        //audioGraph.gainNode.connect(audioGraph.pannerNode);
 
         // connect to the panner node to the destination (speakers)
-        audioGraph.pannerNode.connect(this._context.destination);
+        //audioGraph.pannerNode.connect(this._context.destination);
+
+        // connect the gain node to the destination (speakers)
+        audioGraph.gainNode.connect(this._context.destination);
 
         return audioGraph;
 
