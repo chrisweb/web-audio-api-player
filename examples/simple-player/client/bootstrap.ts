@@ -38,10 +38,10 @@ $(function () {
     player.setVolume(volume);
 
     // play first song in the queue
-    player.play();
+    //player.play();
 
     // play next song
-    player.play(player.PLAY_SOUND_NEXT);
+    //player.play(player.PLAY_SOUND_NEXT);
 
     // TODO: use the sound to display the loading progress
 

@@ -26,12 +26,17 @@
   "dependencies": {
     "express": "^4.14.0",
     "jquery": "^3.1.1",
+    "passport": "^0.3.2",
+    "passport-deezer": "^0.2.0",
+    "request": "^2.79.0",
     "systemjs": "^0.19.41"
   },
   "devDependencies": {
     "@types/express": "^4.0.34",
-    "@types/node": "^0.0.1",
     "@types/jquery": "^2.0.34",
+    "@types/node": "^0.0.1",
+    "@types/passport": "^0.2.35",
+    "@types/request": "0.0.36",
 	  "@types/systemjs": "^0.19.33",
     "gulp": "^3.9.1",
     "gulp-sourcemaps": "^1.9.1",
