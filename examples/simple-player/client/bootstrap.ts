@@ -7,6 +7,9 @@ import * as $ from 'jquery';
 // player build
 import { PlayerCore, ICoreOptions, PlayerSound, ISoundAttributes } from 'web-audio-api-player';
 
+// library
+import { PlayerUI } from './library/player/ui';
+
 $(function () {
 
     let options: ICoreOptions = {
@@ -32,6 +35,10 @@ $(function () {
 
     // add another song
     let secondSound = player.addSoundToQueue(secondSoundAttributes);
+
+    let playerUI = new PlayerUI(player);
+
+
 
     //let volume = 90;
 
