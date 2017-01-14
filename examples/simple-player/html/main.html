@@ -42,18 +42,28 @@
 
     <h1>web audio api player - simple example</h1>
 
-    <div class="js-track-information">
-        <span class="js-track-id"></span>
-    </div>
+    <section id="js-player">
 
-    <div class="js-buttons-bar">
-        <button class="button js-play-pause-button" data-player-context="off">
-            <span class="js-play">></span>
-            <span class="hidden js-pause">||</span>
-        </button>
-        <button class="button js-next-button">>>></button>
-    </div>
-    
+        <div id="js-track-information">
+            <span id="js-track-id"></span>
+        </div>
+
+        <div id="js-buttons-box">
+            <button id="js-shuffle-button" class="button">S</button>
+            <button id="js-previous-button" class="button">|<</button>
+            <button id="js-play-pause-button" class="button" data-player-context="off">
+                <span id="js-play">></span>
+                <span id="js-pause" class="hidden">||</span>
+            </button>
+            <button id="js-next-button" class="button">>|</button>
+            <button id="js-repeat-button" class="button">R</button>
+        </div>
+
+        <input type="range" min="0" max="100" value="0" step="1" id="js-player-progress" />
+
+        <input type="range" min="0" max="100" value="0" step="1" id="js-player-volume" />
+
+    </section>
 
 </body>
 </html>

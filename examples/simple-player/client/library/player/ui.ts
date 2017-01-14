@@ -5,27 +5,45 @@ export class PlayerUI {
 
     public player: PlayerCore;
 
+    protected _buttonsBox: HTMLElement;
+    protected _volumeSlider: HTMLInputElement;
+    protected _progressBar: HTMLInputElement;
+
     constructor(player: PlayerCore) {
 
-        // compatibility: minimum IE11
+        // compatibility goal: minimum IE11
 
         this.player = player;
 
+        // buttons box
+        this._buttonsBox = document.getElementById('js-buttons-box');
+
+        // slider (html5 input range)
+        this._volumeSlider = document.getElementById('js-player-volume') as HTMLInputElement;
+
+        // progress bar (html5 input range)
+        this._progressBar = document.getElementById('js-player-progress') as HTMLInputElement;
+
+        // start listening to events
         this._createListeners();
+
+        // set the initial volume volume to the volume input range
+        this._volumeSlider.value = String(this.player.getVolume());
 
     }
 
     protected _createListeners() {
 
-        let $body = document.getElementsByTagName('body')[0];
+        // some performance tests:
+        // https://jsperf.com/js-get-elements
 
-        let $buttonsBar = $body.getElementsByClassName('js-buttons-bar')[0];
-
-        $buttonsBar.addEventListener('click', this._onClickButtonsBar.bind(this));
+        this._buttonsBox.addEventListener('click', this._onClickButtonsBox.bind(this));
+        this._volumeSlider.addEventListener('change', this._onChangeVolume.bind(this));
+        this._progressBar.addEventListener('change', this._onChangeProgress.bind(this));
 
     }
 
-    protected _onClickButtonsBar(event: Event) {
+    protected _onClickButtonsBox(event: Event) {
 
         event.preventDefault();
 
@@ -35,11 +53,11 @@ export class PlayerUI {
             $button = $button.parentElement;
         }
 
-        if ($button.classList.contains('js-play-pause-button')) {
+        if ($button.id === 'js-play-pause-button') {
 
             let playerContext = $button.dataset['playerContext'];
-            let $playIcon = $button.getElementsByClassName('js-play')[0];
-            let $pauseIcon = $button.getElementsByClassName('js-pause')[0];
+            let $playIcon = document.getElementById('js-play');
+            let $pauseIcon = document.getElementById('js-pause');
 
             switch (playerContext) {
                 // is playing
@@ -60,21 +78,62 @@ export class PlayerUI {
 
         }
 
-        if ($button.classList.contains('js-next-button')) {
+        if ($button.id === 'js-previous-button') {
+
+            this.player.play('previous');
+
+        }
+
+        if ($button.id === 'js-next-button') {
 
             this.player.play('next');
 
         }
 
+        if ($button.id === 'js-shuffle-button') {
+
+            // TODO
+
+        }
+
+        if ($button.id === 'js-repeat-button') {
+
+            // TODO
+
+        }
+
+    }
+
+    protected _onChangeVolume(event: Event) {
+
+        // styling the html5 range:
+        // http://brennaobrien.com/blog/2014/05/style-input-type-range-in-every-browser.html
+
+        let rangeElement = event.target as HTMLInputElement;
+        let value = parseInt(rangeElement.value);
+
+        this.player.setVolume(value);
+
+    }
+
+    protected _onChangeProgress(event: Event) {
+
+        let rangeElement = event.target as HTMLInputElement;
+        let value = parseInt(rangeElement.value);
+
+        this.player.setProgress(value);
+
     }
 
     protected _destroyListeners() {
 
-        let $body = document.getElementsByTagName('body')[0];
+        this._buttonsBox.removeEventListener('click', this._onClickButtonsBox.bind(this));
+        this._volumeSlider.removeEventListener('change', this._onChangeVolume.bind(this));
+        this._progressBar.removeEventListener('click', this._onChangeProgress.bind(this));
 
-        let $buttonsBar = $body.getElementsByClassName('js-buttons-bar')[0];
-
-        $buttonsBar.removeEventListener('click', this._onClickButtonsBar);
+        this._buttonsBox = null;
+        this._volumeSlider = null;
+        this._progressBar = null;
 
     }
 

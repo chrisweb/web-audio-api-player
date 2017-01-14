@@ -10,7 +10,7 @@
     "declarationDir": "./definitions",
     "noImplicitAny": true,
     "noFallthroughCasesInSwitch": true,
-    "lib": [ "es5", "dom", "es2015" ],
+    "lib": [ "es5", "dom", "es2015", "dom.iterable" ],
     "skipDefaultLibCheck": true,
     "skipLibCheck": true,
     "target": "es5"

@@ -10,6 +10,7 @@ export declare class PlayerCore {
     protected _queue: ISound[];
     protected _queueIndex: number;
     protected _volume: number;
+    protected _progress: number;
     protected _soundsBaseUrl: string;
     protected _currentIndex: number;
     protected _playerAudio: PlayerAudio;
@@ -24,7 +25,7 @@ export declare class PlayerCore {
     readonly PLAY_SOUND_PREVIOUS: string;
     readonly PLAY_SOUND_FIRST: string;
     readonly PLAY_SOUND_LAST: string;
-    constructor(options?: ICoreOptions);
+    constructor(playerOptions: ICoreOptions);
     protected _initialize(): void;
     addSoundToQueue(soundAttributes: ISoundAttributes, whereInQueue?: string): ISound;
     _appendSoundToQueue(sound: ISound): void;
@@ -33,6 +34,8 @@ export declare class PlayerCore {
     resetQueue(): void;
     setVolume(volume: number): void;
     getVolume(): number;
+    setProgress(progress: number): void;
+    getProgress(): number;
     setPlaybackRate(playbackRate: number): void;
     getPlaybackRate(): number;
     resetPlaybackRate(): void;
@@ -53,4 +56,7 @@ export declare class PlayerCore {
     stop(): void;
     protected _stopPlaying(): void;
     next(): void;
+    previous(): void;
+    first(): void;
+    last(): void;
 }

@@ -22,6 +22,8 @@ export class PlayerCore {
     protected _queueIndex: number;
     // the volume (0 to 100)
     protected _volume: number;
+    // the progress (song play time)
+    protected _progress: number;
     // the base url that all sounds will have in common
     protected _soundsBaseUrl: string;
     // the current sound in queue index
@@ -46,11 +48,15 @@ export class PlayerCore {
     readonly PLAY_SOUND_FIRST = 'first';
     readonly PLAY_SOUND_LAST = 'last';
 
-    constructor(options: ICoreOptions = {
-        volume: 80,
-        loopQueue: false,
-        soundsBaseUrl: ''
-    }) {
+    constructor(playerOptions: ICoreOptions) {
+
+        let defaultOptions = {
+            volume: 80,
+            loopQueue: false,
+            soundsBaseUrl: ''
+        };
+
+        let options = Object.assign({}, defaultOptions, playerOptions);
 
         this._volume = options.volume;
         this._soundsBaseUrl = options.soundsBaseUrl;
@@ -66,6 +72,8 @@ export class PlayerCore {
         // TODO: check if web audio api is available
         let webAudioApi = true;
 
+        // is the web audio api supported
+        // if not we will use the audio element as fallback
         if (webAudioApi) {
 
             this._isWebAudioApiSupported = true;
@@ -80,9 +88,11 @@ export class PlayerCore {
         // TODO: initialize the audio graph when initializing the player
         // suspend the audio context while not playing any sound?
 
+        // player audio library instance
         this._playerAudio = new PlayerAudio();
 
-        this._audioGraph = this._playerAudio.createAudioGraph();
+        // get an audio graph
+        this._audioGraph = this._playerAudio.createAudioGraph({ volume: this._volume });
 
     }
 
@@ -153,6 +163,8 @@ export class PlayerCore {
 
         this._volume = volume;
 
+        this._audioGraph.gainNode.gain.value = volume / 100;
+
         // https://developer.mozilla.org/en-US/docs/Web/API/GainNode
 
         //this._audioGraph.gainNode.value = this._volume / 100;
@@ -165,6 +177,17 @@ export class PlayerCore {
 
     }
 
+    public setProgress(progress: number): void {
+
+        this._progress = progress;
+
+    }
+
+    public getProgress(): number {
+
+        return this._progress;
+
+    }
 
     public setPlaybackRate(playbackRate: number): void {
 
@@ -427,7 +450,25 @@ export class PlayerCore {
 
     public next() {
 
-        // TODO: add aliases for play('next') / previous / first / last?
+        // TODO: add aliases for play('next')
+
+    }
+
+    public previous() {
+
+        // TODO: add aliases for play('previous')
+
+    }
+
+    public first() {
+
+        // TODO: add aliases for play('first')
+
+    }
+
+    public last() {
+
+        // TODO: add aliases for play('last')
 
     }
 

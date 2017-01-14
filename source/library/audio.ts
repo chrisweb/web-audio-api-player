@@ -9,6 +9,10 @@ export interface IAudioGraph {
     pannerNode: PannerNode;
 }
 
+export interface IAudioGraphOptions {
+    volume: number;
+}
+
 export class PlayerAudio {
 
     protected _context: AudioContext;
@@ -108,7 +112,7 @@ export class PlayerAudio {
 
     }
 
-    public createAudioGraph(): IAudioGraph {
+    public createAudioGraph(audioGraphOptions: IAudioGraphOptions): IAudioGraph {
 
         if (this._contextState === 'closed') {
             this._createContext();
@@ -118,23 +122,26 @@ export class PlayerAudio {
 
             this._unfreezeAudioContext().then(() => {
 
-                this._createAudioGraph();
+                this._createAudioGraph(audioGraphOptions);
 
             });
 
         }
 
-        return this._createAudioGraph();
+        return this._createAudioGraph(audioGraphOptions);
 
     }
 
-    protected _createAudioGraph(): IAudioGraph {
+    protected _createAudioGraph(audioGraphOptions: IAudioGraphOptions): IAudioGraph {
 
         let audioGraph = {
+            // TODO: source nodes can be used only once, so we need one per song
             sourceNode: this._context.createBufferSource(),
             gainNode: this._context.createGain(),
             pannerNode: this._context.createPanner()
         };
+
+        audioGraph.gainNode.gain.value = audioGraphOptions.volume / 100;
 
         // connect the source node to the gain node
         audioGraph.sourceNode.connect(audioGraph.gainNode);
