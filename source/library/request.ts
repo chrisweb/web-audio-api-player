@@ -17,6 +17,9 @@ export class PlayerRequest {
         return new Promise(function (resolve, reject) {
 
             let xhr = new XMLHttpRequest();
+    
+            // TODO: abort the request?
+            // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort
 
             // thirs parameter is for "async", default true but who knows if prefer to explicitly set it just in case
             xhr.open('GET', requested.url, true);
