@@ -76,6 +76,8 @@ export class PlayerUI {
                     break;
             }
 
+            $button.dataset['playerContext'] = playerContext;
+
         }
 
         if ($button.id === 'js-previous-button') {

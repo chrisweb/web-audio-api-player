@@ -25,7 +25,7 @@ $(function () {
     };
 
     // add the first song to queue
-    //let firstSound = player.addSoundToQueue(firstSoundAttributes);
+    let firstSound = player.addSoundToQueue(firstSoundAttributes);
 
     let secondSoundAttributes: ISoundAttributes = {
         sources: '1214935&format=ogg1',

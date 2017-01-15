@@ -10,6 +10,7 @@ export interface ISoundAttributes {
     loop?: boolean;
 }
 export interface ISound extends IRequested, ISoundAttributes {
+    sourceNode: AudioBufferSourceNode | null;
     isBuffered: boolean;
     isBuffering: boolean;
     audioBuffer: AudioBuffer | null;
@@ -30,6 +31,7 @@ export declare class PlayerSound implements ISound {
     playlistId: number | null;
     loop: boolean;
     url: string;
+    sourceNode: AudioBufferSourceNode | null;
     isBuffered: boolean;
     isBuffering: boolean;
     audioBuffer: AudioBuffer | null;

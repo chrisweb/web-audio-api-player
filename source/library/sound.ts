@@ -3,6 +3,7 @@
 
 import { IRequested } from './request';
 import { PlayerError, IPlayerError } from './error';
+import { IAudioGraph } from './audio';
 
 export interface ISoundSource {
     url: string;
@@ -17,6 +18,7 @@ export interface ISoundAttributes {
 }
 
 export interface ISound extends IRequested, ISoundAttributes {
+    sourceNode: AudioBufferSourceNode | null;
     isBuffered: boolean;
     isBuffering: boolean;
     audioBuffer: AudioBuffer | null;
@@ -42,6 +44,7 @@ export class PlayerSound implements ISound {
     public loop: boolean;
     public url: string;
 
+    public sourceNode: AudioBufferSourceNode | null;
     public isBuffered: boolean;
     public isBuffering: boolean;
     public audioBuffer: AudioBuffer | null;
@@ -68,6 +71,7 @@ export class PlayerSound implements ISound {
         this.loop = soundAttributes.loop || false;
 
         // default values
+        this.sourceNode = null;
         this.isBuffered = false;
         this.isBuffering = false;
         this.audioBuffer = null;
