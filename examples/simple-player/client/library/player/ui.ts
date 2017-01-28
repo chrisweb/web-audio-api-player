@@ -7,7 +7,8 @@ export class PlayerUI {
 
     protected _buttonsBox: HTMLElement;
     protected _volumeSlider: HTMLInputElement;
-    protected _progressBar: HTMLInputElement;
+    protected _loadingProgressBar: HTMLInputElement;
+    protected _playingProgressBar: HTMLInputElement;
 
     constructor(player: PlayerCore) {
 
@@ -21,8 +22,11 @@ export class PlayerUI {
         // slider (html5 input range)
         this._volumeSlider = document.getElementById('js-player-volume') as HTMLInputElement;
 
-        // progress bar (html5 input range)
-        this._progressBar = document.getElementById('js-player-progress') as HTMLInputElement;
+        // loading progress bar (html5 input range)
+        this._loadingProgressBar = document.getElementById('js-player-loading-progress') as HTMLInputElement;
+
+        // playing progress bar (html5 input range)
+        this._playingProgressBar = document.getElementById('js-player-playing-progress') as HTMLInputElement;
 
         // start listening to events
         this._createListeners();
@@ -39,7 +43,7 @@ export class PlayerUI {
 
         this._buttonsBox.addEventListener('click', this._onClickButtonsBox.bind(this));
         this._volumeSlider.addEventListener('change', this._onChangeVolume.bind(this));
-        this._progressBar.addEventListener('change', this._onChangeProgress.bind(this));
+        this._playingProgressBar.addEventListener('change', this._onChangePlayingProgress.bind(this));
 
     }
 
@@ -55,38 +59,50 @@ export class PlayerUI {
 
         if ($button.id === 'js-play-pause-button') {
 
-            let playerContext = $button.dataset['playerContext'];
-            let $playIcon = document.getElementById('js-play');
-            let $pauseIcon = document.getElementById('js-pause');
+            let playerContext = this._buttonsBox.dataset['playerContext'];
 
             switch (playerContext) {
                 // is playing
                 case 'on':
                     this.player.pause();
-                    playerContext = 'off';
-                    $playIcon.classList.remove('hidden');
-                    $pauseIcon.classList.add('hidden');
                     break;
                 // is paused
                 case 'off':
                     this.player.play();
-                    playerContext = 'on';
-                    $playIcon.classList.add('hidden');
-                    $pauseIcon.classList.remove('hidden');
                     break;
             }
 
-            $button.dataset['playerContext'] = playerContext;
+            this.switchPlayerContext(playerContext);
 
         }
 
         if ($button.id === 'js-previous-button') {
+
+            this.setPlayingProgress(0);
+
+            let playerContext = this._buttonsBox.dataset['playerContext'];
+
+            if (playerContext === 'off') {
+
+                this.switchPlayerContext(playerContext);
+
+            }
 
             this.player.play('previous');
 
         }
 
         if ($button.id === 'js-next-button') {
+
+            this.setPlayingProgress(0);
+
+            let playerContext = this._buttonsBox.dataset['playerContext'];
+
+            if (playerContext === 'off') {
+
+                this.switchPlayerContext(playerContext);
+
+            }
 
             this.player.play('next');
 
@@ -106,6 +122,30 @@ export class PlayerUI {
 
     }
 
+    protected switchPlayerContext(playerContext: string) {
+
+        let $playIcon = document.getElementById('js-play');
+        let $pauseIcon = document.getElementById('js-pause');
+
+        switch (playerContext) {
+            // is playing
+            case 'on':
+                playerContext = 'off';
+                $playIcon.classList.remove('hidden');
+                $pauseIcon.classList.add('hidden');
+                break;
+            // is paused
+            case 'off':
+                playerContext = 'on';
+                $playIcon.classList.add('hidden');
+                $pauseIcon.classList.remove('hidden');
+                break;
+        }
+
+        this._buttonsBox.dataset['playerContext'] = playerContext;
+
+    }
+
     protected _onChangeVolume(event: Event) {
 
         // styling the html5 range:
@@ -118,7 +158,7 @@ export class PlayerUI {
 
     }
 
-    protected _onChangeProgress(event: Event) {
+    protected _onChangePlayingProgress(event: Event) {
 
         let rangeElement = event.target as HTMLInputElement;
         let value = parseInt(rangeElement.value);
@@ -131,20 +171,26 @@ export class PlayerUI {
 
         this._buttonsBox.removeEventListener('click', this._onClickButtonsBox.bind(this));
         this._volumeSlider.removeEventListener('change', this._onChangeVolume.bind(this));
-        this._progressBar.removeEventListener('click', this._onChangeProgress.bind(this));
+        this._playingProgressBar.removeEventListener('click', this._onChangePlayingProgress.bind(this));
 
         this._buttonsBox = null;
         this._volumeSlider = null;
-        this._progressBar = null;
+        this._playingProgressBar = null;
+
+    }
+
+    public setLoadingProgress(percentage: number) {
+
+        this._loadingProgressBar.value = percentage.toString();
 
     }
 
     public setPlayingProgress(percentage: number) {
 
-        this._progressBar.value = percentage.toString();
+        this._playingProgressBar.value = percentage.toString();
 
     }
-
+    
     public deconstructor() {
 
         this._destroyListeners();

@@ -4,21 +4,22 @@ export interface ISoundSource {
     codec?: string;
 }
 export interface IOnProgress {
-    (progress: number): void;
+    (progress: number, maximumValue: number, currentValue: number): void;
 }
 export interface ISoundAttributes {
     sources: (ISoundSource | string)[] | string;
     id: number;
     playlistId?: number | null;
     loop?: boolean;
-    onLoading: IOnProgress;
-    onPlaying: IOnProgress;
+    onLoading?: IOnProgress;
+    onPlaying?: IOnProgress;
 }
 export interface ISound extends IRequested, ISoundAttributes {
     sourceNode: AudioBufferSourceNode | null;
     isBuffered: boolean;
     isBuffering: boolean;
     audioBuffer: AudioBuffer | null;
+    arrayBuffer: ArrayBuffer | null;
     audioBufferDate: Date | null;
     playTimeOffset: number;
     startTime: number;
@@ -27,6 +28,7 @@ export interface ISound extends IRequested, ISoundAttributes {
     isPlaying: boolean;
     sources: (ISoundSource | string)[];
     codec: string | null;
+    duration: number;
 }
 export interface IOptions {
 }
@@ -40,6 +42,7 @@ export declare class PlayerSound implements ISound {
     isBuffered: boolean;
     isBuffering: boolean;
     audioBuffer: AudioBuffer | null;
+    arrayBuffer: ArrayBuffer | null;
     audioBufferDate: Date | null;
     playTimeOffset: number;
     startTime: number;
@@ -48,6 +51,7 @@ export declare class PlayerSound implements ISound {
     isPlaying: boolean;
     loadingProgress: number;
     codec: string;
+    duration: number;
     onLoading: IOnProgress;
     onPlaying: IOnProgress;
     constructor(soundAttributes: ISoundAttributes);

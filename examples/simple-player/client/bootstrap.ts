@@ -23,11 +23,13 @@ $(function () {
         sources: '1314412&format=mp31',
         id: 1314412,
         playlistId: 0,
-        onLoading: (loadingProgress) => {
-            console.log('loading: ',loadingProgress);
+        onLoading: (loadingProgress, maximumValue, currentValue) => {
+            console.log('loading: ', loadingProgress, maximumValue, currentValue);
+            playerUI.setLoadingProgress(loadingProgress);
         },
-        onPlaying: (loadingProgress) => {
-            console.log('playing: ',loadingProgress);
+        onPlaying: (playingProgress, maximumValue, currentValue) => {
+            console.log('playing: ', playingProgress, maximumValue, currentValue);
+            playerUI.setPlayingProgress(playingProgress);
         }
     };
 
@@ -38,11 +40,12 @@ $(function () {
         sources: '1214935&format=ogg1',
         id: 1214935,
         playlistId: 0,
-        onLoading: (loadingProgress) => {
-            console.log('loading: ',loadingProgress);
+        onLoading: (loadingProgress, maximumValue, currentValue) => {
+            console.log('loading: ', loadingProgress, maximumValue, currentValue);
+            playerUI.setLoadingProgress(loadingProgress);
         },
-        onPlaying: (playingProgress) => {
-            console.log('playing: ', playingProgress);
+        onPlaying: (playingProgress, maximumValue, currentValue) => {
+            console.log('playing: ', playingProgress, maximumValue, currentValue);
             playerUI.setPlayingProgress(playingProgress);
         }
     };

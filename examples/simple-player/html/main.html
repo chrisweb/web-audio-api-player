@@ -48,10 +48,10 @@
             <span id="js-track-id"></span>
         </div>
 
-        <div id="js-buttons-box">
+        <div id="js-buttons-box" data-player-context="off">
             <button id="js-shuffle-button" class="button">S</button>
             <button id="js-previous-button" class="button">|<</button>
-            <button id="js-play-pause-button" class="button" data-player-context="off">
+            <button id="js-play-pause-button" class="button">
                 <span id="js-play">></span>
                 <span id="js-pause" class="hidden">||</span>
             </button>
@@ -59,7 +59,9 @@
             <button id="js-repeat-button" class="button">R</button>
         </div>
 
-        <input type="range" min="0" max="100" value="0" step="1" id="js-player-progress" />
+        <input type="range" min="0" max="100" value="0" step="1" id="js-player-loading-progress" />
+
+        <input type="range" min="0" max="100" value="0" step="1" id="js-player-playing-progress" />
 
         <input type="range" min="0" max="100" value="0" step="1" id="js-player-volume" />
 

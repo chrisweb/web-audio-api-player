@@ -7,8 +7,8 @@ import { IOnProgress } from './sound';
 export interface IRequested {
     url: string;
     loadingProgress: number;
-    onLoading: IOnProgress;
-    onPlaying: IOnProgress;
+    onLoading?: IOnProgress;
+    onPlaying?: IOnProgress;
 }
 
 export class PlayerRequest {
@@ -54,7 +54,9 @@ export class PlayerRequest {
                 // update value on sound object
                 requested.loadingProgress = percentage;
 
-                requested.onLoading(percentage);
+                if (requested.onLoading !== null) {
+                    requested.onLoading(percentage, event.total, event.loaded);
+                }
 
             };
 

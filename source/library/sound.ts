@@ -11,7 +11,7 @@ export interface ISoundSource {
 }
 
 export interface IOnProgress {
-    (progress: number): void;
+    (progress: number, maximumValue: number, currentValue: number): void;
 }
 
 export interface ISoundAttributes {
@@ -19,8 +19,8 @@ export interface ISoundAttributes {
     id: number;
     playlistId?: number | null;
     loop?: boolean;
-    onLoading: IOnProgress;
-    onPlaying: IOnProgress;
+    onLoading?: IOnProgress;
+    onPlaying?: IOnProgress;
 }
 
 export interface ISound extends IRequested, ISoundAttributes {
@@ -28,6 +28,7 @@ export interface ISound extends IRequested, ISoundAttributes {
     isBuffered: boolean;
     isBuffering: boolean;
     audioBuffer: AudioBuffer | null;
+    arrayBuffer: ArrayBuffer | null;
     audioBufferDate: Date | null;
     playTimeOffset: number;
     startTime: number;
@@ -36,6 +37,7 @@ export interface ISound extends IRequested, ISoundAttributes {
     isPlaying: boolean;
     sources: (ISoundSource | string)[];
     codec: string | null;
+    duration: number;
 }
 
 export interface IOptions {
@@ -54,6 +56,7 @@ export class PlayerSound implements ISound {
     public isBuffered: boolean;
     public isBuffering: boolean;
     public audioBuffer: AudioBuffer | null;
+    public arrayBuffer: ArrayBuffer | null;
     public audioBufferDate: Date | null;
     public playTimeOffset: number;
     public startTime: number;
@@ -62,6 +65,7 @@ export class PlayerSound implements ISound {
     public isPlaying: boolean;
     public loadingProgress: number;
     public codec: string;
+    public duration: number;
 
     public onLoading: IOnProgress;
     public onPlaying: IOnProgress;
@@ -81,10 +85,14 @@ export class PlayerSound implements ISound {
 
         if (typeof soundAttributes.onLoading === 'function') {
             this.onLoading = soundAttributes.onLoading;
+        } else {
+            this.onLoading = null;
         }
 
         if (typeof soundAttributes.onPlaying === 'function') {
             this.onPlaying = soundAttributes.onPlaying;
+        } else {
+            this.onPlaying = null;
         }
 
         // default values

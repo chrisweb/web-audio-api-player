@@ -29,3 +29,4 @@ in the meantime check out what's in the examples directory (especially the simpl
  * currently the "find song in queue" can't retrieve songs by queue index, is this useful anyway?
  * let the user modify the audio graph, for example by adding / removíng nodes like a filter node, a panner node ...
  * implement suspend and resume: ctx.suspend() and resume of the context on pause / stop or if for some time no sound was played? ... to free device resources, as suspend returns a promise, does this mean suspending and resuming takes time? if so how much time does it take, based on that information we can decide when and how often we should resume / suspend
+ * let the user add a sound with an already fetched ArrayBuffer or even with an already decoded AudioBuffer?

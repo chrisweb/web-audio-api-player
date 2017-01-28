@@ -16,7 +16,7 @@ export declare class PlayerCore {
     protected _currentIndex: number;
     protected _playerAudio: PlayerAudio;
     protected _playingProgressIntervalTime: number;
-    protected _playingTimeoutID: number;
+    protected _playingTimeoutID: number | null;
     onPlayStart: () => void;
     onPlaying: () => void;
     onBuffering: () => void;
@@ -41,6 +41,7 @@ export declare class PlayerCore {
     setProgress(progress: number): void;
     getProgress(): number;
     protected _loadSound(sound: ISound): Promise<ISound | PlayerError>;
+    protected _decodeSound(sound: ISound, resolve: Function, reject: Function): void;
     play(whichSound?: number | string | undefined, playTimeOffset?: number): void;
     protected _play(sound: ISound): void;
     /**

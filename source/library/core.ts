@@ -31,9 +31,8 @@ export class PlayerCore {
     protected _playerAudio: PlayerAudio;
     // playing progress time interval
     protected _playingProgressIntervalTime: number;
-
     // playing progress timeoutID
-    protected _playingTimeoutID: number;
+    protected _playingTimeoutID: number | null;
 
     // callback hooks
     public onPlayStart: () => void;
@@ -206,43 +205,74 @@ export class PlayerCore {
 
         return new Promise((resolve, reject) => {
 
-            if (sound.url !== null) {
+            // if the sound already has an AudioBuffer
+            if (sound.audioBuffer === null) {
 
-                let request = new PlayerRequest();
+                resolve(sound);
 
-                // change buffering state
-                sound.isBuffering = true;
+            }
 
-                request.getArrayBuffer(sound).then((arrayBuffer: ArrayBuffer) => {
 
-                    this._playerAudio.decodeAudio(arrayBuffer).then((audioBuffer: AudioBuffer) => {
+            // if the sound has already an ArrayBuffer but no AudioBuffer
+            if (sound.arrayBuffer !== null && sound.audioBuffer === null) {
 
-                        sound.audioBuffer = audioBuffer;
-                        sound.isBuffering = false;
-                        sound.isBuffered = true;
-                        sound.audioBufferDate = new Date();
+                this._decodeSound(sound, resolve, reject);
 
-                        resolve(sound);
+            }
 
-                    }).catch((decodeAudioError: IPlayerError) => {
+            // if the sound has no ArrayBuffer and also no AudioBuffer yet
+            if (sound.arrayBuffer === null && sound.audioBuffer === null) {
 
-                        reject(decodeAudioError);
+                if (sound.url !== null) {
+
+                    let request = new PlayerRequest();
+
+                    // change buffering state
+                    sound.isBuffering = true;
+
+                    request.getArrayBuffer(sound).then((arrayBuffer: ArrayBuffer) => {
+
+                        sound.arrayBuffer = arrayBuffer;
+
+                        this._decodeSound(sound, resolve, reject);
+
+                    }).catch((requestError: IPlayerError) => {
+
+                        reject(requestError);
 
                     });
 
-                }).catch((requestError: IPlayerError) => {
+                } else {
 
-                    reject(requestError);
+                    let noUrlError = new PlayerError('sound has no url', 1);
 
-                });
+                    reject(noUrlError);
 
-            } else {
-
-                let noUrlError = new PlayerError('sound has no url', 1);
-
-                reject(noUrlError);
+                }
 
             }
+
+        });
+
+    }
+
+    protected _decodeSound(sound: ISound, resolve: Function, reject: Function) {
+
+        let arrayBuffer = sound.arrayBuffer;
+
+        this._playerAudio.decodeAudio(arrayBuffer).then((audioBuffer: AudioBuffer) => {
+
+            sound.audioBuffer = audioBuffer;
+            sound.isBuffering = false;
+            sound.isBuffered = true;
+            sound.audioBufferDate = new Date();
+            sound.duration = sound.audioBuffer.duration;
+
+            resolve(sound);
+
+        }).catch((decodeAudioError: IPlayerError) => {
+
+            reject(decodeAudioError);
 
         });
 
@@ -321,6 +351,9 @@ export class PlayerCore {
         // create a new source node
         this._playerAudio.createSourceNode(sourceNodeOptions).then((sourceNode) => {
 
+            sound.isPlaying = true;
+            sound.sourceNode = sourceNode;
+
             // add the buffer to the source node
             sourceNode.buffer = sound.audioBuffer;
 
@@ -334,15 +367,20 @@ export class PlayerCore {
             // start(when, offset, duration)
             sourceNode.start(0, sound.playTimeOffset);
 
-            sound.isPlaying = true;
-            sound.sourceNode = sourceNode;
+            if (sound.onPlaying !== null) {
 
-            // at interval set playing progress
-            this._playingTimeoutID = setInterval(() => {
+                // at interval set playing progress
+                this._playingTimeoutID = setInterval(() => {
 
-                this._playingProgress(sound);
+                    this._playingProgress(sound);
 
-            }, this._playingProgressIntervalTime);
+                }, this._playingProgressIntervalTime);
+
+            } else {
+
+                this._playingTimeoutID = null;
+
+            }
 
         }).catch((error) => {
 
@@ -534,8 +572,12 @@ export class PlayerCore {
 
         sound.sourceNode = null;
 
-        // clear the playing progress setInterval
-        clearInterval(this._playingTimeoutID);
+        if (this._playingTimeoutID !== null) {
+
+            // clear the playing progress setInterval
+            clearInterval(this._playingTimeoutID);
+
+        }
 
     }
 
@@ -577,7 +619,7 @@ export class PlayerCore {
 
         sound.playedTimePercentage = playingPercentage;
 
-        sound.onPlaying(playingPercentage);
+        sound.onPlaying(playingPercentage, sound.audioBuffer.duration, sound.playTime);
 
     };
 
