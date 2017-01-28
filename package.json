@@ -23,7 +23,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "0.3.0",
+  "version": "0.4.0",
   "devDependencies": {
     "@types/webaudioapi": "0.0.27",
     "gulp": "^3.9.1",
