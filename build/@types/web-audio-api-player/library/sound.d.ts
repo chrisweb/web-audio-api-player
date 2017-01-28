@@ -3,11 +3,16 @@ export interface ISoundSource {
     url: string;
     codec?: string;
 }
+export interface IOnProgress {
+    (progress: number): void;
+}
 export interface ISoundAttributes {
     sources: (ISoundSource | string)[] | string;
     id: number;
     playlistId?: number | null;
     loop?: boolean;
+    onLoading: IOnProgress;
+    onPlaying: IOnProgress;
 }
 export interface ISound extends IRequested, ISoundAttributes {
     sourceNode: AudioBufferSourceNode | null;
@@ -43,5 +48,7 @@ export declare class PlayerSound implements ISound {
     isPlaying: boolean;
     loadingProgress: number;
     codec: string;
+    onLoading: IOnProgress;
+    onPlaying: IOnProgress;
     constructor(soundAttributes: ISoundAttributes);
 }

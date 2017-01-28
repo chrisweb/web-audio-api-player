@@ -10,6 +10,7 @@ export interface ICoreOptions {
     volume?: number;
     loopQueue?: boolean;
     soundsBaseUrl?: string;
+    playingProgressIntervalTime?: number;
 }
 
 export class PlayerCore {
@@ -28,6 +29,11 @@ export class PlayerCore {
     protected _currentIndex: number;
     // instance of the audio library class
     protected _playerAudio: PlayerAudio;
+    // playing progress time interval
+    protected _playingProgressIntervalTime: number;
+
+    // playing progress timeoutID
+    protected _playingTimeoutID: number;
 
     // callback hooks
     public onPlayStart: () => void;
@@ -49,7 +55,8 @@ export class PlayerCore {
         let defaultOptions = {
             volume: 80,
             loopQueue: false,
-            soundsBaseUrl: ''
+            soundsBaseUrl: '',
+            playingProgressIntervalTime: 1000
         };
 
         let options = Object.assign({}, defaultOptions, playerOptions);
@@ -58,6 +65,7 @@ export class PlayerCore {
         this._soundsBaseUrl = options.soundsBaseUrl;
         this._queue = [];
         this._currentIndex = 0;
+        this._playingProgressIntervalTime = options.playingProgressIntervalTime;
 
         this._initialize();
 
@@ -329,6 +337,13 @@ export class PlayerCore {
             sound.isPlaying = true;
             sound.sourceNode = sourceNode;
 
+            // at interval set playing progress
+            this._playingTimeoutID = setInterval(() => {
+
+                this._playingProgress(sound);
+
+            }, this._playingProgressIntervalTime);
+
         }).catch((error) => {
 
             // TODO: handle error
@@ -508,13 +523,19 @@ export class PlayerCore {
 
     protected _stop(sound: ISound) {
 
+        // tell the sourceNode to stop playing
         sound.sourceNode.stop(0);
 
+        // tell the sound that playing is over
         sound.isPlaying = false;
 
+        // destroy the source node as it can anyway only get used once
         this._playerAudio.destroySourceNode(sound.sourceNode);
 
         sound.sourceNode = null;
+
+        // clear the playing progress setInterval
+        clearInterval(this._playingTimeoutID);
 
     }
 
@@ -546,41 +567,21 @@ export class PlayerCore {
 
     }
 
-/*
+    protected _playingProgress(sound: ISound) {
 
-    player.prototype.stop = function stopFunction() {
+        let timeNow = sound.sourceNode.context.currentTime;
 
-        if (this.track === undefined) {
+        sound.playTime = (timeNow - sound.startTime) + sound.playTimeOffset;
 
-            return false;
+        let playingPercentage = (sound.playTime / sound.audioBuffer.duration) * 100;
 
-        }
+        sound.playedTimePercentage = playingPercentage;
 
-        if (!this.track.isPlaying) {
-
-            return null;
-
-        }
-
-        // stop the track playback
-        this.audioGraph.sourceNode.stop(0);
-
-        // change the track attributes
-        this.track.isPlaying = false;
-
-        this.track.playTime = 0;
-
-        // after a stop you cant call a start again, you need to create a new
-        // source node, this means that we unset the audiograph after a stop
-        // so that it gets recreated on the next play
-        this.audioGraph = undefined;
-        
-        // stop the progress timer
-        stopTimer.call(this);
-
-        return true;
+        sound.onPlaying(playingPercentage);
 
     };
+
+/*
 
     player.prototype.positionChange = function positionChangeFunction(trackPositionInPercent) {
         
@@ -596,14 +597,12 @@ export class PlayerCore {
 
     };
 
-    let triggerProgressEvent = function triggerProgressEventFunction() {
+    */
 
-        let timeNow = this.audioGraph.sourceNode.context.currentTime;
+    /*
 
-        this.track.playTime = (timeNow - this.track.startTime) + this.track.playTimeOffset;
-
-        // if the player is at the end of the track
-        if (this.track.playTime >= this.track.buffer.duration) {
+            // if the player is at the end of the track
+        if (sound.playTime >= sound.audioBuffer.duration) {
 
             this.stop();
 
@@ -627,17 +626,6 @@ export class PlayerCore {
             }
 
         }
-
-        this.track.playedTimePercentage = (this.track.playTime / this.track.buffer.duration) * 100;
-
-        this.events.trigger(
-            this.events.constants.PLAYER_PLAYING_PROGRESS,
-            {
-                percentage: this.track.playedTimePercentage,
-                track: this.track
-            }
-        );
-
-    };*/
+    */
 
 }

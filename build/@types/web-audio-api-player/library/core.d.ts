@@ -5,6 +5,7 @@ export interface ICoreOptions {
     volume?: number;
     loopQueue?: boolean;
     soundsBaseUrl?: string;
+    playingProgressIntervalTime?: number;
 }
 export declare class PlayerCore {
     protected _isWebAudioApiSupported: boolean;
@@ -14,6 +15,8 @@ export declare class PlayerCore {
     protected _soundsBaseUrl: string;
     protected _currentIndex: number;
     protected _playerAudio: PlayerAudio;
+    protected _playingProgressIntervalTime: number;
+    protected _playingTimeoutID: number;
     onPlayStart: () => void;
     onPlaying: () => void;
     onBuffering: () => void;
@@ -57,4 +60,5 @@ export declare class PlayerCore {
     previous(): void;
     first(): void;
     last(): void;
+    protected _playingProgress(sound: ISound): void;
 }

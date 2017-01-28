@@ -17,11 +17,18 @@ $(function () {
     };
 
     let player = new PlayerCore(options);
+    let playerUI = new PlayerUI(player);
 
     let firstSoundAttributes: ISoundAttributes = {
         sources: '1314412&format=mp31',
         id: 1314412,
-        playlistId: 0
+        playlistId: 0,
+        onLoading: (loadingProgress) => {
+            console.log('loading: ',loadingProgress);
+        },
+        onPlaying: (loadingProgress) => {
+            console.log('playing: ',loadingProgress);
+        }
     };
 
     // add the first song to queue
@@ -30,13 +37,20 @@ $(function () {
     let secondSoundAttributes: ISoundAttributes = {
         sources: '1214935&format=ogg1',
         id: 1214935,
-        playlistId: 0
+        playlistId: 0,
+        onLoading: (loadingProgress) => {
+            console.log('loading: ',loadingProgress);
+        },
+        onPlaying: (playingProgress) => {
+            console.log('playing: ', playingProgress);
+            playerUI.setPlayingProgress(playingProgress);
+        }
     };
 
     // add another song
     let secondSound = player.addSoundToQueue(secondSoundAttributes);
 
-    let playerUI = new PlayerUI(player);
+    
 
 
 

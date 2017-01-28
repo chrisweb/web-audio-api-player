@@ -139,6 +139,12 @@ export class PlayerUI {
 
     }
 
+    public setPlayingProgress(percentage: number) {
+
+        this._progressBar.value = percentage.toString();
+
+    }
+
     public deconstructor() {
 
         this._destroyListeners();

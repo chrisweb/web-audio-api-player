@@ -10,11 +10,17 @@ export interface ISoundSource {
     codec?: string;
 }
 
+export interface IOnProgress {
+    (progress: number): void;
+}
+
 export interface ISoundAttributes {
     sources: (ISoundSource | string)[] | string;
     id: number;
     playlistId?: number | null;
     loop?: boolean;
+    onLoading: IOnProgress;
+    onPlaying: IOnProgress;
 }
 
 export interface ISound extends IRequested, ISoundAttributes {
@@ -57,6 +63,9 @@ export class PlayerSound implements ISound {
     public loadingProgress: number;
     public codec: string;
 
+    public onLoading: IOnProgress;
+    public onPlaying: IOnProgress;
+
     constructor(soundAttributes: ISoundAttributes) {
 
         // user provided values
@@ -69,6 +78,14 @@ export class PlayerSound implements ISound {
         this.id = soundAttributes.id;
         this.playlistId = soundAttributes.playlistId || null;
         this.loop = soundAttributes.loop || false;
+
+        if (typeof soundAttributes.onLoading === 'function') {
+            this.onLoading = soundAttributes.onLoading;
+        }
+
+        if (typeof soundAttributes.onPlaying === 'function') {
+            this.onPlaying = soundAttributes.onPlaying;
+        }
 
         // default values
         this.sourceNode = null;

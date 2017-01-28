@@ -2,10 +2,13 @@
 'use strict';
 
 import { PlayerError, IPlayerError } from './error';
+import { IOnProgress } from './sound';
 
 export interface IRequested {
     url: string;
     loadingProgress: number;
+    onLoading: IOnProgress;
+    onPlaying: IOnProgress;
 }
 
 export class PlayerRequest {
@@ -17,7 +20,7 @@ export class PlayerRequest {
         return new Promise(function (resolve, reject) {
 
             let xhr = new XMLHttpRequest();
-    
+
             // TODO: abort the request?
             // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort
 
@@ -50,6 +53,8 @@ export class PlayerRequest {
 
                 // update value on sound object
                 requested.loadingProgress = percentage;
+
+                requested.onLoading(percentage);
 
             };
 
