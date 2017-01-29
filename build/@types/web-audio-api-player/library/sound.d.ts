@@ -13,8 +13,10 @@ export interface ISoundAttributes {
     loop?: boolean;
     onLoading?: IOnProgress;
     onPlaying?: IOnProgress;
+    audioBuffer?: AudioBuffer | null;
+    arrayBuffer?: ArrayBuffer | null;
 }
-export interface ISound extends IRequested, ISoundAttributes {
+export interface ISound extends ISoundAttributes, IRequested {
     sourceNode: AudioBufferSourceNode | null;
     isBuffered: boolean;
     isBuffering: boolean;

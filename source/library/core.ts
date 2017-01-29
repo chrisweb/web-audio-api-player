@@ -206,7 +206,7 @@ export class PlayerCore {
         return new Promise((resolve, reject) => {
 
             // if the sound already has an AudioBuffer
-            if (sound.audioBuffer === null) {
+            if (sound.audioBuffer !== null) {
 
                 resolve(sound);
 
@@ -216,7 +216,7 @@ export class PlayerCore {
             // if the sound has already an ArrayBuffer but no AudioBuffer
             if (sound.arrayBuffer !== null && sound.audioBuffer === null) {
 
-                this._decodeSound(sound, resolve, reject);
+                return this._decodeSound(sound, resolve, reject);
 
             }
 
@@ -234,7 +234,7 @@ export class PlayerCore {
 
                         sound.arrayBuffer = arrayBuffer;
 
-                        this._decodeSound(sound, resolve, reject);
+                        return this._decodeSound(sound, resolve, reject);
 
                     }).catch((requestError: IPlayerError) => {
 

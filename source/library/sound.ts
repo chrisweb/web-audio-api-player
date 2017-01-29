@@ -21,9 +21,11 @@ export interface ISoundAttributes {
     loop?: boolean;
     onLoading?: IOnProgress;
     onPlaying?: IOnProgress;
+    audioBuffer?: AudioBuffer | null;
+    arrayBuffer?: ArrayBuffer | null;
 }
 
-export interface ISound extends IRequested, ISoundAttributes {
+export interface ISound extends ISoundAttributes, IRequested {
     sourceNode: AudioBufferSourceNode | null;
     isBuffered: boolean;
     isBuffering: boolean;
@@ -95,12 +97,24 @@ export class PlayerSound implements ISound {
             this.onPlaying = null;
         }
 
+        if (typeof soundAttributes.arrayBuffer === 'ArrayBuffer') {
+            this.arrayBuffer = soundAttributes.arrayBuffer;
+        } else {
+            this.arrayBuffer = null;
+        }
+
+        if (typeof soundAttributes.audioBuffer === 'AudioBuffer') {
+            this.audioBuffer = soundAttributes.audioBuffer;
+            this.audioBufferDate = new Date();
+        } else {
+            this.audioBuffer = null;
+            this.audioBufferDate = null;
+        }
+
         // default values
         this.sourceNode = null;
         this.isBuffered = false;
         this.isBuffering = false;
-        this.audioBuffer = null;
-        this.audioBufferDate = null;
         this.playTimeOffset = 0;
         this.startTime = 0;
         this.playTime = 0;

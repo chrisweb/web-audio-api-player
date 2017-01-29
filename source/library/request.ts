@@ -8,7 +8,6 @@ export interface IRequested {
     url: string;
     loadingProgress: number;
     onLoading?: IOnProgress;
-    onPlaying?: IOnProgress;
 }
 
 export class PlayerRequest {
