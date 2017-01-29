@@ -176,6 +176,9 @@ export class PlayerAudio {
             sourceNode.loop = sourceNodeOptions.loop;
 
             // if the song ends destroy it's audioGraph as the source can't be reused anyway
+            // NOTE: the onended handler won't have any effect if the loop property is set to
+            // true, as the audio won't stop playing. To see the effect in this case you'd
+            // have to use AudioBufferSourceNode.stop()
             sourceNode.onended = () => {
                 sourceNode.disconnect();
             };
