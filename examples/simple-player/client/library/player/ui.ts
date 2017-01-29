@@ -122,27 +122,28 @@ export class PlayerUI {
 
     }
 
-    protected switchPlayerContext(playerContext: string) {
+    public switchPlayerContext(currentPlayerContext: string) {
 
         let $playIcon = document.getElementById('js-play');
         let $pauseIcon = document.getElementById('js-pause');
+        let newPlayerContext;
 
-        switch (playerContext) {
+        switch (currentPlayerContext) {
             // is playing
             case 'on':
-                playerContext = 'off';
+                newPlayerContext = 'off';
                 $playIcon.classList.remove('hidden');
                 $pauseIcon.classList.add('hidden');
                 break;
             // is paused
             case 'off':
-                playerContext = 'on';
+                newPlayerContext = 'on';
                 $playIcon.classList.add('hidden');
                 $pauseIcon.classList.remove('hidden');
                 break;
         }
 
-        this._buttonsBox.dataset['playerContext'] = playerContext;
+        this._buttonsBox.dataset['playerContext'] = newPlayerContext;
 
     }
 
@@ -163,7 +164,7 @@ export class PlayerUI {
         let rangeElement = event.target as HTMLInputElement;
         let value = parseInt(rangeElement.value);
 
-        this.player.setProgress(value);
+        this.player.setPosition(value);
 
     }
 

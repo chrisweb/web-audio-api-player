@@ -14,6 +14,10 @@ export interface IOnProgress {
     (progress: number, maximumValue: number, currentValue: number): void;
 }
 
+export interface IOnEnded {
+    (willPlayNext: boolean): void;
+}
+
 export interface ISoundAttributes {
     sources: (ISoundSource | string)[] | string;
     id: number;
@@ -21,6 +25,7 @@ export interface ISoundAttributes {
     loop?: boolean;
     onLoading?: IOnProgress;
     onPlaying?: IOnProgress;
+    onEnded?: IOnEnded;
     audioBuffer?: AudioBuffer | null;
     arrayBuffer?: ArrayBuffer | null;
 }
@@ -71,6 +76,7 @@ export class PlayerSound implements ISound {
 
     public onLoading: IOnProgress;
     public onPlaying: IOnProgress;
+    public onEnded: IOnEnded;
 
     constructor(soundAttributes: ISoundAttributes) {
 
@@ -95,6 +101,12 @@ export class PlayerSound implements ISound {
             this.onPlaying = soundAttributes.onPlaying;
         } else {
             this.onPlaying = null;
+        }
+
+        if (typeof soundAttributes.onEnded === 'function') {
+            this.onEnded = soundAttributes.onEnded;
+        } else {
+            this.onEnded = null;
         }
 
         if (typeof soundAttributes.arrayBuffer === 'ArrayBuffer') {

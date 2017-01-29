@@ -13,7 +13,8 @@ import { PlayerUI } from './library/player/ui';
 $(function () {
 
     let options: ICoreOptions = {
-        soundsBaseUrl: 'https://mp3l.jamendo.com/?trackid='
+        soundsBaseUrl: 'https://mp3l.jamendo.com/?trackid=',
+        playingProgressIntervalTime: 500
     };
 
     let player = new PlayerCore(options);
@@ -30,6 +31,12 @@ $(function () {
         onPlaying: (playingProgress, maximumValue, currentValue) => {
             console.log('playing: ', playingProgress, maximumValue, currentValue);
             playerUI.setPlayingProgress(playingProgress);
+        },
+        onEnded: (willPlayNext) => {
+            console.log('ended');
+            if (!willPlayNext) {
+                playerUI.switchPlayerContext('on');
+            }
         }
     };
 
@@ -47,6 +54,12 @@ $(function () {
         onPlaying: (playingProgress, maximumValue, currentValue) => {
             console.log('playing: ', playingProgress, maximumValue, currentValue);
             playerUI.setPlayingProgress(playingProgress);
+        },
+        onEnded: (willPlayNext) => {
+            console.log('ended');
+            if (!willPlayNext) {
+                playerUI.switchPlayerContext('on');
+            }
         }
     };
 

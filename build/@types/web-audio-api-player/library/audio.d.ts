@@ -8,11 +8,12 @@ export interface IAudioGraphOptions {
 }
 export interface ISourceNodeOptions {
     loop: boolean;
+    onEnded: Function;
 }
 export declare class PlayerAudio {
     protected _context: AudioContext;
     protected _contextState: string;
-    protected _audioGraph: IAudioGraph;
+    protected _audioGraph: IAudioGraph | null;
     constructor();
     decodeAudio(arrayBuffer: ArrayBuffer): Promise<AudioBuffer>;
     protected _getAudioContext(): Promise<{}>;

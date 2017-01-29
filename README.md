@@ -53,6 +53,7 @@ in the meantime check out what's in the examples directory (especially the [simp
  * put all the code related to the queue into a seperate library class (out of core)
  * add UI screenshot to readme
  * add demo (github pages)
+ * for position and volume, allow to use a percentage or a value
 
 ## DONE
 
@@ -62,9 +63,12 @@ in the meantime check out what's in the examples directory (especially the [simp
 * let the user add a sound with an already fetched ArrayBuffer or even with an already decoded AudioBuffer
 * create a simple example with a vanilla JS UI
 * add a sounds queue manager
-* add play sound
-* add pause / stop
-* add next / previous
+* add "play" sound
+* add "pause" and "stop"
+* add "next" and "previous"
 * add set / get volume and mute
 * add a loading progress callback
 * add a playing progress callback
+* add an onEnded callback
+* play next song onEnded, add option to enable or disable automatic play next onEnded
+* add change position method

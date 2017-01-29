@@ -11,12 +11,13 @@ export declare class PlayerCore {
     protected _isWebAudioApiSupported: boolean;
     protected _queue: ISound[];
     protected _volume: number;
-    protected _progress: number;
     protected _soundsBaseUrl: string;
     protected _currentIndex: number;
     protected _playerAudio: PlayerAudio;
     protected _playingProgressIntervalTime: number;
     protected _playingTimeoutID: number | null;
+    protected _playNextOnEnded: boolean;
+    protected _loopQueue: boolean;
     onPlayStart: () => void;
     onPlaying: () => void;
     onBuffering: () => void;
@@ -38,18 +39,21 @@ export declare class PlayerCore {
     setVolume(volume: number): void;
     getVolume(): number;
     mute(): void;
-    setProgress(progress: number): void;
-    getProgress(): number;
+    setPosition(soundPositionInPercent: number): void;
     protected _loadSound(sound: ISound): Promise<ISound | PlayerError>;
     protected _decodeSound(sound: ISound, resolve: Function, reject: Function): void;
     play(whichSound?: number | string | undefined, playTimeOffset?: number): void;
     protected _play(sound: ISound): void;
+    protected _onEnded(): void;
     /**
-     * whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
+     * whichSound is optional, if set it can be the sound id or if it's
+     * a string it can be next / previous / first / last
+     *
      * @param whichSound
+     *
      */
-    protected _getSoundFromQueue(whichSound?: string | number): ISound | null;
-    protected _findSoundById(soundId: string | number): ISound | null;
+    protected _getSoundFromQueue(whichSound?: string | number, updateIndex?: boolean): ISound | null;
+    protected _findSoundById(soundId: string | number, updateIndex: boolean): ISound | null;
     protected _sourceToVariables(sources: (ISoundSource | string)[]): {
         url: string | null;
         codec?: string | null;

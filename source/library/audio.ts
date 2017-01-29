@@ -15,18 +15,20 @@ export interface IAudioGraphOptions {
 
 export interface ISourceNodeOptions {
     loop: boolean;
+    onEnded: Function;
 }
 
 export class PlayerAudio {
 
     protected _context: AudioContext;
     protected _contextState: string;
-    protected _audioGraph: IAudioGraph;
+    protected _audioGraph: IAudioGraph | null;
 
     constructor() {
 
         // initial context state is still "closed"
         this._contextState = 'closed';
+        this._audioGraph = null;
 
         // TODO: to speed up things would it be better to create a context in the constructor?
         // and suspend the context upon creating it until it gets used?
@@ -180,7 +182,13 @@ export class PlayerAudio {
             // true, as the audio won't stop playing. To see the effect in this case you'd
             // have to use AudioBufferSourceNode.stop()
             sourceNode.onended = () => {
+
+                sourceNodeOptions.onEnded();
+
                 sourceNode.disconnect();
+
+                sourceNode = null;
+
             };
 
             return sourceNode;
@@ -215,7 +223,11 @@ export class PlayerAudio {
 
     public changeGainValue(volume: number) {
 
-        this._audioGraph.gainNode.gain.value = volume / 100;
+        this._getAudioContext().then(() => {
+
+            this._audioGraph.gainNode.gain.value = volume / 100;
+
+        });
 
     }
 

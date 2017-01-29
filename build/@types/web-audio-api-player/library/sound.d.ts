@@ -6,6 +6,9 @@ export interface ISoundSource {
 export interface IOnProgress {
     (progress: number, maximumValue: number, currentValue: number): void;
 }
+export interface IOnEnded {
+    (willPlayNext: boolean): void;
+}
 export interface ISoundAttributes {
     sources: (ISoundSource | string)[] | string;
     id: number;
@@ -13,6 +16,7 @@ export interface ISoundAttributes {
     loop?: boolean;
     onLoading?: IOnProgress;
     onPlaying?: IOnProgress;
+    onEnded?: IOnEnded;
     audioBuffer?: AudioBuffer | null;
     arrayBuffer?: ArrayBuffer | null;
 }
@@ -56,5 +60,6 @@ export declare class PlayerSound implements ISound {
     duration: number;
     onLoading: IOnProgress;
     onPlaying: IOnProgress;
+    onEnded: IOnEnded;
     constructor(soundAttributes: ISoundAttributes);
 }
