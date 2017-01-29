@@ -22,7 +22,7 @@ gulp build
 
 TODO write some user guide  
 
-in the meantime check out what's in the examples directory (especially the simple example to get started)  
+in the meantime check out what's in the examples directory (especially the [simple example](examples/simple-player) to get started)  
 
 ## TODOs
 
@@ -43,13 +43,16 @@ in the meantime check out what's in the examples directory (especially the simpl
  * add promise fallback for IE11 and Android < 4.4.4?
  * add fallback for onended for IE11 (https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode/onended)
  * publish on npm
- * add npm version badge / add dependencies check badge(s) / license badge (http://shields.io/)
- * add browser compatibility table badge in readme
- * write tests!!! (goal 100% coverage)
- * add travis build check
+ * add npm version badge / license badge / ... (http://shields.io/)
+ * add dependencies check badge(s) (https://david-dm.org)
+ * add browser compatibility table badge in readme (https://saucelabs.com/blog/new-open-sauce-ui-and-refreshed-build-status-badges)
+ * write tests!!! (goal 100% coverage), add tests coverage badge ((https://coveralls.io)
+ * add travis build check and badge (https://travis-ci.org)
  * add a contribution guide
  * write some documentation
  * put all the code related to the queue into a seperate library class (out of core)
+ * add UI screenshot to readme
+ * add demo (github pages)
 
 ## DONE
 
