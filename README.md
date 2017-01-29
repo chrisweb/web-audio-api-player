@@ -72,3 +72,4 @@ in the meantime check out what's in the examples directory (especially the [simp
 * add an onEnded callback
 * play next song onEnded, add option to enable or disable automatic play next onEnded
 * add change position method
+* add loop queue option
