@@ -26,11 +26,12 @@ in the meantime check out what's in the examples directory (especially the [simp
 
 ## TODOs
 
+ * make the core player options object optinal when initializing a new player
  * abort the loading of the sound if the user clicks play and then pause (or stop / next / previous) before the end of the buffering process (https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort)
  * allow cross fading songs "on end" if it's the next song in a playlist
  * create a web component UI (http://www.w3.org/TR/components-intro/)!?
  * currently the "find song in queue" can't retrieve songs by queue index, is this useful anyway?
- * let the user modify the audio graph, for example by adding / removíng nodes like a filter node, a panner node ...
+ * let the user modify the audio graph, for example by adding / removÃ­ng nodes like a filter node, a panner node ...
  * implement suspend and resume: ctx.suspend() and resume of the context on pause / stop or if for some time no sound was played? ... to free device resources, as suspend returns a promise, does this mean suspending and resuming takes time? if so how much time does it take, based on that information we can decide when and how often we should resume / suspend
  * use the html audio element for backwards compatibility for IE11 and mobile android devices? (http://caniuse.com/#feat=audio-api / )
  * use the requestAnimation (https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) frame or the requestidlecallback (https://developers.google.com/web/updates/2015/08/using-requestidlecallback / https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback) instead of setInterval for playing progress callback?
