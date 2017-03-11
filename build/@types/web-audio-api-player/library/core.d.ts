@@ -6,6 +6,7 @@ export interface ICoreOptions {
     loopQueue?: boolean;
     soundsBaseUrl?: string;
     playingProgressIntervalTime?: number;
+    playNextOnEnded?: boolean;
 }
 export declare class PlayerCore {
     protected _isWebAudioApiSupported: boolean;
@@ -28,7 +29,7 @@ export declare class PlayerCore {
     readonly PLAY_SOUND_PREVIOUS: string;
     readonly PLAY_SOUND_FIRST: string;
     readonly PLAY_SOUND_LAST: string;
-    constructor(playerOptions: ICoreOptions);
+    constructor(playerOptions?: ICoreOptions);
     protected _initialize(): void;
     addSoundToQueue(soundAttributes: ISoundAttributes, whereInQueue?: string): ISound;
     _appendSoundToQueue(sound: ISound): void;

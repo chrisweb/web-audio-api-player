@@ -11,6 +11,7 @@ export interface ICoreOptions {
     loopQueue?: boolean;
     soundsBaseUrl?: string;
     playingProgressIntervalTime?: number;
+    playNextOnEnded?: boolean;
 }
 
 export class PlayerCore {
@@ -51,7 +52,7 @@ export class PlayerCore {
     readonly PLAY_SOUND_FIRST = 'first';
     readonly PLAY_SOUND_LAST = 'last';
 
-    constructor(playerOptions: ICoreOptions) {
+    constructor(playerOptions: ICoreOptions = {}) {
 
         let defaultOptions = {
             volume: 80,

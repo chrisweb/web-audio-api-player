@@ -1,21 +1,19 @@
-
 'use strict';
 
 export interface IConfiguration {
-    clientID: number,
-    clientSecret: string
+    clientID: number;
+    clientSecret: string;
 }
 
-export default class Configuration {
+export class Configuration implements IConfiguration {
+
+    readonly clientID: number;
+    readonly clientSecret: string;
 
     constructor() {
 
-        let configuration: IConfiguration = {
-            clientID: 1111111111,
-            clientSecret: '00000AAAAAAAAAA00000000BBBBBBBBBBB'
-        };
-
-        return configuration;
+        this.clientID = 111111111111;
+        this.clientSecret = '111111111111aaaaaaaaaaa111111111111';
 
     }
 

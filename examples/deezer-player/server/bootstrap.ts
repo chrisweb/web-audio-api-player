@@ -92,83 +92,83 @@ export default class Bootsrtrap {
             callbackURL: DEEZER_CALLBACK_URL,
             scope: DEEZER_SCOPE
         },
-            function (accessToken: string, refreshToken: string | undefined, profile: passport.Profile, done: Function) {
+        function (accessToken: string, refreshToken: string | undefined, profile: passport.Profile, done: Function) {
 
-                console.log(accessToken, refreshToken, profile);
+            console.log(accessToken, refreshToken, profile);
 
-                let parameters = {
-                    access_token: accessToken
-                    // index (default 0)
-                    // limit (default  25)
-                };
+            let parameters = {
+                access_token: accessToken
+                // index (default 0)
+                // limit (default  25)
+            };
 
-                let deezerApiBaseUrl = 'http://api.deezer.com';
-                let deezerApiUri = '/playlist';
-                let deezerResourceId = 2002496842;
+            let deezerApiBaseUrl = 'http://api.deezer.com';
+            let deezerApiUri = '/playlist';
+            let deezerResourceId = 2002496842;
 
-                let apiRequest = request({
-                    url: deezerApiBaseUrl + deezerApiUri + '/' + deezerResourceId + '/tracks',
-                    method: 'GET',
-                    qs: parameters,
-                    json: true
-                }, (error, response, body) => {
+            let apiRequest = request({
+                url: deezerApiBaseUrl + deezerApiUri + '/' + deezerResourceId + '/tracks',
+                method: 'GET',
+                qs: parameters,
+                json: true
+            }, (error, response, body) => {
 
-                    if ('error' in body) {
-                        // TODO: error
-                    }
+                if ('error' in body) {
+                    // TODO: error
+                }
 
-                    // body:
-                    // checksum: string
-                    // data: string
-                    // next: string
-                    // total: number
+                // body:
+                // checksum: string
+                // data: string
+                // next: string
+                // total: number
 
-                    let playlistTracks = body.data;
+                let playlistTracks = body.data;
 
-                    console.log(playlistTracks);
+                console.log(playlistTracks);
 
-                });
+            });
 
-                /*let deezerApiUri = '/track';
-                let deezerResourceId = 2002496842;
+            /*let deezerApiUri = '/track';
+            let deezerResourceId = 2002496842;
 
-                let apiRequest = request({
-                    url: deezerApiBaseUrl + deezerApiUri + '/' + deezerResourceId,
-                    method: 'GET',
-                    qs: parameters,
-                    json: true
-                }, (error, response, body) => {
+            let apiRequest = request({
+                url: deezerApiBaseUrl + deezerApiUri + '/' + deezerResourceId,
+                method: 'GET',
+                qs: parameters,
+                json: true
+            }, (error, response, body) => {
 
-                    if ('error' in body) {
-                        // TODO: error
-                    }
+                if ('error' in body) {
+                    // TODO: error
+                }
 
-                    // body:
-                    // checksum: string
-                    // data: string
-                    // next: string
-                    // total: number
+                // body:
+                // checksum: string
+                // data: string
+                // next: string
+                // total: number
 
-                    let playlistTracks = body.data;
+                let playlistTracks = body.data;
 
-                    console.log(parsedResponse);
+                console.log(parsedResponse);
 
-                });*/
+            });*/
 
 
 
-                // asynchronous verification, for effect...
-                process.nextTick(function () {
+            // asynchronous verification, for effect...
+            process.nextTick(function () {
 
-                    // To keep the example simple, the user's Deezer profile is returned to
-                    // represent the logged-in user.  In a typical application, you would want
-                    // to associate the Deezer account with a user record in your database,
-                    // and return that user instead.
-                    return done(null, profile);
-                });
+                // To keep the example simple, the user's Deezer profile is returned to
+                // represent the logged-in user.  In a typical application, you would want
+                // to associate the Deezer account with a user record in your database,
+                // and return that user instead.
+                return done(null, profile);
 
-            }
-        ));
+            });
+
+        }));
 
         // GET /auth/deezer
         //   Use passport.authenticate() as route middleware to authenticate the

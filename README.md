@@ -26,7 +26,6 @@ in the meantime check out what's in the examples directory (especially the [simp
 
 ## TODOs
 
- * make the core player options object optinal when initializing a new player
  * abort the loading of the sound if the user clicks play and then pause (or stop / next / previous) before the end of the buffering process (https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort)
  * allow cross fading songs "on end" if it's the next song in a playlist
  * create a web component UI (http://www.w3.org/TR/components-intro/)!?
@@ -74,3 +73,4 @@ in the meantime check out what's in the examples directory (especially the [simp
 * play next song onEnded, add option to enable or disable automatic play next onEnded
 * add change position method
 * add loop queue option
+ * make the core player options object optinal when initializing a new player
