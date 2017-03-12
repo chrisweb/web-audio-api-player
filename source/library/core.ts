@@ -37,11 +37,6 @@ export class PlayerCore {
     // do we start over gain at the end of the queue
     protected _loopQueue: boolean;
 
-    // callback hooks
-    public onPlayStart: () => void;
-    public onPlaying: () => void;
-    public onBuffering: () => void;
-
     // constants
     readonly WHERE_IN_QUEUE_AT_END: string = 'append';
     readonly WHERE_IN_QUEUE_AT_START: string = 'prepend';
