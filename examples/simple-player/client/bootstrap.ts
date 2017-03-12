@@ -32,6 +32,9 @@ $(function () {
             console.log('playing: ', playingProgress, maximumValue, currentValue);
             playerUI.setPlayingProgress(playingProgress);
         },
+        onStarted: () => {
+            console.log('started');
+        },
         onEnded: (willPlayNext) => {
             console.log('ended');
             if (!willPlayNext) {
@@ -55,6 +58,9 @@ $(function () {
             console.log('playing: ', playingProgress, maximumValue, currentValue);
             playerUI.setPlayingProgress(playingProgress);
         },
+        onStarted: () => {
+            console.log('started');
+        },
         onEnded: (willPlayNext) => {
             console.log('ended');
             if (!willPlayNext) {
@@ -67,8 +73,6 @@ $(function () {
     let secondSound = player.addSoundToQueue(secondSoundAttributes);
 
     
-
-
 
     //let volume = 90;
 

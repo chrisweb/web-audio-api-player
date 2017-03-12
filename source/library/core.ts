@@ -191,15 +191,71 @@ export class PlayerCore {
         let currentSound = this._getSoundFromQueue();
 
         // if there is a sound currently being played
-        if (currentSound !== null && currentSound.isPlaying) {
+        if (currentSound !== null) {
 
-            // stop the track playback
-            this.pause();
+            // check if the duration got set manually
+            if (currentSound.duration === null) {
 
-            let soundPositionInSeconds = (currentSound.duration / 100) * soundPositionInPercent;
+                // the user can set the sound duration manually but if he didn't the song has to
+                // get preloaded as the duration is a property of the audioBuffer
+                this._loadSound(currentSound)
+                    .then((sound: ISound) => {
 
-            // start the playback at the given position
-            this.play(currentSound.id, soundPositionInSeconds);
+                        // calculate the position in seconds
+                        let soundPositionInSeconds = (sound.duration / 100) * soundPositionInPercent;
+
+                        this.setPositionInSeconds(soundPositionInSeconds);
+
+                    }).catch((error: PlayerError) => {
+
+                        // TODO: throw error???
+
+                    });
+
+            } else {
+
+                // calculate the position in seconds
+                let soundPositionInSeconds = (currentSound.duration / 100) * soundPositionInPercent;
+
+                this.setPositionInSeconds(soundPositionInSeconds);
+
+            }
+
+        } else {
+
+            // TODO: throw error???
+
+        }
+
+    }
+
+    public setPositionInSeconds(soundPositionInSeconds: number) {
+
+        // get the current sound if any
+        let currentSound = this._getSoundFromQueue();
+
+        // if there is a sound currently being played
+        if (currentSound !== null) {
+
+            // is the song is being played
+            if (currentSound.isPlaying) {
+
+                // stop the track playback
+                this.pause();
+
+                // start the playback at the given position
+                this.play(currentSound.id, soundPositionInSeconds);
+
+            } else {
+
+                // only set the sound position but don't play
+                currentSound.playTimeOffset = soundPositionInSeconds;
+
+            }
+
+        } else {
+
+            // TODO: throw error???
 
         }
 
@@ -216,21 +272,22 @@ export class PlayerCore {
 
             // if the sound already has an AudioBuffer
             if (sound.audioBuffer !== null) {
-
                 resolve(sound);
-
             }
-
 
             // if the sound has already an ArrayBuffer but no AudioBuffer
             if (sound.arrayBuffer !== null && sound.audioBuffer === null) {
-
                 return this._decodeSound(sound, resolve, reject);
-
             }
 
             // if the sound has no ArrayBuffer and also no AudioBuffer yet
             if (sound.arrayBuffer === null && sound.audioBuffer === null) {
+
+                // extract the url and codec from sources
+                let { url, codec = null } = this._sourceToVariables(sound.sources);
+
+                sound.url = url;
+                sound.codec = codec;
 
                 if (sound.url !== null) {
 
@@ -325,12 +382,6 @@ export class PlayerCore {
         // has the sound already been loaded?
         if (!sound.isBuffered) {
 
-            // extract the url and codec from sources
-            let { url, codec = null } = this._sourceToVariables(sound.sources);
-
-            sound.url = url;
-            sound.codec = codec;
-
             this._loadSound(sound).then(() => {
 
                 this._play(sound);
@@ -356,7 +407,8 @@ export class PlayerCore {
             loop: sound.loop,
             onEnded: () => {
                 this._onEnded();
-            }
+            },
+            onPlay: () => { }
         };
 
         // create a new source node
@@ -378,6 +430,14 @@ export class PlayerCore {
             // start(when, offset, duration)
             sourceNode.start(0, sound.playTimeOffset);
 
+            // trigger started event
+            if (sound.onStarted !== null && sound.playTimeOffset === 0) {
+
+                sound.onStarted();
+
+            }
+
+            // trigger playing event
             if (sound.onPlaying !== null) {
 
                 // at interval set playing progress
@@ -454,9 +514,6 @@ export class PlayerCore {
     /**
      * whichSound is optional, if set it can be the sound id or if it's
      * a string it can be next / previous / first / last
-     * 
-     * @param whichSound
-     * 
      */
     protected _getSoundFromQueue(whichSound?: string | number, updateIndex: boolean = true): ISound | null {
 

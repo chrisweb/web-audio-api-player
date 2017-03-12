@@ -18,16 +18,24 @@ export interface IOnEnded {
     (willPlayNext: boolean): void;
 }
 
+export interface IOnStarted {
+    (): void;
+}
+
 export interface ISoundAttributes {
-    sources: (ISoundSource | string)[] | string;
+    // sources are not mandatory as user can provide an arrayBuffer
+    // and / or audioBuffer in which case the source url is not needed
+    sources?: (ISoundSource | string)[] | string;
     id: number;
     playlistId?: number | null;
     loop?: boolean;
     onLoading?: IOnProgress;
     onPlaying?: IOnProgress;
     onEnded?: IOnEnded;
+    onStarted?: IOnStarted;
     audioBuffer?: AudioBuffer | null;
     arrayBuffer?: ArrayBuffer | null;
+    duration?: number | null;
 }
 
 export interface ISound extends ISoundAttributes, IRequested {
@@ -44,7 +52,7 @@ export interface ISound extends ISoundAttributes, IRequested {
     isPlaying: boolean;
     sources: (ISoundSource | string)[];
     codec: string | null;
-    duration: number;
+    duration: number | null;
 }
 
 export interface IOptions {
@@ -72,10 +80,11 @@ export class PlayerSound implements ISound {
     public isPlaying: boolean;
     public loadingProgress: number;
     public codec: string;
-    public duration: number;
+    public duration: number | null;
 
     public onLoading: IOnProgress;
     public onPlaying: IOnProgress;
+    public onStarted: IOnStarted;
     public onEnded: IOnEnded;
 
     constructor(soundAttributes: ISoundAttributes) {
@@ -90,6 +99,10 @@ export class PlayerSound implements ISound {
         this.id = soundAttributes.id;
         this.playlistId = soundAttributes.playlistId || null;
         this.loop = soundAttributes.loop || false;
+        // the user can set the duration manually
+        // this is usefull if we need to convert the position percentage into seconds but don't want to preload the song
+        // to get the duration the song has to get preloaded as the duration is a property of the audioBuffer
+        this.duration = soundAttributes.duration || null;
 
         if (typeof soundAttributes.onLoading === 'function') {
             this.onLoading = soundAttributes.onLoading;
@@ -103,19 +116,29 @@ export class PlayerSound implements ISound {
             this.onPlaying = null;
         }
 
+        if (typeof soundAttributes.onStarted === 'function') {
+            this.onStarted = soundAttributes.onStarted;
+        } else {
+            this.onStarted = null;
+        }
+
         if (typeof soundAttributes.onEnded === 'function') {
             this.onEnded = soundAttributes.onEnded;
         } else {
             this.onEnded = null;
         }
 
-        if (typeof soundAttributes.arrayBuffer === 'ArrayBuffer') {
+        let arrayBufferType: string = typeof soundAttributes.arrayBuffer;
+
+        if (arrayBufferType === 'ArrayBuffer') {
             this.arrayBuffer = soundAttributes.arrayBuffer;
         } else {
             this.arrayBuffer = null;
         }
 
-        if (typeof soundAttributes.audioBuffer === 'AudioBuffer') {
+        let audioBufferType: string = typeof soundAttributes.audioBuffer;
+
+        if (audioBufferType === 'AudioBuffer') {
             this.audioBuffer = soundAttributes.audioBuffer;
             this.audioBufferDate = new Date();
         } else {

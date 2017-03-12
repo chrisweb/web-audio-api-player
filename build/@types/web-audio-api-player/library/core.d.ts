@@ -38,6 +38,7 @@ export declare class PlayerCore {
     getVolume(): number;
     mute(): void;
     setPosition(soundPositionInPercent: number): void;
+    setPositionInSeconds(soundPositionInSeconds: number): void;
     protected _loadSound(sound: ISound): Promise<ISound | PlayerError>;
     protected _decodeSound(sound: ISound, resolve: Function, reject: Function): void;
     play(whichSound?: number | string | undefined, playTimeOffset?: number): void;
@@ -46,9 +47,6 @@ export declare class PlayerCore {
     /**
      * whichSound is optional, if set it can be the sound id or if it's
      * a string it can be next / previous / first / last
-     *
-     * @param whichSound
-     *
      */
     protected _getSoundFromQueue(whichSound?: string | number, updateIndex?: boolean): ISound | null;
     protected _findSoundById(soundId: string | number, updateIndex: boolean): ISound | null;
