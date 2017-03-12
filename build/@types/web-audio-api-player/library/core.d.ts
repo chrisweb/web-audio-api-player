@@ -19,9 +19,6 @@ export declare class PlayerCore {
     protected _playingTimeoutID: number | null;
     protected _playNextOnEnded: boolean;
     protected _loopQueue: boolean;
-    onPlayStart: () => void;
-    onPlaying: () => void;
-    onBuffering: () => void;
     readonly WHERE_IN_QUEUE_AT_END: string;
     readonly WHERE_IN_QUEUE_AT_START: string;
     readonly WHERE_IN_QUEUE_AFTER_CURRENT: string;
