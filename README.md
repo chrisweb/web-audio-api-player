@@ -54,6 +54,7 @@ in the meantime check out what's in the examples directory (especially the [simp
  * add UI screenshot to readme
  * add demo (github pages)
  * for position and volume, allow to use a percentage or a value
+ * add hooks to the sound object for all the native source node events https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode
 
 ## DONE
 
