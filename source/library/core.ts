@@ -407,8 +407,7 @@ export class PlayerCore {
             loop: sound.loop,
             onEnded: () => {
                 this._onEnded();
-            },
-            onPlay: () => { }
+            }
         };
 
         // create a new source node
@@ -430,10 +429,17 @@ export class PlayerCore {
             // start(when, offset, duration)
             sourceNode.start(0, sound.playTimeOffset);
 
-            // trigger started event
-            if (sound.onStarted !== null && sound.playTimeOffset === 0) {
+            // trigger resumed event
+            if (sound.onResumed !== null && !sound.firstTimePlayed) {
+                sound.onResumed(sound.playTimeOffset);
+            }
 
-                sound.onStarted();
+            // trigger started event
+            if (sound.onStarted !== null && sound.firstTimePlayed) {
+
+                sound.onStarted(sound.playTimeOffset);
+
+                sound.firstTimePlayed = false;
 
             }
 
@@ -487,7 +493,13 @@ export class PlayerCore {
 
             }
 
-            this.stop();
+            // reset the is first time sound is being played to true
+            currentSound.firstTimePlayed = true;
+
+            // reset the playTimeOffset
+            currentSound.playTimeOffset = 0;
+
+            this._stop(currentSound);
 
             if (nextSound !== null) {
 
@@ -669,6 +681,11 @@ export class PlayerCore {
 
         sound.playTimeOffset += timeAtPause - sound.startTime;
 
+        // trigger paused event
+        if (sound.onPaused !== null) {
+            sound.onPaused(sound.playTimeOffset);
+        }
+
         this._stop(sound);
 
     }
@@ -682,6 +699,15 @@ export class PlayerCore {
             return;
         }
 
+        // reset the is first time sound is being played to true
+        sound.firstTimePlayed = true;
+
+        // trigger stopped event
+        if (sound.onStopped !== null) {
+            sound.onStopped(sound.playTimeOffset);
+        }
+
+        // reset the playTimeOffset
         sound.playTimeOffset = 0;
 
         this._stop(sound);

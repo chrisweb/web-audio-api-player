@@ -9,21 +9,24 @@ export interface IOnProgress {
 export interface IOnEnded {
     (willPlayNext: boolean): void;
 }
-export interface IOnStarted {
-    (): void;
+export interface IOnAnyAction {
+    (playTimeOffset: number): void;
 }
 export interface ISoundAttributes {
     sources?: (ISoundSource | string)[] | string;
     id: number;
     playlistId?: number | null;
     loop?: boolean;
-    onLoading?: IOnProgress;
-    onPlaying?: IOnProgress;
-    onEnded?: IOnEnded;
-    onStarted?: IOnStarted;
     audioBuffer?: AudioBuffer | null;
     arrayBuffer?: ArrayBuffer | null;
     duration?: number | null;
+    onLoading?: IOnProgress;
+    onPlaying?: IOnProgress;
+    onEnded?: IOnEnded;
+    onStarted?: IOnAnyAction;
+    onStopped?: IOnAnyAction;
+    onPaused?: IOnAnyAction;
+    onResumed?: IOnAnyAction;
 }
 export interface ISound extends ISoundAttributes, IRequested {
     sourceNode: AudioBufferSourceNode | null;
@@ -40,6 +43,7 @@ export interface ISound extends ISoundAttributes, IRequested {
     sources: (ISoundSource | string)[];
     codec: string | null;
     duration: number | null;
+    firstTimePlayed: boolean;
 }
 export interface IOptions {
 }
@@ -63,9 +67,13 @@ export declare class PlayerSound implements ISound {
     loadingProgress: number;
     codec: string;
     duration: number | null;
+    firstTimePlayed: boolean;
     onLoading: IOnProgress;
     onPlaying: IOnProgress;
-    onStarted: IOnStarted;
     onEnded: IOnEnded;
+    onStarted: IOnAnyAction;
+    onStopped: IOnAnyAction;
+    onPaused: IOnAnyAction;
+    onResumed: IOnAnyAction;
     constructor(soundAttributes: ISoundAttributes);
 }

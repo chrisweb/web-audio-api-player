@@ -32,11 +32,20 @@ $(function () {
             console.log('playing: ', playingProgress, maximumValue, currentValue);
             playerUI.setPlayingProgress(playingProgress);
         },
-        onStarted: () => {
-            console.log('started');
+        onStarted: (playTimeOffset) => {
+            console.log('started', playTimeOffset);
+        },
+        onPaused: (playTimeOffset) => {
+            console.log('paused', playTimeOffset);
+        },
+        onStopped: (playTimeOffset) => {
+            console.log('stopped', playTimeOffset);
+        },
+        onResumed: (playTimeOffset) => {
+            console.log('resumed', playTimeOffset);
         },
         onEnded: (willPlayNext) => {
-            console.log('ended');
+            console.log('ended', willPlayNext);
             if (!willPlayNext) {
                 playerUI.switchPlayerContext('on');
             }
@@ -58,11 +67,20 @@ $(function () {
             console.log('playing: ', playingProgress, maximumValue, currentValue);
             playerUI.setPlayingProgress(playingProgress);
         },
-        onStarted: () => {
-            console.log('started');
+        onStarted: (playTimeOffset) => {
+            console.log('started', playTimeOffset);
+        },
+        onPaused: (playTimeOffset) => {
+            console.log('paused', playTimeOffset);
+        },
+        onStopped: (playTimeOffset) => {
+            console.log('stopped', playTimeOffset);
+        },
+        onResumed: (playTimeOffset) => {
+            console.log('resumed', playTimeOffset);
         },
         onEnded: (willPlayNext) => {
-            console.log('ended');
+            console.log('ended', willPlayNext);
             if (!willPlayNext) {
                 playerUI.switchPlayerContext('on');
             }

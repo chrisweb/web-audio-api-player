@@ -18,8 +18,8 @@ export interface IOnEnded {
     (willPlayNext: boolean): void;
 }
 
-export interface IOnStarted {
-    (): void;
+export interface IOnAnyAction {
+    (playTimeOffset: number): void;
 }
 
 export interface ISoundAttributes {
@@ -29,13 +29,18 @@ export interface ISoundAttributes {
     id: number;
     playlistId?: number | null;
     loop?: boolean;
-    onLoading?: IOnProgress;
-    onPlaying?: IOnProgress;
-    onEnded?: IOnEnded;
-    onStarted?: IOnStarted;
     audioBuffer?: AudioBuffer | null;
     arrayBuffer?: ArrayBuffer | null;
     duration?: number | null;
+
+    // events
+    onLoading?: IOnProgress;
+    onPlaying?: IOnProgress;
+    onEnded?: IOnEnded;
+    onStarted?: IOnAnyAction;
+    onStopped?: IOnAnyAction;
+    onPaused?: IOnAnyAction;
+    onResumed?: IOnAnyAction;
 }
 
 export interface ISound extends ISoundAttributes, IRequested {
@@ -53,6 +58,7 @@ export interface ISound extends ISoundAttributes, IRequested {
     sources: (ISoundSource | string)[];
     codec: string | null;
     duration: number | null;
+    firstTimePlayed: boolean;
 }
 
 export interface IOptions {
@@ -81,11 +87,16 @@ export class PlayerSound implements ISound {
     public loadingProgress: number;
     public codec: string;
     public duration: number | null;
+    public firstTimePlayed: boolean;
 
+    // events
     public onLoading: IOnProgress;
     public onPlaying: IOnProgress;
-    public onStarted: IOnStarted;
     public onEnded: IOnEnded;
+    public onStarted: IOnAnyAction;
+    public onStopped: IOnAnyAction;
+    public onPaused: IOnAnyAction;
+    public onResumed: IOnAnyAction;
 
     constructor(soundAttributes: ISoundAttributes) {
 
@@ -99,10 +110,13 @@ export class PlayerSound implements ISound {
         this.id = soundAttributes.id;
         this.playlistId = soundAttributes.playlistId || null;
         this.loop = soundAttributes.loop || false;
+
         // the user can set the duration manually
         // this is usefull if we need to convert the position percentage into seconds but don't want to preload the song
         // to get the duration the song has to get preloaded as the duration is a property of the audioBuffer
         this.duration = soundAttributes.duration || null;
+
+        this.firstTimePlayed = true;
 
         if (typeof soundAttributes.onLoading === 'function') {
             this.onLoading = soundAttributes.onLoading;
@@ -126,6 +140,24 @@ export class PlayerSound implements ISound {
             this.onEnded = soundAttributes.onEnded;
         } else {
             this.onEnded = null;
+        }
+
+        if (typeof soundAttributes.onStopped === 'function') {
+            this.onStopped = soundAttributes.onStopped;
+        } else {
+            this.onStopped = null;
+        }
+
+        if (typeof soundAttributes.onPaused === 'function') {
+            this.onPaused = soundAttributes.onPaused;
+        } else {
+            this.onPaused = null;
+        }
+
+        if (typeof soundAttributes.onResumed === 'function') {
+            this.onResumed = soundAttributes.onResumed;
+        } else {
+            this.onResumed = null;
         }
 
         let arrayBufferType: string = typeof soundAttributes.arrayBuffer;
