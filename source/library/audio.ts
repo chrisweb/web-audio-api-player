@@ -3,10 +3,36 @@
 
 import { PlayerError, IPlayerError } from './error';
 
+// Note to self: AudioGraph documentation
+// https://developer.mozilla.org/en-US/docs/Web/API/AudioNode
+
 export interface IAudioGraph {
+    // https://developer.mozilla.org/en-US/docs/Web/API/GainNode
     gainNode: GainNode;
+    // https://developer.mozilla.org/en-US/docs/Web/API/PannerNode
     pannerNode?: PannerNode;
+    // https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode
     stereoPannerNode?: StereoPannerNode;
+    // https://developer.mozilla.org/en-US/docs/Web/API/DelayNode
+    delayNode?: DelayNode;
+    // https://developer.mozilla.org/en-US/docs/Web/API/ScriptProcessorNode
+    scriptProcessorNode?: ScriptProcessorNode;
+    // https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode
+    analyserNode?: AnalyserNode;
+    // https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode
+    biquadFilterNode?: BiquadFilterNode;
+    // https://developer.mozilla.org/en-US/docs/Web/API/ChannelMergerNode
+    channelMergeNode?: ChannelMergerNode;
+    // https://developer.mozilla.org/en-US/docs/Web/API/ChannelSplitterNode
+    channelSplitterNode?: ChannelSplitterNode;
+    // https://developer.mozilla.org/en-US/docs/Web/API/ConvolverNode
+    convolverNode?: ConvolverNode;
+    // https://developer.mozilla.org/en-US/docs/Web/API/DynamicsCompressorNode
+    dynamicCompressorNode?: DynamicsCompressorNode;
+    // https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode
+    oscillatorNode?: OscillatorNode;
+    // https://developer.mozilla.org/en-US/docs/Web/API/WaveShaperNode
+    waveShaperNode?: WaveShaperNode;
 }
 
 export interface IAudioGraphOptions {
@@ -22,13 +48,16 @@ export class PlayerAudio {
 
     protected _context: AudioContext;
     protected _contextState: string;
-    protected _audioGraph: IAudioGraph | null;
+    protected _audioGraph: IAudioGraph | null = null;
 
-    constructor() {
+    constructor(customAudioGraph?: IAudioGraph) {
 
         // initial context state is still "closed"
         this._contextState = 'closed';
-        this._audioGraph = null;
+
+        if (customAudioGraph !== undefined) {
+            this._audioGraph = customAudioGraph;
+        }
 
         // TODO: to speed up things would it be better to create a context in the constructor?
         // and suspend the context upon creating it until it gets used?
@@ -69,7 +98,7 @@ export class PlayerAudio {
 
                 this._context = audioContext;
 
-                this._createAudioGraph();
+                this._connectAudioGraphGainToDestination();
 
                 resolve();
 
@@ -135,27 +164,26 @@ export class PlayerAudio {
 
     }
 
-    protected _createAudioGraph() {
+    protected _connectAudioGraphGainToDestination() {
 
-        // https://developer.mozilla.org/en-US/docs/Web/API/GainNode
+        if (this._audioGraph === null) {
 
-        let audioGraph = {
-            gainNode: this._context.createGain()
-        };
+            this._audioGraph = {
+                gainNode: this._context.createGain()
+            }
+
+        }
 
         // connect the gain node to the destination (speakers)
-        audioGraph.gainNode.connect(this._context.destination);
-
-        this._audioGraph = audioGraph;
+        // https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
+        this._audioGraph.gainNode.connect(this._context.destination);
 
     }
 
     public setAudioGraph(audioGraph: IAudioGraph) {
 
         if (this._audioGraph !== null) {
-
             this._destroyAudioGraph();
-
         }
 
         this._audioGraph = audioGraph;
@@ -197,7 +225,7 @@ export class PlayerAudio {
 
     }
 
-    public connectSourceNodeToGraph(sourceNode: AudioBufferSourceNode) {
+    public connectSourceNodeToGraphGainNode(sourceNode: AudioBufferSourceNode) {
 
         sourceNode.connect(this._audioGraph.gainNode);
 

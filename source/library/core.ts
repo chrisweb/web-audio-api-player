@@ -2,7 +2,7 @@
 'use strict';
 
 import { PlayerSound, ISound, ISoundAttributes, ISoundSource } from './sound';
-import { PlayerAudio } from './audio';
+import { PlayerAudio, IAudioGraph } from './audio';
 import { PlayerRequest } from './request';
 import { PlayerError, IPlayerError } from './error';
 
@@ -12,6 +12,7 @@ export interface ICoreOptions {
     soundsBaseUrl?: string;
     playingProgressIntervalTime?: number;
     playNextOnEnded?: boolean;
+    audioGraph?: IAudioGraph;
 }
 
 export class PlayerCore {
@@ -31,11 +32,13 @@ export class PlayerCore {
     // playing progress time interval
     protected _playingProgressIntervalTime: number;
     // playing progress timeoutID
-    protected _playingTimeoutID: number | null;
+    protected _playingTimeoutID: number | null = null;
     // when a song finishes, automatically play the next one
     protected _playNextOnEnded: boolean;
     // do we start over gain at the end of the queue
     protected _loopQueue: boolean;
+    // a custon audioGraph created by the user
+    protected _customAudioGraph: IAudioGraph | null = null;
 
     // constants
     readonly WHERE_IN_QUEUE_AT_END: string = 'append';
@@ -67,6 +70,10 @@ export class PlayerCore {
         this._playNextOnEnded = options.playNextOnEnded;
         this._loopQueue = options.loopQueue;
 
+        if (typeof options.audioGraph !== 'undefined') {
+            this._customAudioGraph = options.audioGraph;
+        }
+
         this._initialize();
 
     }
@@ -90,7 +97,7 @@ export class PlayerCore {
         }
 
         // player audio library instance
-        this._playerAudio = new PlayerAudio();
+        this._playerAudio = new PlayerAudio(this._customAudioGraph);
 
     }
 
@@ -423,7 +430,7 @@ export class PlayerCore {
             sound.startTime = sourceNode.context.currentTime;
 
             // connect the source to the graph (destination)
-            this._playerAudio.connectSourceNodeToGraph(sourceNode);
+            this._playerAudio.connectSourceNodeToGraphGainNode(sourceNode);
 
             // start playback
             // start(when, offset, duration)
@@ -777,5 +784,21 @@ export class PlayerCore {
         sound.onPlaying(playingPercentage, sound.audioBuffer.duration, sound.playTime);
 
     };
+
+    public setAudioGraph(customAudioGraph: IAudioGraph) {
+
+        this._playerAudio.setAudioGraph(customAudioGraph);
+
+        this._customAudioGraph = customAudioGraph;
+
+    }
+
+    public getAudioGraph(): IAudioGraph {
+
+        this._customAudioGraph = this._playerAudio.getAudioGraph();
+
+        return this._customAudioGraph;
+
+    }
 
 }
