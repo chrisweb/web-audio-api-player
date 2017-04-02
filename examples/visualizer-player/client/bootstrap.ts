@@ -10,7 +10,7 @@ import { PlayerCore, ICoreOptions, PlayerSound, ISoundAttributes } from 'web-aud
 // library
 import { PlayerUI } from './library/player/ui';
 
-/*function transformToVisualBins(array: []) {
+/*function transformToVisualBins(array: any) {
     
     let i;
     let spectrumSize = 63; // number of bars in the spectrum
@@ -32,15 +32,6 @@ import { PlayerUI } from './library/player/ui';
     return newArray;
 
 }*/
-
-function transformToVisualBins(Array: any) {
-    Array = AverageTransform(Array);
-    Array = tailTransform(Array);
-    Array = exponentialTransform(Array);
-
-    return Array;
-}
-
 
 // canvas
 let canvas = document.getElementById('visualizer') as HTMLCanvasElement;
@@ -74,6 +65,54 @@ var headMarginSlope = (1 - minMarginWeight) / Math.pow(headMargin, marginDecay);
 
 var spectrumHeight = 255;
 var tailMarginSlope: number = 0;
+
+function SpectrumEase(Value: number) {
+    return Math.pow(Value, SpectrumLogScale)
+}
+
+function GetVisualBins(Array: any) {
+    /*var NewArray = []
+    for (var i = 0; i < SpectrumBarCount; i++) {
+      var Bin = SpectrumEase(i / SpectrumBarCount) * (SpectrumEnd - SpectrumStart) + SpectrumStart;
+      NewArray[i] = Array[Math.floor(Bin) + SpectrumStart] //* (Bin % 1)
+              //+ Array[Math.floor(Bin + 1) + SpectrumStart] * (1 - (Bin % 1))
+    }
+    UpdateParticleAttributes(NewArray)
+    return NewArray*/
+
+    var SamplePoints = []
+    var NewArray = []
+    for (var i = 0; i < SpectrumBarCount; i++) {
+        var Bin = SpectrumEase(i / SpectrumBarCount) * (SpectrumEnd - SpectrumStart) + SpectrumStart;
+        SamplePoints[i] = Math.floor(Bin)
+    }
+
+    for (var i = 0; i < SpectrumBarCount; i++) {
+        var CurSpot = SamplePoints[i]
+        var NextSpot = SamplePoints[i + 1]
+        if (NextSpot == null) {
+            NextSpot = SpectrumEnd
+        }
+
+        var CurMax = Array[CurSpot]
+        var Dif = NextSpot - CurSpot
+        for (var j = 1; j < Dif; j++) {
+            CurMax = (Array[CurSpot + j] + CurMax) / 2
+        }
+        NewArray[i] = CurMax
+    }
+
+    //UpdateParticleAttributes(NewArray)
+    return NewArray
+}
+
+function transformToVisualBins(Array: any) {
+    Array = AverageTransform(Array);
+    Array = tailTransform(Array);
+    Array = exponentialTransform(Array);
+
+    return Array;
+}
 
 function AverageTransform(Array: any) {
     var Values = []
@@ -151,6 +190,7 @@ $(function () {
         visualizerAudioGraph.analyserNode.minDecibels = -100;
         visualizerAudioGraph.analyserNode.maxDecibels = -33;
         visualizerAudioGraph.analyserNode.fftSize = 16384;
+        //visualizerAudioGraph.analyserNode.fftSize = 2048;
 
         // connect the nodes
         visualizerAudioGraph.delayNode.connect(audioContext.destination);
@@ -180,9 +220,14 @@ $(function () {
 
         console.log(initialArray);
 
-        var binsArray = transformToVisualBins(initialArray);
+        //var binsArray = transformToVisualBins(initialArray);
 
-        console.log(binsArray);
+        //console.log(binsArray);
+
+        var VisualData = GetVisualBins(initialArray)
+        var TransformedVisualData = transformToVisualBins(VisualData)
+
+        console.log(TransformedVisualData);
 
         ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
         ctx.fillStyle = 'red'; // Color of the bars
@@ -191,7 +236,7 @@ $(function () {
 
             let bar_x = y * barWidth;
             let bar_width = barWidth;
-            let bar_height = binsArray[y];
+            let bar_height = TransformedVisualData[y];
 
             //  fillRect( x, y, width, height ) // Explanation of the parameters below
             //ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -210,6 +255,8 @@ $(function () {
     let firstSoundAttributes: ISoundAttributes = {
         sources: '1314412&format=mp31',
         id: 1314412,
+        //sources: '1214935&format=ogg1',
+        //id: 1214935,
         playlistId: 0,
         onLoading: (loadingProgress, maximumValue, currentValue) => {
 
