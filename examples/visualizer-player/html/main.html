@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>web audio api player - visualizer example</title>
+    <style>
+        .button {
+            padding: .75rem 1.5rem;
+            font-size: 1.25rem;
+            border-radius: .3rem;
+            color: white;
+            background-color: dodgerblue;
+            display: inline-block;
+            vertical-align: middle;
+            white-space: nowrap;
+            font-weight: 400;
+            border: 0px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+    <script src="./javascripts/vendor/systemjs/dist/system.js"></script>
+    <script>
+        SystemJS.config({
+            baseURL: './javascripts',
+            packages: {
+                '.': {
+                    defaultJSExtensions: 'js'
+                }
+            },
+            map: {
+                'jquery': 'vendor/jquery/dist/jquery.js',
+                'web-audio-api-player': 'vendor/web-audio-api-player/index.js'
+            }
+        });
+        SystemJS.import('bootstrap.js');
+    </script>
+</head>
+<body>
+
+    <h1>web audio api player - visualizer example</h1>
+
+    <section id="js-player">
+
+        <div id="js-track-information">
+            <span id="js-track-id"></span>
+        </div>
+
+        <div id="js-buttons-box" data-player-context="off">
+            <button id="js-shuffle-button" class="button">S</button>
+            <button id="js-previous-button" class="button">|<</button>
+            <button id="js-play-pause-button" class="button">
+                <span id="js-play">></span>
+                <span id="js-pause" class="hidden">||</span>
+            </button>
+            <button id="js-next-button" class="button">>|</button>
+            <button id="js-repeat-button" class="button">R</button>
+        </div>
+
+        <input type="range" min="0" max="100" value="0" step="1" id="js-player-loading-progress" />
+
+        <input type="range" min="0" max="100" value="0" step="1" id="js-player-playing-progress" />
+
+        <input type="range" min="0" max="100" value="0" step="1" id="js-player-volume" />
+
+        <canvas id="visualizer" height="500" width="750"></canvas>
+
+    </section>
+
+</body>
+</html>

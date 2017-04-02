@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "declaration": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "module": "umd",
+    "moduleResolution": "node",
+    "inlineSourceMap": true,
+    "declarationDir": "./definitions",
+    "noImplicitAny": true,
+    "noFallthroughCasesInSwitch": true,
+    "lib": [ "es5", "dom", "es2015", "dom.iterable" ],
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "target": "es5"
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}

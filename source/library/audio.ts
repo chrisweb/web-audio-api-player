@@ -6,6 +6,57 @@ import { PlayerError, IPlayerError } from './error';
 // Note to self: AudioGraph documentation
 // https://developer.mozilla.org/en-US/docs/Web/API/AudioNode
 
+export interface IWaveTable {
+}
+
+// https://developer.mozilla.org/en-US/docs/Web/API/AudioContext
+export interface IAudioContext {
+
+    destination: AudioDestinationNode; // readonly
+    sampleRate: number; // readonly
+    currentTime: number; // readonly
+    listener: AudioListener; // readonly
+    activeSourceCount: number; // readonly
+
+    state: string; // readonly
+
+    createBuffer(numberOfChannels: number, length: number, sampleRate: number): AudioBuffer;
+    createBuffer(buffer: ArrayBuffer, mixToMono: boolean): AudioBuffer;
+    decodeAudioData(audioData: ArrayBuffer, decodeSuccessCallback?: Function, decodeErrorCallback?: Function): void;
+    createBufferSource(): AudioBufferSourceNode;
+    createMediaElementSource(mediaElement: HTMLMediaElement): MediaElementAudioSourceNode;
+    createMediaStreamSource(mediaStreamMediaStream: MediaStream): MediaStreamAudioSourceNode;
+    createMediaStreamDestination(): MediaStreamAudioDestinationNode;
+    createScriptProcessor(bufferSize: number, numberOfInputChannels?: number, numberOfOutputChannels?: number): ScriptProcessorNode;
+    createAnalyser(): AnalyserNode;
+    createGain(): GainNode;
+    createDelay(maxDelayTime?: number): DelayNode;
+    createBiquadFilter(): BiquadFilterNode;
+    createWaveShaper(): WaveShaperNode;
+    createPanner(): PannerNode;
+    createConvolver(): ConvolverNode;
+    createChannelSplitter(numberOfOutputs?: number): ChannelSplitterNode;
+    createChannelMerger(numberOfInputs?: number): ChannelMergerNode;
+    createDynamicsCompressor(): DynamicsCompressorNode;
+    createOscillator(): OscillatorNode;
+    createWaveTable(real: Float32Array, imag: Float32Array): IWaveTable;
+
+    onstatechange(): void;
+    close(): Promise<void>;
+    suspend(): Promise<void>;
+    resume(): Promise<void>;
+}
+
+declare var webkitAudioContext: {
+    prototype: IAudioContext;
+    new (): IAudioContext;
+};
+
+declare var AudioContext: {
+    prototype: IAudioContext;
+    new (): IAudioContext;
+};
+
 export interface IAudioGraph {
     // https://developer.mozilla.org/en-US/docs/Web/API/GainNode
     gainNode: GainNode;
@@ -46,17 +97,23 @@ export interface ISourceNodeOptions {
 
 export class PlayerAudio {
 
-    protected _context: AudioContext;
+    protected _audioContext: IAudioContext | null = null;
     protected _contextState: string;
     protected _audioGraph: IAudioGraph | null = null;
 
-    constructor(customAudioGraph?: IAudioGraph) {
+    constructor(customAudioContext?: IAudioContext, customAudioGraph?: IAudioGraph) {
 
         // initial context state is still "closed"
         this._contextState = 'closed';
 
+        if (customAudioContext !== undefined) {
+            this._audioContext = customAudioContext;
+        }
+
         if (customAudioGraph !== undefined) {
             this._audioGraph = customAudioGraph;
+        } else {
+            this._createAudioGraph();
         }
 
         // TODO: to speed up things would it be better to create a context in the constructor?
@@ -66,53 +123,65 @@ export class PlayerAudio {
 
     public decodeAudio(arrayBuffer: ArrayBuffer): Promise<AudioBuffer> {
 
-        return this._getAudioContext().then(() => {
+        return this.getAudioContext().then((audioContext: IAudioContext) => {
 
             // decodeAudioData returns a promise of type PromiseLike
             // using resolve to return a promise of type Promise
-            return Promise.resolve(this._context.decodeAudioData(arrayBuffer));
+            return Promise.resolve(audioContext.decodeAudioData(arrayBuffer));
 
         });
 
     }
 
-    protected _getAudioContext(): Promise<{}> {
+    protected _createAudioContext(): IAudioContext {
+
+        let AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+
+        let audioContext = new AudioContext();
+
+        this._bindContextStateListener(audioContext);
+
+        return audioContext;
+
+    }
+
+    protected _bindContextStateListener(audioContext: IAudioContext) {
+
+        audioContext.onstatechange = () => {
+
+            this._contextState = audioContext.state;
+
+            if (this._contextState === 'closed') {
+                this._audioContext = null;
+            }
+
+        };
+
+    }
+
+    public getAudioContext(): Promise<{}> {
 
         return new Promise((resolve, reject) => {
 
             if (this._contextState === 'closed') {
 
-                let AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+                let audioContext = this._createAudioContext();
 
-                let audioContext = new AudioContext();
+                this._audioContext = audioContext;
 
-                audioContext.onstatechange = () => {
-
-                    this._contextState = audioContext.state;
-
-                    if (this._contextState === 'closed') {
-                        this._context = null;
-                    }
-
-                };
-
-                this._context = audioContext;
-
-                this._connectAudioGraphGainToDestination();
-
-                resolve();
+                resolve(audioContext);
 
             } else if (this._contextState === 'suspended') {
 
                 this._unfreezeAudioContext().then(() => {
 
-                    resolve();
+                    resolve(this._audioContext);
 
                 });
 
             } else {
 
-                resolve();
+                resolve(this._audioContext);
 
             }
 
@@ -120,13 +189,21 @@ export class PlayerAudio {
 
     }
 
+    public setAudioContext(audioContext: IAudioContext): void {
+
+        this._audioContext = audioContext;
+
+        this._bindContextStateListener(audioContext);
+
+    }
+
     protected _destroyAudioContext() {
 
         this._destroyAudioGraph();
 
-        this._context.close().then(() => {
+        this._audioContext.close().then(() => {
 
-            this._context = null;
+            this._audioContext = null;
 
         });
 
@@ -135,14 +212,18 @@ export class PlayerAudio {
     protected _unfreezeAudioContext(): Promise<void> {
 
         // did resume get implemented
-        if (typeof this._context.suspend === 'undefined') {
+        if (typeof this._audioContext.suspend === 'undefined') {
 
+            // this browser does not support resume
+            // just send back a promise as resume would do
             return Promise.resolve();
 
         } else {
 
             // resume the audio hardware access
-            return this._context.resume();
+            // audio context resume returns a promise
+            // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/resume
+            return this._audioContext.resume();
 
         }
 
@@ -151,32 +232,16 @@ export class PlayerAudio {
     protected _freezeAudioContext(): Promise<void> {
 
         // did suspend get implemented
-        if (typeof this._context.suspend === 'undefined') {
+        if (typeof this._audioContext.suspend === 'undefined') {
 
             return Promise.resolve();
 
         } else {
 
             // halt the audio hardware access temporarily to reduce CPU and battery usage
-            return this._context.suspend();
+            return this._audioContext.suspend();
 
         }
-
-    }
-
-    protected _connectAudioGraphGainToDestination() {
-
-        if (this._audioGraph === null) {
-
-            this._audioGraph = {
-                gainNode: this._context.createGain()
-            }
-
-        }
-
-        // connect the gain node to the destination (speakers)
-        // https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
-        this._audioGraph.gainNode.connect(this._context.destination);
 
     }
 
@@ -198,9 +263,9 @@ export class PlayerAudio {
 
     public createSourceNode(sourceNodeOptions: ISourceNodeOptions): Promise<AudioBufferSourceNode> {
 
-        return this._getAudioContext().then(() => {
+        return this.getAudioContext().then((audioContext: IAudioContext) => {
 
-            let sourceNode = this._context.createBufferSource();
+            let sourceNode = audioContext.createBufferSource();
 
             // do we loop this song
             sourceNode.loop = sourceNodeOptions.loop;
@@ -225,9 +290,37 @@ export class PlayerAudio {
 
     }
 
-    public connectSourceNodeToGraphGainNode(sourceNode: AudioBufferSourceNode) {
+    public connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode) {
 
         sourceNode.connect(this._audioGraph.gainNode);
+
+        if (this._audioGraph.analyserNode !== null) {
+            sourceNode.connect(this._audioGraph.analyserNode);
+        }
+
+        if (this._audioGraph.delayNode !== null) {
+            sourceNode.connect(this._audioGraph.delayNode);
+        }
+
+    }
+
+    protected _createAudioGraph() {
+
+        this.getAudioContext().then((audioContext: IAudioContext) => {
+
+            if (this._audioGraph === null) {
+
+                this._audioGraph = {
+                    gainNode: audioContext.createGain()
+                };
+
+            }
+
+            // connect the gain node to the destination (speakers)
+            // https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
+            this._audioGraph.gainNode.connect(audioContext.destination);
+
+        });
 
     }
 
@@ -251,55 +344,12 @@ export class PlayerAudio {
 
     public changeGainValue(volume: number) {
 
-        this._getAudioContext().then(() => {
+        this.getAudioContext().then((audioContext: IAudioContext) => {
 
             this._audioGraph.gainNode.gain.value = volume / 100;
 
         });
 
     }
-
-    /*public setPlaybackRate(playbackRate: number): void {
-
-        // < 1 slower, > 1 faster playback
-        //this._audioGraph.sourceNode.setPlaybackRate(playbackRate);
-
-    };
-
-    public getPlaybackRate(): number {
-
-        //return this._audioGraph.sourceNode.playbackRate;
-
-        return 0;
-
-    };
-
-    public resetPlaybackRate(): void {
-
-
-
-    }
-
-    public setPanner(left: number, right: number): void {
-
-        // https://developer.mozilla.org/en-US/docs/Web/API/PannerNode
-
-        //this.audioGraph.pannerNode.setPosition(0, 0, 0);
-
-    };
-
-    public getPanner(): { left: number, right: number } {
-
-        //return this.audioGraph.pannerNode.getPosition();
-
-        return { left: 0, right: 0 };
-
-    };
-
-    public resetPanner(): void {
-
-
-
-    }*/
 
 }

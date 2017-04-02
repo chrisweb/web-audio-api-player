@@ -2,7 +2,7 @@
 'use strict';
 
 import { PlayerSound, ISound, ISoundAttributes, ISoundSource } from './sound';
-import { PlayerAudio, IAudioGraph } from './audio';
+import { PlayerAudio, IAudioGraph, IAudioContext } from './audio';
 import { PlayerRequest } from './request';
 import { PlayerError, IPlayerError } from './error';
 
@@ -13,6 +13,7 @@ export interface ICoreOptions {
     playingProgressIntervalTime?: number;
     playNextOnEnded?: boolean;
     audioGraph?: IAudioGraph;
+    audioContext?: IAudioContext;
 }
 
 export class PlayerCore {
@@ -39,6 +40,8 @@ export class PlayerCore {
     protected _loopQueue: boolean;
     // a custon audioGraph created by the user
     protected _customAudioGraph: IAudioGraph | null = null;
+    // a custom audio context created by the user
+    protected _customAudioContext: IAudioContext | null = null;
 
     // constants
     readonly WHERE_IN_QUEUE_AT_END: string = 'append';
@@ -70,6 +73,10 @@ export class PlayerCore {
         this._playNextOnEnded = options.playNextOnEnded;
         this._loopQueue = options.loopQueue;
 
+        if (typeof options.audioContext !== 'undefined') {
+            this._customAudioContext = options.audioContext;
+        }
+
         if (typeof options.audioGraph !== 'undefined') {
             this._customAudioGraph = options.audioGraph;
         }
@@ -86,18 +93,14 @@ export class PlayerCore {
         // is the web audio api supported
         // if not we will use the audio element as fallback
         if (webAudioApi) {
-
             this._isWebAudioApiSupported = true;
-
         } else {
-
             // use the html5 audio element
             this._isWebAudioApiSupported = false;
-
         }
 
         // player audio library instance
-        this._playerAudio = new PlayerAudio(this._customAudioGraph);
+        this._playerAudio = new PlayerAudio(this._customAudioContext, this._customAudioGraph);
 
     }
 
@@ -429,8 +432,8 @@ export class PlayerCore {
             // the audiocontext time right now (since the audiocontext got created)
             sound.startTime = sourceNode.context.currentTime;
 
-            // connect the source to the graph (destination)
-            this._playerAudio.connectSourceNodeToGraphGainNode(sourceNode);
+            // connect the source to the graph node(s)
+            this._playerAudio.connectSourceNodeToGraphNodes(sourceNode);
 
             // start playback
             // start(when, offset, duration)
@@ -798,6 +801,30 @@ export class PlayerCore {
         this._customAudioGraph = this._playerAudio.getAudioGraph();
 
         return this._customAudioGraph;
+
+    }
+
+    public setAudioContext(customAudioContext: IAudioContext) {
+
+        this._playerAudio.setAudioContext(customAudioContext);
+
+        this._customAudioContext = customAudioContext;
+
+    }
+
+    public getAudioContext(): Promise<IAudioContext> {
+
+        return new Promise((resolve, reject) => {
+
+            this._playerAudio.getAudioContext().then((audioContext: IAudioContext) => {
+
+                this._customAudioContext = audioContext;
+
+                resolve(audioContext);
+
+            });
+
+        });
 
     }
 

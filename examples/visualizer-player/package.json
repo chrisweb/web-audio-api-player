@@ -3,7 +3,7 @@
   "bugs": {
     "url": "https://github.com/chrisweb/web-audio-api-player/issues"
   },
-  "description": "web audio api player",
+  "description": "web audio api player - visualizer example",
   "homepage": "https://github.com/chrisweb/web-audio-api-player#readme",
   "keywords": [
     "player",
@@ -12,10 +12,9 @@
     "audio",
     "api"
   ],
-  "main": "build/index.js",
-  "types": "./build/@types/web-audio-api-player/index.d.ts",
+  "main": "build/server.js",
   "license": "MIT",
-  "name": "web-audio-api-player",
+  "name": "web-audio-api-player_visualizer-example",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/chrisweb/web-audio-api-player.git"
@@ -23,12 +22,19 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "0.7.0",
+  "version": "2.0.1",
+  "dependencies": {
+    "express": "^4.15.2",
+    "jquery": "^3.1.1",
+    "systemjs": "^0.19.46"
+  },
   "devDependencies": {
-    "@types/webaudioapi": "0.0.27",
+    "@types/express": "^4.0.35",
+    "@types/node": "^7.0.8",
+    "@types/jquery": "^2.0.41",
+    "@types/systemjs": "^0.19.33",
     "gulp": "^3.9.1",
     "gulp-sourcemaps": "^1.11.1",
-    "gulp-tslint": "^7.1.0",
     "gulp-typescript": "^3.1.5",
     "merge2": "^1.0.3",
     "tslint": "^4.5.1",
