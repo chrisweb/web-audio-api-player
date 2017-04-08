@@ -25,13 +25,13 @@
   },
   "version": "0.7.0",
   "devDependencies": {
-    "@types/webaudioapi": "0.0.27",
+    "@types/webaudioapi": "^0.0.27",
     "gulp": "^3.9.1",
-    "gulp-sourcemaps": "^1.11.1",
+    "gulp-sourcemaps": "^2.5.1",
     "gulp-tslint": "^7.1.0",
-    "gulp-typescript": "^3.1.5",
+    "gulp-typescript": "^3.1.6",
     "merge2": "^1.0.3",
-    "tslint": "^4.5.1",
-    "typescript": "^2.2.1"
+    "tslint": "^5.0.0",
+    "typescript": "^2.2.2"
   }
 }
