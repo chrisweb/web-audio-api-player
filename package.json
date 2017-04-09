@@ -26,6 +26,7 @@
   "version": "0.7.1",
   "dependencies": {
     "@types/webaudioapi": "^0.0.27"
+  },
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-sourcemaps": "^2.5.1",
