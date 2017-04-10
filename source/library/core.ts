@@ -2,7 +2,7 @@
 'use strict';
 
 import { PlayerSound, ISound, ISoundAttributes, ISoundSource } from './sound';
-import { PlayerAudio, IAudioGraph, IAudioContext } from './audio';
+import { PlayerAudio, IAudioGraph, IAudioContext, IAudioOptions } from './audio';
 import { PlayerRequest } from './request';
 import { PlayerError, IPlayerError } from './error';
 
@@ -99,8 +99,14 @@ export class PlayerCore {
             this._isWebAudioApiSupported = false;
         }
 
+        let audioOptions: IAudioOptions = {
+            volume: this._volume,
+            customAudioContext: this._customAudioContext,
+            customAudioGraph: this._customAudioGraph
+        };
+
         // player audio library instance
-        this._playerAudio = new PlayerAudio(this._customAudioContext, this._customAudioGraph);
+        this._playerAudio = new PlayerAudio(audioOptions);
 
     }
 
@@ -796,12 +802,20 @@ export class PlayerCore {
 
     }
 
-    public getAudioGraph(): IAudioGraph {
+    public getAudioGraph(): Promise<IAudioGraph> {
 
-        this._customAudioGraph = this._playerAudio.getAudioGraph();
+        return new Promise((resolve, reject) => {
 
-        return this._customAudioGraph;
+            this._playerAudio.getAudioGraph().then((audioGraph: IAudioGraph) => {
 
+                this._customAudioGraph = audioGraph;
+
+                resolve(audioGraph);
+
+            }).catch(reject);
+
+        });
+        
     }
 
     public setAudioContext(customAudioContext: IAudioContext) {
@@ -822,7 +836,7 @@ export class PlayerCore {
 
                 resolve(audioContext);
 
-            });
+            }).catch(reject);
 
         });
 

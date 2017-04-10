@@ -22,7 +22,10 @@ export interface IAudioContext {
 
     createBuffer(numberOfChannels: number, length: number, sampleRate: number): AudioBuffer;
     createBuffer(buffer: ArrayBuffer, mixToMono: boolean): AudioBuffer;
-    decodeAudioData(audioData: ArrayBuffer, decodeSuccessCallback?: Function, decodeErrorCallback?: Function): void;
+    // old decodeAudioData
+    //decodeAudioData(audioData: ArrayBuffer, decodeSuccessCallback?: Function, decodeErrorCallback?: Function): void;
+    // newer decodeAudioData
+    decodeAudioData(audioData: ArrayBuffer): Promise<AudioBuffer>;
     createBufferSource(): AudioBufferSourceNode;
     createMediaElementSource(mediaElement: HTMLMediaElement): MediaElementAudioSourceNode;
     createMediaStreamSource(mediaStreamMediaStream: MediaStream): MediaStreamAudioSourceNode;
@@ -86,8 +89,10 @@ export interface IAudioGraph {
     waveShaperNode?: WaveShaperNode;
 }
 
-export interface IAudioGraphOptions {
+export interface IAudioOptions {
     volume: number;
+    customAudioContext?: IAudioContext;
+    customAudioGraph?: IAudioGraph;
 }
 
 export interface ISourceNodeOptions {
@@ -97,21 +102,24 @@ export interface ISourceNodeOptions {
 
 export class PlayerAudio {
 
+    protected _volume: number;
     protected _audioContext: IAudioContext | null = null;
     protected _contextState: string;
     protected _audioGraph: IAudioGraph | null = null;
 
-    constructor(customAudioContext?: IAudioContext, customAudioGraph?: IAudioGraph) {
+    constructor(options?: IAudioOptions) {
 
         // initial context state is still "closed"
         this._contextState = 'closed';
 
-        if (customAudioContext !== undefined) {
-            this._audioContext = customAudioContext;
+        this._volume = options.volume;
+
+        if (options.customAudioContext !== undefined) {
+            this._audioContext = options.customAudioContext;
         }
 
-        if (customAudioGraph !== undefined) {
-            this._audioGraph = customAudioGraph;
+        if (options.customAudioGraph !== undefined) {
+            this._audioGraph = options.customAudioGraph;
         } else {
             this._createAudioGraph();
         }
@@ -125,9 +133,16 @@ export class PlayerAudio {
 
         return this.getAudioContext().then((audioContext: IAudioContext) => {
 
+            // Note to self:
+            // newer decodeAudioData returns promise, older accept as second
+            // and third parameter a success and an error callback funtion
+            // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/decodeAudioData
+
+            let audioBufferPromise = audioContext.decodeAudioData(arrayBuffer);
+
             // decodeAudioData returns a promise of type PromiseLike
             // using resolve to return a promise of type Promise
-            return Promise.resolve(audioContext.decodeAudioData(arrayBuffer));
+            return Promise.resolve(audioBufferPromise);
 
         });
 
@@ -159,7 +174,7 @@ export class PlayerAudio {
 
     }
 
-    public getAudioContext(): Promise<{}> {
+    public getAudioContext(): Promise<IAudioContext> {
 
         return new Promise((resolve, reject) => {
 
@@ -255,9 +270,28 @@ export class PlayerAudio {
 
     }
 
-    public getAudioGraph(): IAudioGraph {
+    public getAudioGraph(): Promise<IAudioGraph> {
 
-        return this._audioGraph;
+        return new Promise((resolve, reject) => {
+
+            if (this._audioGraph !== null) {
+
+                resolve(this._audioGraph);
+
+            } else {
+
+                this._createAudioGraph()
+                    .then((audioGraph: IAudioGraph) => {
+
+                        this._audioGraph = audioGraph;
+
+                        resolve(audioGraph);
+
+                    }).catch(reject);
+
+            }
+
+        });
 
     }
 
@@ -304,21 +338,30 @@ export class PlayerAudio {
 
     }
 
-    protected _createAudioGraph() {
+    protected _createAudioGraph(): Promise<IAudioGraph> {
 
-        this.getAudioContext().then((audioContext: IAudioContext) => {
+        return new Promise((resolve, reject) => {
 
-            if (this._audioGraph === null) {
+            this.getAudioContext().then((audioContext: IAudioContext) => {
 
-                this._audioGraph = {
-                    gainNode: audioContext.createGain()
-                };
+                if (this._audioGraph === null) {
 
-            }
+                    this._audioGraph = {
+                        gainNode: audioContext.createGain()
+                    };
 
-            // connect the gain node to the destination (speakers)
-            // https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
-            this._audioGraph.gainNode.connect(audioContext.destination);
+                }
+
+                // connect the gain node to the destination (speakers)
+                // https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
+                this._audioGraph.gainNode.connect(audioContext.destination);
+
+                // update volume
+                this.changeGainValue(this._volume);
+
+                resolve(this._audioGraph);
+
+            });
 
         });
 
@@ -344,9 +387,9 @@ export class PlayerAudio {
 
     public changeGainValue(volume: number) {
 
-        this.getAudioContext().then((audioContext: IAudioContext) => {
+        this.getAudioGraph().then((audioGraph: IAudioGraph) => {
 
-            this._audioGraph.gainNode.gain.value = volume / 100;
+            audioGraph.gainNode.gain.value = volume / 100;
 
         });
 

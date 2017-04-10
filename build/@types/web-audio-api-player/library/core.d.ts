@@ -67,7 +67,7 @@ export declare class PlayerCore {
     last(): void;
     protected _playingProgress(sound: ISound): void;
     setAudioGraph(customAudioGraph: IAudioGraph): void;
-    getAudioGraph(): IAudioGraph;
+    getAudioGraph(): Promise<IAudioGraph>;
     setAudioContext(customAudioContext: IAudioContext): void;
     getAudioContext(): Promise<IAudioContext>;
 }

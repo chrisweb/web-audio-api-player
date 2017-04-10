@@ -10,7 +10,7 @@ export interface IAudioContext {
     state: string;
     createBuffer(numberOfChannels: number, length: number, sampleRate: number): AudioBuffer;
     createBuffer(buffer: ArrayBuffer, mixToMono: boolean): AudioBuffer;
-    decodeAudioData(audioData: ArrayBuffer, decodeSuccessCallback?: Function, decodeErrorCallback?: Function): void;
+    decodeAudioData(audioData: ArrayBuffer): Promise<AudioBuffer>;
     createBufferSource(): AudioBufferSourceNode;
     createMediaElementSource(mediaElement: HTMLMediaElement): MediaElementAudioSourceNode;
     createMediaStreamSource(mediaStreamMediaStream: MediaStream): MediaStreamAudioSourceNode;
@@ -48,31 +48,34 @@ export interface IAudioGraph {
     oscillatorNode?: OscillatorNode;
     waveShaperNode?: WaveShaperNode;
 }
-export interface IAudioGraphOptions {
+export interface IAudioOptions {
     volume: number;
+    customAudioContext?: IAudioContext;
+    customAudioGraph?: IAudioGraph;
 }
 export interface ISourceNodeOptions {
     loop: boolean;
     onEnded: Function;
 }
 export declare class PlayerAudio {
+    protected _volume: number;
     protected _audioContext: IAudioContext | null;
     protected _contextState: string;
     protected _audioGraph: IAudioGraph | null;
-    constructor(customAudioContext?: IAudioContext, customAudioGraph?: IAudioGraph);
+    constructor(options?: IAudioOptions);
     decodeAudio(arrayBuffer: ArrayBuffer): Promise<AudioBuffer>;
     protected _createAudioContext(): IAudioContext;
     protected _bindContextStateListener(audioContext: IAudioContext): void;
-    getAudioContext(): Promise<{}>;
+    getAudioContext(): Promise<IAudioContext>;
     setAudioContext(audioContext: IAudioContext): void;
     protected _destroyAudioContext(): void;
     protected _unfreezeAudioContext(): Promise<void>;
     protected _freezeAudioContext(): Promise<void>;
     setAudioGraph(audioGraph: IAudioGraph): void;
-    getAudioGraph(): IAudioGraph;
+    getAudioGraph(): Promise<IAudioGraph>;
     createSourceNode(sourceNodeOptions: ISourceNodeOptions): Promise<AudioBufferSourceNode>;
     connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode): void;
-    protected _createAudioGraph(): void;
+    protected _createAudioGraph(): Promise<IAudioGraph>;
     protected _destroyAudioGraph(): void;
     destroySourceNode(sourceNode: AudioBufferSourceNode): AudioBufferSourceNode;
     changeGainValue(volume: number): void;

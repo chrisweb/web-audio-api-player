@@ -1,3 +1,4 @@
+[![Dependencies](https://david-dm.org/chrisweb/web-audio-api-player/status.svg)](https://david-dm.org/chrisweb/web-audio-api-player)
 [![Dependencies](https://david-dm.org/chrisweb/web-audio-api-player/dev-status.png)](https://david-dm.org/chrisweb/web-audio-api-player)
 [![GitHub release](https://img.shields.io/github/release/chrisweb/web-audio-api-player.svg)](https://github.com/chrisweb/web-audio-api-player/releases)
 

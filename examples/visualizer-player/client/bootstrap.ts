@@ -167,10 +167,14 @@ $(function () {
 
     let options: ICoreOptions = {
         soundsBaseUrl: 'https://mp3l.jamendo.com/?trackid=',
-        playingProgressIntervalTime: 500
+        playingProgressIntervalTime: 500,
+        //volume: 80
     };
-
+    
     let player = new PlayerCore(options);
+
+    player.setVolume(80);
+
     let visualizerAudioGraph: any = {};
 
     player.getAudioContext().then((audioContext) => {
