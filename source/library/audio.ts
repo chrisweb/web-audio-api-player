@@ -115,11 +115,11 @@ export class PlayerAudio {
         this._volume = options.volume;
 
         if (options.customAudioContext !== undefined) {
-            this._audioContext = options.customAudioContext;
+            this.setAudioContext(options.customAudioContext);
         }
 
         if (options.customAudioGraph !== undefined) {
-            this._audioGraph = options.customAudioGraph;
+            this.setAudioGraph(options.customAudioGraph);
         } else {
             this._createAudioGraph();
         }
@@ -266,7 +266,24 @@ export class PlayerAudio {
             this._destroyAudioGraph();
         }
 
-        this._audioGraph = audioGraph;
+        // check if there is gain node
+        if (!('gainNode' in audioGraph)
+            || audioGraph.gainNode === null
+            || audioGraph.gainNode === undefined) {
+
+            this.getAudioContext().then((audioContext: IAudioContext) => {
+
+                audioGraph.gainNode = audioContext.createGain();
+
+                this._audioGraph = audioGraph;
+
+            });
+
+        } else {
+
+            this._audioGraph = audioGraph;
+
+        }
 
     }
 
@@ -328,13 +345,24 @@ export class PlayerAudio {
 
         sourceNode.connect(this._audioGraph.gainNode);
 
-        if (this._audioGraph.analyserNode !== null) {
+        if ('analyserNode' in this._audioGraph
+            && this._audioGraph.analyserNode !== null
+            && this._audioGraph.analyserNode !== undefined) {
+
             sourceNode.connect(this._audioGraph.analyserNode);
+
         }
 
-        if (this._audioGraph.delayNode !== null) {
+        if ('delayNode' in this._audioGraph
+            && this._audioGraph.delayNode !== null
+            && this._audioGraph.delayNode !== undefined) {
+
             sourceNode.connect(this._audioGraph.delayNode);
+
         }
+
+        // TODO: handle other types of nodes as well
+        // do it recursivly!?
 
     }
 
@@ -344,7 +372,7 @@ export class PlayerAudio {
 
             this.getAudioContext().then((audioContext: IAudioContext) => {
 
-                if (this._audioGraph === null) {
+                if (!this._audioGraph) {
 
                     this._audioGraph = {
                         gainNode: audioContext.createGain()
