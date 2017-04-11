@@ -68,15 +68,16 @@ export declare class PlayerAudio {
     protected _bindContextStateListener(audioContext: IAudioContext): void;
     getAudioContext(): Promise<IAudioContext>;
     setAudioContext(audioContext: IAudioContext): void;
-    protected _destroyAudioContext(): void;
+    protected _setAudioContext(audioContext: IAudioContext): void;
+    protected _destroyAudioContext(): Promise<void>;
     protected _unfreezeAudioContext(): Promise<void>;
     protected _freezeAudioContext(): Promise<void>;
     setAudioGraph(audioGraph: IAudioGraph): void;
     getAudioGraph(): Promise<IAudioGraph>;
-    createSourceNode(sourceNodeOptions: ISourceNodeOptions): Promise<AudioBufferSourceNode>;
-    connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode): void;
     protected _createAudioGraph(): Promise<IAudioGraph>;
     protected _destroyAudioGraph(): void;
+    createSourceNode(sourceNodeOptions: ISourceNodeOptions): Promise<AudioBufferSourceNode>;
+    connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode): void;
     destroySourceNode(sourceNode: AudioBufferSourceNode): AudioBufferSourceNode;
     changeGainValue(volume: number): void;
 }

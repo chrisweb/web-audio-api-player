@@ -114,14 +114,25 @@ export class PlayerAudio {
 
         this._volume = options.volume;
 
-        if (options.customAudioContext !== undefined) {
+        if ('customAudioContext' in options
+            && options.customAudioContext !== null
+            && options.customAudioContext !== undefined) {
             this.setAudioContext(options.customAudioContext);
+        } else {
+            this._audioContext = this._createAudioContext();
         }
 
-        if (options.customAudioGraph !== undefined) {
+        if ('customAudioGraph' in options
+            && options.customAudioGraph !== null
+            && options.customAudioGraph !== undefined) {
             this.setAudioGraph(options.customAudioGraph);
         } else {
-            this._createAudioGraph();
+            this._createAudioGraph()
+                .then((audioGraph: IAudioGraph) => {
+
+                    this._audioGraph = audioGraph;
+
+                });
         }
 
         // TODO: to speed up things would it be better to create a context in the constructor?
@@ -152,9 +163,14 @@ export class PlayerAudio {
 
         let AudioContext = window.AudioContext || (window as any).webkitAudioContext;
 
+        // initialize the audio context
         let audioContext = new AudioContext();
 
+        // bind the listener for the context state changes
         this._bindContextStateListener(audioContext);
+
+        // set the "initial" state to running
+        this._contextState = 'running'
 
         return audioContext;
 
@@ -206,17 +222,33 @@ export class PlayerAudio {
 
     public setAudioContext(audioContext: IAudioContext): void {
 
+        if (this._audioContext !== null) {
+
+            this._destroyAudioContext().then(() => {
+
+                this._setAudioContext(audioContext);
+
+            });
+
+        } else {
+
+            this._setAudioContext(audioContext);
+
+        }
+
+    }
+
+    protected _setAudioContext(audioContext: IAudioContext) {
+
         this._audioContext = audioContext;
 
         this._bindContextStateListener(audioContext);
 
     }
 
-    protected _destroyAudioContext() {
+    protected _destroyAudioContext(): Promise<void> {
 
-        this._destroyAudioGraph();
-
-        this._audioContext.close().then(() => {
+        return this._audioContext.close().then(() => {
 
             this._audioContext = null;
 
@@ -312,6 +344,46 @@ export class PlayerAudio {
 
     }
 
+
+    protected _createAudioGraph(): Promise<IAudioGraph> {
+
+        return new Promise((resolve, reject) => {
+
+            this.getAudioContext().then((audioContext: IAudioContext) => {
+
+                if (!this._audioGraph) {
+
+                    this._audioGraph = {
+                        gainNode: audioContext.createGain()
+                    };
+
+                }
+
+                // connect the gain node to the destination (speakers)
+                // https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
+                this._audioGraph.gainNode.connect(audioContext.destination);
+
+                // update volume
+                this.changeGainValue(this._volume);
+
+                resolve(this._audioGraph);
+
+            });
+
+        });
+
+    }
+
+    protected _destroyAudioGraph(): void {
+
+        this._audioGraph.gainNode.disconnect();
+
+        // TODO: disconnect other nodes!?
+
+        this._audioGraph = null;
+
+    }
+
     public createSourceNode(sourceNodeOptions: ISourceNodeOptions): Promise<AudioBufferSourceNode> {
 
         return this.getAudioContext().then((audioContext: IAudioContext) => {
@@ -363,43 +435,6 @@ export class PlayerAudio {
 
         // TODO: handle other types of nodes as well
         // do it recursivly!?
-
-    }
-
-    protected _createAudioGraph(): Promise<IAudioGraph> {
-
-        return new Promise((resolve, reject) => {
-
-            this.getAudioContext().then((audioContext: IAudioContext) => {
-
-                if (!this._audioGraph) {
-
-                    this._audioGraph = {
-                        gainNode: audioContext.createGain()
-                    };
-
-                }
-
-                // connect the gain node to the destination (speakers)
-                // https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
-                this._audioGraph.gainNode.connect(audioContext.destination);
-
-                // update volume
-                this.changeGainValue(this._volume);
-
-                resolve(this._audioGraph);
-
-            });
-
-        });
-
-    }
-
-    protected _destroyAudioGraph(): void {
-
-        this._audioGraph.gainNode.disconnect();
-
-        this._audioGraph = null;
 
     }
 
