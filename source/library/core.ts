@@ -14,6 +14,7 @@ export interface ICoreOptions {
     playNextOnEnded?: boolean;
     audioGraph?: IAudioGraph;
     audioContext?: IAudioContext;
+    stopOnReset?: boolean;
 }
 
 export class PlayerCore {
@@ -42,6 +43,8 @@ export class PlayerCore {
     protected _customAudioGraph: IAudioGraph | null = null;
     // a custom audio context created by the user
     protected _customAudioContext: IAudioContext | null = null;
+    // stop the song currently being played on (queue) reset
+    protected _stopOnReset: boolean;
 
     // constants
     readonly WHERE_IN_QUEUE_AT_END: string = 'append';
@@ -60,7 +63,8 @@ export class PlayerCore {
             loopQueue: false,
             soundsBaseUrl: '',
             playingProgressIntervalTime: 1000,
-            playNextOnEnded: true
+            playNextOnEnded: true,
+            stopOnReset: true
         };
 
         let options = Object.assign({}, defaultOptions, playerOptions);
@@ -72,6 +76,7 @@ export class PlayerCore {
         this._playingProgressIntervalTime = options.playingProgressIntervalTime;
         this._playNextOnEnded = options.playNextOnEnded;
         this._loopQueue = options.loopQueue;
+        this._stopOnReset = options.stopOnReset;
 
         if (typeof options.audioContext !== 'undefined') {
             this._customAudioContext = options.audioContext;
@@ -167,9 +172,22 @@ export class PlayerCore {
 
     public resetQueue() {
 
+        // check if a song is getting played and stop it
+        if (this._stopOnReset) {
+
+            this.stop();
+
+        }
+
+        // TODO: destroy all the sounds or clear the cached buffers?
+
         this._queue = [];
 
-        // TODO: check if a song is getting played and stop it?
+    }
+
+    public reset() {
+
+        this.resetQueue();
 
     }
 
