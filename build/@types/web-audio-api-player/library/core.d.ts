@@ -9,6 +9,7 @@ export interface ICoreOptions {
     playNextOnEnded?: boolean;
     audioGraph?: IAudioGraph;
     audioContext?: IAudioContext;
+    stopOnReset?: boolean;
 }
 export declare class PlayerCore {
     protected _isWebAudioApiSupported: boolean;
@@ -23,6 +24,7 @@ export declare class PlayerCore {
     protected _loopQueue: boolean;
     protected _customAudioGraph: IAudioGraph | null;
     protected _customAudioContext: IAudioContext | null;
+    protected _stopOnReset: boolean;
     readonly WHERE_IN_QUEUE_AT_END: string;
     readonly WHERE_IN_QUEUE_AT_START: string;
     readonly WHERE_IN_QUEUE_AFTER_CURRENT: string;
@@ -37,6 +39,7 @@ export declare class PlayerCore {
     _prependSoundToQueue(sound: ISound): void;
     _addSoundToQueueAfterCurrent(sound: ISound): void;
     resetQueue(): void;
+    reset(): void;
     getQueue(): ISound[];
     setVolume(volume: number): void;
     getVolume(): number;
