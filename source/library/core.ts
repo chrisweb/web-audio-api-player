@@ -733,6 +733,11 @@ export class PlayerCore {
             return;
         }
 
+        if (!sound.isPlaying) {
+            // TODO: just return or throw an error
+            return;
+        }
+
         // reset the is first time sound is being played to true
         sound.firstTimePlayed = true;
 
