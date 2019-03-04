@@ -28,7 +28,17 @@ TODO write some user guide
 
 in the meantime check out what's in the examples directory (especially the [simple example](examples/simple-player) to get started)  
 
-## TODOs
+## TODOs (help wanted 😊)
+
+* create a react example
+* create a vue.js example
+* create a jquery ajax example
+* create a custom ajax example
+* create systemjs module loader example
+* create use as standalone js package
+* make player with vanilla js
+* put the web audio API player on npm
+* make people aware of the examples folder
 
 * abort the loading of the sound if the user clicks play and then pause (or stop / next / previous) before the end of the buffering process (https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort)
 * allow cross fading songs "on end" if it's the next song in a playlist
