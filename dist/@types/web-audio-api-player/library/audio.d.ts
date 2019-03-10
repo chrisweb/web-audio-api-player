@@ -1,4 +1,3 @@
-/// <reference types="webaudioapi" />
 export interface IWaveTable {
 }
 export interface IAudioContext {

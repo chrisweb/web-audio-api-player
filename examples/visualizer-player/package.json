@@ -22,22 +22,22 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "2.0.1",
+  "version": "2.0.2",
   "dependencies": {
-    "express": "^4.15.2",
-    "jquery": "^3.2.1",
-    "systemjs": "^0.19.47"
+    "express": "4.16.4",
+    "jquery": "3.3.1",
+    "systemjs": "3.0.1"
   },
   "devDependencies": {
-    "@types/express": "^4.15.3",
-    "@types/node": "^7.0.21",
-    "@types/jquery": "^2.0.45",
-    "@types/systemjs": "^0.19.33",
-    "gulp": "^3.9.1",
-    "gulp-sourcemaps": "^1.12.0",
-    "gulp-typescript": "^3.1.6",
-    "merge2": "^1.0.3",
-    "tslint": "^4.5.1",
-    "typescript": "^2.3.2"
+    "@types/express": "4.16.1",
+    "@types/node": "11.10.4",
+    "@types/jquery": "3.3.29",
+    "@types/systemjs": "0.20.6",
+    "gulp": "4.0.0",
+    "gulp-sourcemaps": "2.6.5",
+    "gulp-typescript": "5.0.0",
+    "merge2": "1.2.3",
+    "tslint": "5.13.1",
+    "typescript": "3.3.3333"
   }
 }

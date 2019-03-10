@@ -12,8 +12,12 @@
     "audio",
     "api"
   ],
-  "main": "build/index.js",
-  "types": "./build/@types/web-audio-api-player/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "files": [
+    "dist"
+  ],
+  "types": "./dist/@types/web-audio-api-player/index.d.ts",
   "license": "MIT",
   "name": "web-audio-api-player",
   "repository": {
@@ -21,19 +25,19 @@
     "url": "git+https://github.com/chrisweb/web-audio-api-player.git"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "tslint \"src/**/*.ts\"",
+    "build": "rollup -c ./scripts/dist.js",
+    "watch": "rollup -cw ./scripts/dist.js"
   },
-  "version": "0.8.4",
+  "version": "0.9.0",
   "dependencies": {
-    "@types/webaudioapi": "^0.0.27"
+    "@types/webaudioapi": "0.0.27"
   },
   "devDependencies": {
-    "gulp": "^3.9.1",
-    "gulp-sourcemaps": "^2.6.0",
-    "gulp-tslint": "^7.1.0",
-    "gulp-typescript": "^3.1.6",
-    "merge2": "^1.0.3",
-    "tslint": "^5.2.0",
-    "typescript": "^2.3.2"
+    "rollup": "^1.4.1",
+    "rollup-plugin-typescript2": "^0.19.3",
+    "tslint": "5.13.1",
+    "tslint-eslint-rules": "5.4.0",
+    "typescript": "3.3.3333"
   }
 }

@@ -170,7 +170,7 @@ export class PlayerAudio {
         this._bindContextStateListener(audioContext);
 
         // set the "initial" state to running
-        this._contextState = 'running'
+        this._contextState = 'running';
 
         return audioContext;
 

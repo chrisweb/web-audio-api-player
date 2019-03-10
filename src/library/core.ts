@@ -481,7 +481,7 @@ export class PlayerCore {
             if (sound.onPlaying !== null) {
 
                 // at interval set playing progress
-                this._playingTimeoutID = setInterval(() => {
+                this._playingTimeoutID = window.setInterval(() => {
 
                     this._playingProgress(sound);
 
@@ -815,7 +815,7 @@ export class PlayerCore {
 
         sound.onPlaying(playingPercentage, sound.audioBuffer.duration, sound.playTime);
 
-    };
+    }
 
     public setAudioGraph(customAudioGraph: IAudioGraph) {
 
@@ -838,7 +838,7 @@ export class PlayerCore {
             }).catch(reject);
 
         });
-        
+
     }
 
     public setAudioContext(customAudioContext: IAudioContext) {

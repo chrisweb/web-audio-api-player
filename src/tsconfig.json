@@ -3,21 +3,23 @@
     "declaration": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "module": "umd",
+    "module": "es6",
     "moduleResolution": "node",
-    "rootDir": "./source",
-    "outDir": "./build",
+    "rootDir": "./",
+    "outDir": "../dist",
     "inlineSourceMap": true,
-    "declarationDir": "./build/@types/web-audio-api-player",
+    "declarationDir": "../dist/@types/web-audio-api-player",
     "noImplicitAny": true,
     "noFallthroughCasesInSwitch": true,
     "skipDefaultLibCheck": true,
     "skipLibCheck": true,
-    "lib": [ "es5", "dom", "es2015" ],
+    "lib": [ "es6", "dom" ],
     "target": "es5"
   },
   "exclude": [
     "node_modules",
-    "examples"
+    "examples",
+    "scripts",
+    "dist"
   ]
 }

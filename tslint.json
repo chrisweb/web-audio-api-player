@@ -1,4 +1,5 @@
 {
+  "extends": [ "tslint-eslint-rules" ],
   "rules": {
     "class-name": true,
     "eofline": true,
