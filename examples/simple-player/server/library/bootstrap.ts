@@ -1,0 +1,61 @@
+// es6 import http://2ality.com/2014/09/es6-modules-final.html
+
+// vendor
+import express from 'express';
+
+// nodejs
+import path from 'path';
+
+// hack because __dirname is not defined
+// https://github.com/nodejs/node/issues/16844
+import { fileURLToPath } from 'url';
+
+//declare global  {
+    interface IImportMeta extends ImportMeta {
+        url: string;
+    }
+//}
+
+export class Bootstrap {
+
+    private application: express.Application;
+
+    constructor() {
+
+        // create a new expressjs application
+        this.application = express();
+
+    }
+
+    public run() {
+
+        const META = import.meta as IImportMeta;
+        const DIRNAME = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(META.url));
+        const ROOTPATH = path.join(DIRNAME, '..', '..');
+
+        this.application.use('/javascripts', express.static(ROOTPATH + '/client'));
+        this.application.use('/javascripts/vendor', express.static(ROOTPATH + '/../node_modules'));
+
+        this.application.get('/', (request: express.Request, response: express.Response) => {
+
+            // options list: http://expressjs.com/en/api.html#res.sendFile
+            let mainPageSendfileOptions = {
+                root: path.join(ROOTPATH, '..', 'html'),
+                dotfiles: 'deny',
+                headers: {
+                    'x-timestamp': Date.now(),
+                    'x-sent': true
+                }
+            };
+
+            response.sendFile('main.html', mainPageSendfileOptions);
+
+        });
+
+        let port = process.env.PORT || 35000;
+
+        this.application.listen(port, () => console.log(`Example app listening on port ${port}!`));
+
+    }
+
+}

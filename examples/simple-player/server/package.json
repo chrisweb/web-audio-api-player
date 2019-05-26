@@ -20,21 +20,21 @@
     "url": "git+https://github.com/chrisweb/web-audio-api-player.git"
   },
   "scripts": {
-    "start": "node build/server/index.js",
-    "lint:client": "tslint \"client/**/*.ts\"",
-    "lint:server": "tslint \"server/**/*.ts\"",
-    "lint": "lint:client lint:server",
-    "build:tsc": "tsc -p ./src",
-    "watch:tsc": "tsc -p ./src -w"
+    "start": "node --experimental-modules --es-module-specifier-resolution=node ./build/index",
+    "lint": "tslint -p ./",
+    "build:debug": "tsc -p ./ --listFiles --traceResolution",
+    "build": "tsc -p ./",
+    "watch": "tsc -w"
   },
-  "version": "2.0.2",
+  "version": "2.0.3",
   "dependencies": {
-    "express": "4.16.4"
+    "express": "4.17.0"
   },
   "devDependencies": {
     "@types/express": "4.16.1",
-    "@types/node": "11.10.4",
-    "tslint": "5.13.1",
-    "typescript": "3.3.3333"
-  }
+    "@types/node": "12.0.2",
+    "tslint": "5.16.0",
+    "typescript": "3.4.5"
+  },
+  "type": "module"
 }

@@ -29,7 +29,11 @@ to build the distributions (es6 module (esm.js) and the UMD version)
 
 in devlopment you can use watch to rebuild every time you edit a typescript file
 
+## development (watch)
+
 `npm run watch`
+
+## linting
 
 to lint the typescript files
 
@@ -38,6 +42,26 @@ to lint the typescript files
 ## usage
 
 the best way to get started is to check out the examples folder, start with [simple example](examples/simple-player)  
+
+## notes about problems I encountered during development
+
+### web audio api typings
+
+As of now (25.05.2019) the web audio api typings seems to be included in lib.d.ts, so removing them from package.json:
+
+```
+  "dependencies": {
+    "@types/webaudioapi": "0.0.27"
+  },
+```
+
+### tslint will be deprecated
+
+	> we plan to deprecate TSLint and focus our efforts instead on improving ESLint’s TypeScript support
+    
+[blog post](https://medium.com/palantir/tslint-in-2019-1a144c2317a9)  
+
+[ts lint will be deprecated, github ticket](https://github.com/palantir/tslint/issues/4534)  
 
 ## TODOs (help wanted 😊)
 
