@@ -45,7 +45,7 @@ the best way to get started is to check out the examples folder, start with [sim
 
 ## notes about problems I encountered during development
 
-### web audio api typings
+### web audio api typings notes
 
 As of now (25.05.2019) the web audio api typings seems to be included in lib.d.ts, so removing them from package.json:
 
@@ -55,13 +55,13 @@ As of now (25.05.2019) the web audio api typings seems to be included in lib.d.t
   },
 ```
 
-### tslint will be deprecated
+### linting setup notes
 
-	> we plan to deprecate TSLint and focus our efforts instead on improving ESLint’s TypeScript support
+	> we plan to deprecate TSLint and focus our efforts instead on improving ESLint’s TypeScript support  
     
-[blog post](https://medium.com/palantir/tslint-in-2019-1a144c2317a9)  
+Their [blog post](https://medium.com/palantir/tslint-in-2019-1a144c2317a9) announcing that [TSLint](https://github.com/palantir/tslint) will be deprecated in 2019 and you should switch to [ESLint](https://github.com/eslint/eslint) when TSLint is officially deprecated  
 
-[ts lint will be deprecated, github ticket](https://github.com/palantir/tslint/issues/4534)  
+TSlint will be deprecated [github ticket](https://github.com/palantir/tslint/issues/4534)
 
 ## TODOs (help wanted 😊)
 
