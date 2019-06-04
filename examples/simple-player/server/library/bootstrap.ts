@@ -8,6 +8,7 @@ import path from 'path';
 
 // hack because __dirname is not defined
 // https://github.com/nodejs/node/issues/16844
+// fileURLToPath got added in nodejs v10.12.0
 import { fileURLToPath } from 'url';
 
 //declare global  {
