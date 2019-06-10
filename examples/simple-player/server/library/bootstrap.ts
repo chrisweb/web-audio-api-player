@@ -8,6 +8,7 @@ import path from 'path';
 
 // hack because __dirname is not defined
 // https://github.com/nodejs/node/issues/16844
+// fileURLToPath got added in nodejs v10.12.0
 import { fileURLToPath } from 'url';
 
 //declare global  {
@@ -19,6 +20,7 @@ import { fileURLToPath } from 'url';
 export class Bootstrap {
 
     private application: express.Application;
+    private env: string;
 
     constructor() {
 
@@ -33,8 +35,12 @@ export class Bootstrap {
         const DIRNAME = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(META.url));
         const ROOTPATH = path.join(DIRNAME, '..', '..');
 
-        this.application.use('/javascripts', express.static(ROOTPATH + '/client'));
-        this.application.use('/javascripts/vendor', express.static(ROOTPATH + '/../node_modules'));
+        if (this.env === 'prod') {
+            this.application.use('/client/build', express.static(ROOTPATH + '/client'));
+        } else {
+            this.application.use('/client/src', express.static(ROOTPATH + '/client'));
+            this.application.use('/javascripts/vendor', express.static(ROOTPATH + '/../node_modules'));
+        }
 
         this.application.get('/', (request: express.Request, response: express.Response) => {
 
