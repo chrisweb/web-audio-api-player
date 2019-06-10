@@ -128,10 +128,15 @@ var PlayerAudio = /** @class */ (function () {
             return Promise.resolve(audioBufferPromise);
         });
     };
+    /*interface IWindow {
+        AudioContext: typeof AudioContext;
+        webkitAudioContext: typeof AudioContext;
+    }*/
+    //declare var window: Window;
     PlayerAudio.prototype._createAudioContext = function () {
-        var AudioContext = window.AudioContext || window.webkitAudioContext;
+        var MyAudioContext = window.AudioContext || window.webkitAudioContext;
         // initialize the audio context
-        var audioContext = new AudioContext();
+        var audioContext = new MyAudioContext();
         // bind the listener for the context state changes
         this._bindContextStateListener(audioContext);
         // set the "initial" state to running

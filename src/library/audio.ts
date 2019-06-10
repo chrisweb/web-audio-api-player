@@ -5,7 +5,7 @@ import { PlayerError, IPlayerError } from './error';
 
 // Note to self: AudioGraph documentation
 // https://developer.mozilla.org/en-US/docs/Web/API/AudioNode
-
+/*
 export interface IWaveTable {
 }
 
@@ -58,9 +58,9 @@ declare var webkitAudioContext: {
 declare var AudioContext: {
     prototype: IAudioContext;
     new (): IAudioContext;
-};
+};*/
 
-export interface IAudioGraph {
+interface IAudioGraph {
     // https://developer.mozilla.org/en-US/docs/Web/API/GainNode
     gainNode: GainNode;
     // https://developer.mozilla.org/en-US/docs/Web/API/PannerNode
@@ -89,21 +89,21 @@ export interface IAudioGraph {
     waveShaperNode?: WaveShaperNode;
 }
 
-export interface IAudioOptions {
+interface IAudioOptions {
     volume: number;
-    customAudioContext?: IAudioContext;
+    customAudioContext?: AudioContext;
     customAudioGraph?: IAudioGraph;
 }
 
-export interface ISourceNodeOptions {
+interface ISourceNodeOptions {
     loop: boolean;
     onEnded: Function;
 }
 
-export class PlayerAudio {
+class PlayerAudio {
 
     protected _volume: number;
-    protected _audioContext: IAudioContext | null = null;
+    protected _audioContext: AudioContext | null = null;
     protected _contextState: string;
     protected _audioGraph: IAudioGraph | null = null;
 
@@ -142,7 +142,7 @@ export class PlayerAudio {
 
     public decodeAudio(arrayBuffer: ArrayBuffer): Promise<AudioBuffer> {
 
-        return this.getAudioContext().then((audioContext: IAudioContext) => {
+        return this.getAudioContext().then((audioContext: AudioContext) => {
 
             // Note to self:
             // newer decodeAudioData returns promise, older accept as second
@@ -159,12 +159,19 @@ export class PlayerAudio {
 
     }
 
-    protected _createAudioContext(): IAudioContext {
+    /*interface IWindow {
+        AudioContext: typeof AudioContext;
+        webkitAudioContext: typeof AudioContext;
+    }*/
 
-        let AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    //declare var window: Window;
+
+    protected _createAudioContext(): AudioContext {
+
+        let MyAudioContext: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
 
         // initialize the audio context
-        let audioContext = new AudioContext();
+        let audioContext = new MyAudioContext();
 
         // bind the listener for the context state changes
         this._bindContextStateListener(audioContext);
@@ -176,7 +183,7 @@ export class PlayerAudio {
 
     }
 
-    protected _bindContextStateListener(audioContext: IAudioContext) {
+    protected _bindContextStateListener(audioContext: AudioContext) {
 
         audioContext.onstatechange = () => {
 
@@ -190,7 +197,7 @@ export class PlayerAudio {
 
     }
 
-    public getAudioContext(): Promise<IAudioContext> {
+    public getAudioContext(): Promise<AudioContext> {
 
         return new Promise((resolve, reject) => {
 
@@ -220,7 +227,7 @@ export class PlayerAudio {
 
     }
 
-    public setAudioContext(audioContext: IAudioContext): void {
+    public setAudioContext(audioContext: AudioContext): void {
 
         if (this._audioContext !== null) {
 
@@ -238,7 +245,7 @@ export class PlayerAudio {
 
     }
 
-    protected _setAudioContext(audioContext: IAudioContext) {
+    protected _setAudioContext(audioContext: AudioContext) {
 
         this._audioContext = audioContext;
 
@@ -303,7 +310,7 @@ export class PlayerAudio {
             || audioGraph.gainNode === null
             || audioGraph.gainNode === undefined) {
 
-            this.getAudioContext().then((audioContext: IAudioContext) => {
+            this.getAudioContext().then((audioContext: AudioContext) => {
 
                 audioGraph.gainNode = audioContext.createGain();
 
@@ -349,7 +356,7 @@ export class PlayerAudio {
 
         return new Promise((resolve, reject) => {
 
-            this.getAudioContext().then((audioContext: IAudioContext) => {
+            this.getAudioContext().then((audioContext: AudioContext) => {
 
                 if (!this._audioGraph) {
 
@@ -386,7 +393,7 @@ export class PlayerAudio {
 
     public createSourceNode(sourceNodeOptions: ISourceNodeOptions): Promise<AudioBufferSourceNode> {
 
-        return this.getAudioContext().then((audioContext: IAudioContext) => {
+        return this.getAudioContext().then((audioContext: AudioContext) => {
 
             let sourceNode = audioContext.createBufferSource();
 
@@ -459,3 +466,5 @@ export class PlayerAudio {
     }
 
 }
+
+export { PlayerAudio, IAudioGraph, IAudioOptions };

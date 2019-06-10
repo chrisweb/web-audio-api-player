@@ -3,7 +3,7 @@
   "bugs": {
     "url": "https://github.com/chrisweb/web-audio-api-player/issues"
   },
-  "description": "web audio api player",
+  "description": "web audio api player - simple example",
   "homepage": "https://github.com/chrisweb/web-audio-api-player#readme",
   "keywords": [
     "player",
@@ -12,29 +12,23 @@
     "audio",
     "api"
   ],
-  "main": "dist/index.js",
-  "module": "dist/index.esm.js",
-  "files": [
-    "dist"
-  ],
-  "types": "dist/index.d.ts",
+  "main": "build/server.js",
   "license": "MIT",
-  "name": "web-audio-api-player",
+  "name": "web-audio-api-player_simple-example",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/chrisweb/web-audio-api-player.git"
   },
   "scripts": {
-    "lint": "tslint \"src/**/*.ts\"",
-    "build": "rollup -c ./scripts/dist.js",
-    "watch": "rollup -cw ./scripts/dist.js"
+    "lint": "tslint -p ./",
+    "build:debug": "tsc -p ./ --listFiles --traceResolution",
+    "build": "tsc -p ./",
+    "watch": "tsc -w"
   },
-  "version": "0.9.1",
+  "version": "2.0.3",
+  "dependencies": {},
   "devDependencies": {
-    "rollup": "1.14.6",
-    "rollup-plugin-typescript2": "0.21.1",
     "tslint": "5.17.0",
-    "tslint-eslint-rules": "5.4.0",
     "typescript": "3.5.1"
   }
 }

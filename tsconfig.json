@@ -6,14 +6,20 @@
     "module": "es6",
     "moduleResolution": "node",
     "rootDir": "./",
-    "outDir": "../dist",
+    "outDir": "dist",
     "inlineSourceMap": true,
-    "declarationDir": "../dist/@types/web-audio-api-player",
+    "declarationDir": "dist",
     "noImplicitAny": true,
     "noFallthroughCasesInSwitch": true,
     "skipDefaultLibCheck": true,
     "skipLibCheck": true,
-    "lib": [ "es6", "dom" ],
+    "lib": [
+      "es5",
+      "es6",
+      "es7",
+      "esnext",
+      "dom"
+    ],
     "target": "es5"
   },
   "exclude": [

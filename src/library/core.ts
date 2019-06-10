@@ -2,7 +2,7 @@
 'use strict';
 
 import { PlayerSound, ISound, ISoundAttributes, ISoundSource } from './sound';
-import { PlayerAudio, IAudioGraph, IAudioContext, IAudioOptions } from './audio';
+import { PlayerAudio, IAudioGraph, IAudioOptions } from './audio';
 import { PlayerRequest } from './request';
 import { PlayerError, IPlayerError } from './error';
 
@@ -13,7 +13,7 @@ export interface ICoreOptions {
     playingProgressIntervalTime?: number;
     playNextOnEnded?: boolean;
     audioGraph?: IAudioGraph;
-    audioContext?: IAudioContext;
+    audioContext?: AudioContext;
     stopOnReset?: boolean;
 }
 
@@ -42,7 +42,7 @@ export class PlayerCore {
     // a custon audioGraph created by the user
     protected _customAudioGraph: IAudioGraph | null = null;
     // a custom audio context created by the user
-    protected _customAudioContext: IAudioContext | null = null;
+    protected _customAudioContext: AudioContext | null = null;
     // stop the song currently being played on (queue) reset
     protected _stopOnReset: boolean;
 
@@ -841,7 +841,7 @@ export class PlayerCore {
 
     }
 
-    public setAudioContext(customAudioContext: IAudioContext) {
+    public setAudioContext(customAudioContext: AudioContext) {
 
         this._playerAudio.setAudioContext(customAudioContext);
 
@@ -849,11 +849,11 @@ export class PlayerCore {
 
     }
 
-    public getAudioContext(): Promise<IAudioContext> {
+    public getAudioContext(): Promise<AudioContext> {
 
         return new Promise((resolve, reject) => {
 
-            this._playerAudio.getAudioContext().then((audioContext: IAudioContext) => {
+            this._playerAudio.getAudioContext().then((audioContext: AudioContext) => {
 
                 this._customAudioContext = audioContext;
 

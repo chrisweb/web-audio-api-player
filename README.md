@@ -55,6 +55,10 @@ As of now (25.05.2019) the web audio api typings seems to be included in lib.d.t
   },
 ```
 
+Unfortunatly the defined window does not have AudioContext:  
+check out [[open] github ticket (as of 06/2019)](https://github.com/microsoft/TypeScript/issues/31686)  
+the current [dom.d.ts on github](https://github.com/microsoft/TypeScript/blob/master/src/lib/dom.generated.d.ts)  
+
 ### tslint will be deprecated
 
 	> we plan to deprecate TSLint and focus our efforts instead on improving ESLint’s TypeScript support

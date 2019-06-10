@@ -1,8 +1,8 @@
 ﻿
-import { PlayerCore } from 'web-audio-api-player';
+//import { PlayerCore } from 'web-audio-api-player';
 
-export class PlayerUI {
-
+class PlayerUI {
+/*
     public player: PlayerCore;
 
     protected _buttonsBox: HTMLElement;
@@ -197,5 +197,7 @@ export class PlayerUI {
         this._destroyListeners();
 
     }
-
+*/
 }
+
+export { PlayerUI };

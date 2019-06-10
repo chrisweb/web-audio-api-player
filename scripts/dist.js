@@ -17,7 +17,7 @@ export default {
   ],
 plugins: [
     typescript({
-        tsconfig: "src/tsconfig.json",
+        tsconfig: "tsconfig.json",
         useTsconfigDeclarationDir: true
     }),
   ],

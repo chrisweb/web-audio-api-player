@@ -1,16 +1,13 @@
 
 'use strict';
 
-// vendor (node_modules)
-import * as $ from 'jquery';
-
 // player build
-import { PlayerCore, ICoreOptions, PlayerSound, ISoundAttributes } from 'web-audio-api-player';
+import { PlayerCore, PlayerSound } from 'web-audio-api-player/index.esm.js';
 
 // library
 import { PlayerUI } from './library/player/ui';
 
-$(function () {
+/*$(function () {
 
     let options: ICoreOptions = {
         soundsBaseUrl: 'https://mp3l.jamendo.com/?trackid=',
@@ -127,3 +124,4 @@ $(function () {
     // TODO: cache buffer in indexed db or just keep "in memory"?
 
 });
+*/

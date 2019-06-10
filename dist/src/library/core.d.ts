@@ -1,5 +1,5 @@
 import { ISound, ISoundAttributes, ISoundSource } from './sound';
-import { PlayerAudio, IAudioGraph, IAudioContext } from './audio';
+import { PlayerAudio, IAudioGraph } from './audio';
 import { PlayerError } from './error';
 export interface ICoreOptions {
     volume?: number;
@@ -8,7 +8,7 @@ export interface ICoreOptions {
     playingProgressIntervalTime?: number;
     playNextOnEnded?: boolean;
     audioGraph?: IAudioGraph;
-    audioContext?: IAudioContext;
+    audioContext?: AudioContext;
     stopOnReset?: boolean;
 }
 export declare class PlayerCore {
@@ -23,7 +23,7 @@ export declare class PlayerCore {
     protected _playNextOnEnded: boolean;
     protected _loopQueue: boolean;
     protected _customAudioGraph: IAudioGraph | null;
-    protected _customAudioContext: IAudioContext | null;
+    protected _customAudioContext: AudioContext | null;
     protected _stopOnReset: boolean;
     readonly WHERE_IN_QUEUE_AT_END: string;
     readonly WHERE_IN_QUEUE_AT_START: string;
@@ -71,6 +71,6 @@ export declare class PlayerCore {
     protected _playingProgress(sound: ISound): void;
     setAudioGraph(customAudioGraph: IAudioGraph): void;
     getAudioGraph(): Promise<IAudioGraph>;
-    setAudioContext(customAudioContext: IAudioContext): void;
-    getAudioContext(): Promise<IAudioContext>;
+    setAudioContext(customAudioContext: AudioContext): void;
+    getAudioContext(): Promise<AudioContext>;
 }
