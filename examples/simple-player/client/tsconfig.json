@@ -14,11 +14,11 @@
         "dom"
       ],
       "baseUrl": ".",
-      "paths": {
+      /*"paths": {
         "web-audio-api-player": [
           "../../../dist/*"
         ]
-      },
+      },*/
       "jsx": "react",
       "allowJs": false,
       "declaration": true,

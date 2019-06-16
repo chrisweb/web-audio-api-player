@@ -5,7 +5,7 @@
     "emitDecoratorMetadata": true,
     "module": "es6",
     "moduleResolution": "node",
-    "rootDir": "./",
+    "rootDir": "./src",
     "outDir": "dist",
     "inlineSourceMap": true,
     "declarationDir": "dist",
