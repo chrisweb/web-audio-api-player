@@ -35,12 +35,8 @@ export class Bootstrap {
         const DIRNAME = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(META.url));
         const ROOTPATH = path.join(DIRNAME, '..', '..');
 
-        if (this.env === 'prod') {
-            this.application.use('/client/build', express.static(ROOTPATH + '/client'));
-        } else {
-            this.application.use('/client/src', express.static(ROOTPATH + '/client'));
-            this.application.use('/javascripts/vendor', express.static(ROOTPATH + '/../node_modules'));
-        }
+        this.application.use('/client', express.static(ROOTPATH + '/../client/build'));
+        //this.application.use('/javascripts/vendor', express.static(ROOTPATH + '/../node_modules'));
 
         this.application.get('/', (request: express.Request, response: express.Response) => {
 

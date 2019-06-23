@@ -20,6 +20,19 @@ update npm to latest version
 
 install the server dependencies  
 
+### build the client
+
+```
+cd client
+npm install
+```
+
+build the client  
+
+`npm run build`
+
+### build the server
+
 ```
 cd server
 npm install

@@ -21,22 +21,7 @@
             display: none;
         }
     </style>
-    <script src="./javascripts/vendor/systemjs/dist/system.js"></script>
-    <script>
-        SystemJS.config({
-            baseURL: './javascripts',
-            packages: {
-                '.': {
-                    defaultJSExtensions: 'js'
-                }
-            },
-            map: {
-                'jquery': 'vendor/jquery/dist/jquery.js',
-                'web-audio-api-player': 'vendor/web-audio-api-player/index.js'
-            }
-        });
-        SystemJS.import('bootstrap.js');
-    </script>
+    <script src="client/bootstrap.js" type="module"></script>
 </head>
 <body>
 

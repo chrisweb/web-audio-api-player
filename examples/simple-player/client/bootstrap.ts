@@ -2,14 +2,11 @@
 'use strict';
 
 // player build
-import { PlayerCore, PlayerSound } from '../../../dist/index';
+import { PlayerCore, PlayerSound, ICoreOptions } from '../../../dist/index';
 
 // library
 import { PlayerUI } from './library/player/ui';
 
-
-
-/*
 let options: ICoreOptions = {
     soundsBaseUrl: 'https://mp3l.jamendo.com/?trackid=',
     playingProgressIntervalTime: 500
@@ -17,6 +14,13 @@ let options: ICoreOptions = {
 
 let player = new PlayerCore(options);
 let playerUI = new PlayerUI(player);
+
+
+
+/*
+
+
+
 
 let firstSoundAttributes: ISoundAttributes = {
     sources: '1314412&format=mp31',

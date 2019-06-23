@@ -5,13 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch via npm",
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
-            "program": "${workspaceFolder}\\dist\\index.js",
-            "outFiles": [
-                "${workspaceFolder}/**/*.js"
-            ]
+            "cwd": "${workspaceFolder}\\examples\\simple-player\\server",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run-script", "debug"
+            ],
+            "port": 9229
         }
     ]
 }

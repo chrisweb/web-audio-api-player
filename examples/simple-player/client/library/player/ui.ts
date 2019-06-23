@@ -1,9 +1,31 @@
 ﻿
 //import { PlayerCore } from 'web-audio-api-player';
+import { PlayerCore } from '../../../../../dist/index';
 
 class PlayerUI {
-/*
+
     public player: PlayerCore;
+
+    protected _buttonsBox: HTMLElement;
+
+    constructor(player: PlayerCore) {
+
+        this.player = player;
+
+        this.prepareUI();
+
+    }
+
+    private prepareUI() {
+
+        // buttons box
+        this._buttonsBox = document.getElementById('js-buttons-box');
+
+    }
+
+}
+
+/*
 
     protected _buttonsBox: HTMLElement;
     protected _volumeSlider: HTMLInputElement;
@@ -14,7 +36,7 @@ class PlayerUI {
 
         // compatibility goal: minimum IE11
 
-        this.player = player;
+
 
         // buttons box
         this._buttonsBox = document.getElementById('js-buttons-box');
@@ -191,13 +213,13 @@ class PlayerUI {
         this._playingProgressBar.value = percentage.toString();
 
     }
-    
+
     public deconstructor() {
 
         this._destroyListeners();
 
     }
 */
-}
+
 
 export { PlayerUI };
