@@ -2,10 +2,10 @@
 'use strict';
 
 // player build
-import { PlayerCore, PlayerSound, ICoreOptions } from '../../../dist/index';
+import { PlayerCore, PlayerSound, ICoreOptions } from '../../../dist/index.js';
 
 // library
-import { PlayerUI } from './library/player/ui';
+import { PlayerUI } from './library/player/ui.js';
 
 let options: ICoreOptions = {
     soundsBaseUrl: 'https://mp3l.jamendo.com/?trackid=',

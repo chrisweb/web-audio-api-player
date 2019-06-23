@@ -36,7 +36,7 @@ export class Bootstrap {
         const ROOTPATH = path.join(DIRNAME, '..', '..');
 
         this.application.use('/client', express.static(ROOTPATH + '/../client/build'));
-        //this.application.use('/javascripts/vendor', express.static(ROOTPATH + '/../node_modules'));
+        this.application.use('/dist', express.static(ROOTPATH + '/../../../dist'));
 
         this.application.get('/', (request: express.Request, response: express.Response) => {
 
