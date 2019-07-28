@@ -28,10 +28,10 @@ export declare class PlayerCore {
     readonly WHERE_IN_QUEUE_AT_END: string;
     readonly WHERE_IN_QUEUE_AT_START: string;
     readonly WHERE_IN_QUEUE_AFTER_CURRENT: string;
-    readonly PLAY_SOUND_NEXT = "next";
-    readonly PLAY_SOUND_PREVIOUS = "previous";
-    readonly PLAY_SOUND_FIRST = "first";
-    readonly PLAY_SOUND_LAST = "last";
+    readonly PLAY_SOUND_NEXT = 'next';
+    readonly PLAY_SOUND_PREVIOUS = 'previous';
+    readonly PLAY_SOUND_FIRST = 'first';
+    readonly PLAY_SOUND_LAST = 'last';
     constructor(playerOptions?: ICoreOptions);
     protected _initialize(): void;
     addSoundToQueue(soundAttributes: ISoundAttributes, whereInQueue?: string): ISound;

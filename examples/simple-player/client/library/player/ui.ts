@@ -7,36 +7,21 @@ class PlayerUI {
     public player: PlayerCore;
 
     protected _buttonsBox: HTMLElement;
-
-    constructor(player: PlayerCore) {
-
-        this.player = player;
-
-        this.prepareUI();
-
-    }
-
-    private prepareUI() {
-
-        // buttons box
-        this._buttonsBox = document.getElementById('js-buttons-box');
-
-    }
-
-}
-
-/*
-
-    protected _buttonsBox: HTMLElement;
     protected _volumeSlider: HTMLInputElement;
     protected _loadingProgressBar: HTMLInputElement;
     protected _playingProgressBar: HTMLInputElement;
 
     constructor(player: PlayerCore) {
 
-        // compatibility goal: minimum IE11
+        this.player = player;
 
+        this._prepareUI();
 
+    }
+
+    protected _prepareUI() {
+
+        // NOTE TO SELF: compatibility goal: minimum IE11
 
         // buttons box
         this._buttonsBox = document.getElementById('js-buttons-box');
@@ -53,8 +38,9 @@ class PlayerUI {
         // start listening to events
         this._createListeners();
 
-        // set the initial volume volume to the volume input range
+        // set the initial volume to the volume input range
         this._volumeSlider.value = String(this.player.getVolume());
+        // TODO: use the localstorage or indexeddb to persist the user volume
 
     }
 
@@ -94,20 +80,18 @@ class PlayerUI {
                     break;
             }
 
-            this.switchPlayerContext(playerContext);
+            this._switchPlayerContext(playerContext);
 
         }
 
         if ($button.id === 'js-previous-button') {
 
-            this.setPlayingProgress(0);
+            this._setPlayingProgress(0);
 
             let playerContext = this._buttonsBox.dataset['playerContext'];
 
             if (playerContext === 'off') {
-
-                this.switchPlayerContext(playerContext);
-
+                this._switchPlayerContext(playerContext);
             }
 
             this.player.play('previous');
@@ -116,14 +100,12 @@ class PlayerUI {
 
         if ($button.id === 'js-next-button') {
 
-            this.setPlayingProgress(0);
+            this._setPlayingProgress(0);
 
             let playerContext = this._buttonsBox.dataset['playerContext'];
 
             if (playerContext === 'off') {
-
-                this.switchPlayerContext(playerContext);
-
+                this._switchPlayerContext(playerContext);
             }
 
             this.player.play('next');
@@ -141,31 +123,6 @@ class PlayerUI {
             // TODO
 
         }
-
-    }
-
-    public switchPlayerContext(currentPlayerContext: string) {
-
-        let $playIcon = document.getElementById('js-play');
-        let $pauseIcon = document.getElementById('js-pause');
-        let newPlayerContext;
-
-        switch (currentPlayerContext) {
-            // is playing
-            case 'on':
-                newPlayerContext = 'off';
-                $playIcon.classList.remove('hidden');
-                $pauseIcon.classList.add('hidden');
-                break;
-            // is paused
-            case 'off':
-                newPlayerContext = 'on';
-                $playIcon.classList.add('hidden');
-                $pauseIcon.classList.remove('hidden');
-                break;
-        }
-
-        this._buttonsBox.dataset['playerContext'] = newPlayerContext;
 
     }
 
@@ -190,6 +147,61 @@ class PlayerUI {
 
     }
 
+    protected _switchPlayerContext(currentPlayerContext: string) {
+
+        let $playIcon = document.getElementById('js-play');
+        let $pauseIcon = document.getElementById('js-pause');
+        let newPlayerContext;
+
+        switch (currentPlayerContext) {
+            // is playing
+            case 'on':
+                newPlayerContext = 'off';
+                $playIcon.classList.remove('hidden');
+                $pauseIcon.classList.add('hidden');
+                break;
+            // is paused
+            case 'off':
+                newPlayerContext = 'on';
+                $playIcon.classList.add('hidden');
+                $pauseIcon.classList.remove('hidden');
+                break;
+        }
+
+        this._buttonsBox.dataset['playerContext'] = newPlayerContext;
+
+    }
+
+    protected _setPlayingProgress(percentage: number) {
+
+        this._playingProgressBar.value = percentage.toString();
+
+    }
+
+    protected _setLoadingProgress(percentage: number) {
+
+        this._loadingProgressBar.value = percentage.toString();
+
+    }
+
+    public changePlayingProgress(percentage: number) {
+
+        this._setPlayingProgress(percentage);
+
+    }
+
+    public changeLoadingProgress(percentage: number) {
+
+        this._setLoadingProgress(percentage);
+
+    }
+
+    public resetUI() {
+
+        this._switchPlayerContext('on');
+
+    }
+
     protected _destroyListeners() {
 
         this._buttonsBox.removeEventListener('click', this._onClickButtonsBox.bind(this));
@@ -202,24 +214,12 @@ class PlayerUI {
 
     }
 
-    public setLoadingProgress(percentage: number) {
-
-        this._loadingProgressBar.value = percentage.toString();
-
-    }
-
-    public setPlayingProgress(percentage: number) {
-
-        this._playingProgressBar.value = percentage.toString();
-
-    }
-
     public deconstructor() {
 
         this._destroyListeners();
 
     }
-*/
 
+}
 
 export { PlayerUI };

@@ -2,7 +2,7 @@
 'use strict';
 
 // player build
-import { PlayerCore, PlayerSound, ICoreOptions } from '../../../dist/index.js';
+import { PlayerCore, ISoundAttributes, ICoreOptions } from '../../../dist/index.js';
 
 // library
 import { PlayerUI } from './library/player/ui.js';
@@ -15,24 +15,17 @@ let options: ICoreOptions = {
 let player = new PlayerCore(options);
 let playerUI = new PlayerUI(player);
 
-
-
-/*
-
-
-
-
 let firstSoundAttributes: ISoundAttributes = {
     sources: '1314412&format=mp31',
     id: 1314412,
     playlistId: 0,
     onLoading: (loadingProgress, maximumValue, currentValue) => {
         console.log('loading: ', loadingProgress, maximumValue, currentValue);
-        playerUI.setLoadingProgress(loadingProgress);
+        playerUI.changeLoadingProgress(loadingProgress);
     },
     onPlaying: (playingProgress, maximumValue, currentValue) => {
         console.log('playing: ', playingProgress, maximumValue, currentValue);
-        playerUI.setPlayingProgress(playingProgress);
+        playerUI.changePlayingProgress(playingProgress);
     },
     onStarted: (playTimeOffset) => {
         console.log('started', playTimeOffset);
@@ -49,7 +42,7 @@ let firstSoundAttributes: ISoundAttributes = {
     onEnded: (willPlayNext) => {
         console.log('ended', willPlayNext);
         if (!willPlayNext) {
-            playerUI.switchPlayerContext('on');
+            playerUI.resetUI();
         }
     }
 };
@@ -63,11 +56,11 @@ let secondSoundAttributes: ISoundAttributes = {
     playlistId: 0,
     onLoading: (loadingProgress, maximumValue, currentValue) => {
         console.log('loading: ', loadingProgress, maximumValue, currentValue);
-        playerUI.setLoadingProgress(loadingProgress);
+        playerUI.changeLoadingProgress(loadingProgress);
     },
     onPlaying: (playingProgress, maximumValue, currentValue) => {
         console.log('playing: ', playingProgress, maximumValue, currentValue);
-        playerUI.setPlayingProgress(playingProgress);
+        playerUI.changePlayingProgress(playingProgress);
     },
     onStarted: (playTimeOffset) => {
         console.log('started', playTimeOffset);
@@ -84,14 +77,14 @@ let secondSoundAttributes: ISoundAttributes = {
     onEnded: (willPlayNext) => {
         console.log('ended', willPlayNext);
         if (!willPlayNext) {
-            playerUI.switchPlayerContext('on');
+            playerUI.resetUI();
         }
     }
 };
 
 // add another song
 let secondSound = player.addSoundToQueue(secondSoundAttributes);
-*/
+
 
 
 

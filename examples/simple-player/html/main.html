@@ -44,8 +44,9 @@
             <button id="js-repeat-button" class="button">R</button>
         </div>
 
-        <input type="range" min="0" max="100" value="0" step="1" id="js-player-loading-progress" />
+        <progress max="100" value="0" id="js-player-loading-progress"></progress>
 
+        <!-- NOTE TO SELF: I use the range element instead of progress to allow the user to interact with it -->
         <input type="range" min="0" max="100" value="0" step="1" id="js-player-playing-progress" />
 
         <input type="range" min="0" max="100" value="0" step="1" id="js-player-volume" />
