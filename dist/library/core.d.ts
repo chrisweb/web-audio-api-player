@@ -28,10 +28,10 @@ export declare class PlayerCore {
     readonly WHERE_IN_QUEUE_AT_END: string;
     readonly WHERE_IN_QUEUE_AT_START: string;
     readonly WHERE_IN_QUEUE_AFTER_CURRENT: string;
-    readonly PLAY_SOUND_NEXT = 'next';
-    readonly PLAY_SOUND_PREVIOUS = 'previous';
-    readonly PLAY_SOUND_FIRST = 'first';
-    readonly PLAY_SOUND_LAST = 'last';
+    readonly PLAY_SOUND_NEXT = "next";
+    readonly PLAY_SOUND_PREVIOUS = "previous";
+    readonly PLAY_SOUND_FIRST = "first";
+    readonly PLAY_SOUND_LAST = "last";
     constructor(playerOptions?: ICoreOptions);
     protected _initialize(): void;
     addSoundToQueue(soundAttributes: ISoundAttributes, whereInQueue?: string): ISound;
@@ -48,8 +48,8 @@ export declare class PlayerCore {
     setPositionInSeconds(soundPositionInSeconds: number): void;
     protected _loadSound(sound: ISound): Promise<ISound | PlayerError>;
     protected _decodeSound(sound: ISound, resolve: Function, reject: Function): void;
-    play(whichSound?: number | string | undefined, playTimeOffset?: number): void;
-    protected _play(sound: ISound): void;
+    play(whichSound?: number | string | undefined, playTimeOffset?: number): boolean;
+    protected _play(sound: ISound): boolean;
     protected _onEnded(): void;
     /**
      * whichSound is optional, if set it can be the sound id or if it's

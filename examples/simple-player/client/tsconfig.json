@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
       "outDir": "build/",
-      "rootDir": "./",
+      "rootDir": "./src",
       "sourceMap": true,
       "inlineSources": true,
       "noImplicitAny": true,

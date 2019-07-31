@@ -1,33 +1,33 @@
 {
-  "author": "chrisweb <chris963@gmail.com> (https://chris.lu)",
+  "name": "web-audio-api-player_simple-player_example_server",
+  "version": "3.0.5",
+  "description": "web audio api player simple player example server",
+  "keywords": [
+    "api",
+    "audio",
+    "javascript",
+    "player",
+    "web"
+  ],
+  "homepage": "https://github.com/chrisweb/web-audio-api-player#readme",
   "bugs": {
     "url": "https://github.com/chrisweb/web-audio-api-player/issues"
   },
-  "description": "web audio api player - simple example",
-  "homepage": "https://github.com/chrisweb/web-audio-api-player#readme",
-  "keywords": [
-    "player",
-    "javascript",
-    "web",
-    "audio",
-    "api"
-  ],
-  "main": "build/server.js",
-  "license": "MIT",
-  "name": "web-audio-api-player_simple-example",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/chrisweb/web-audio-api-player.git"
   },
+  "license": "MIT",
+  "author": "chrisweb <chris963@gmail.com> (https://chris.lu)",
+  "main": "build/bootstrap.js",
   "scripts": {
-    "start": "node --experimental-modules --es-module-specifier-resolution=node ./build/index",
-    "debug": "node --experimental-modules --es-module-specifier-resolution=node --nolazy --inspect-brk=9229 ./build/index",
-    "lint": "tslint -p ./",
-    "build:debug": "tsc -p ./ --listFiles --traceResolution",
     "build": "tsc -p ./",
+    "build:debug": "tsc -p ./ --listFiles --traceResolution",
+    "debug": "node --experimental-modules --es-module-specifier-resolution=node --nolazy --inspect-brk=9229 ./build/bootstrap",
+    "lint": "tslint -p ./",
+    "start": "node --experimental-modules --es-module-specifier-resolution=node ./build/bootstrap",
     "watch": "tsc -w"
   },
-  "version": "3.0.5",
   "dependencies": {
     "express": "4.17.1"
   },

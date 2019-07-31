@@ -378,7 +378,7 @@ export class PlayerCore {
 
     }
 
-    public play(whichSound?: number | string | undefined, playTimeOffset?: number): void {
+    public play(whichSound?: number | string | undefined, playTimeOffset?: number): boolean {
 
         // TODO: check the available codecs and defined sources, play the first one that has matches and available codec
         // TODO: let user define order of preferred codecs for playerback
@@ -400,7 +400,7 @@ export class PlayerCore {
         // if there is no sound we could play, do nothing
         if (sound === null) {
 
-            return;
+            return false;
 
             // TODO: throw an error?
 
@@ -418,7 +418,7 @@ export class PlayerCore {
 
             this._loadSound(sound).then(() => {
 
-                this._play(sound);
+                return this._play(sound);
 
             }).catch((error) => {
 
@@ -428,13 +428,13 @@ export class PlayerCore {
 
         } else {
 
-            this._play(sound);
+            return this._play(sound);
 
         }
 
     }
 
-    protected _play(sound: ISound) {
+    protected _play(sound: ISound): boolean {
 
         // source node options
         let sourceNodeOptions = {
@@ -498,6 +498,8 @@ export class PlayerCore {
             // TODO: handle error
 
         });
+
+        return true;
 
     }
 

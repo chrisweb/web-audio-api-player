@@ -1,6 +1,6 @@
 ﻿
 //import { PlayerCore } from 'web-audio-api-player';
-import { PlayerCore } from '../../../../../dist/index.js';
+import { PlayerCore } from '../../../../../../dist/index';
 
 class PlayerUI {
 

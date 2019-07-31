@@ -2,7 +2,7 @@
 'use strict';
 
 // player build
-import { PlayerCore, ISoundAttributes, ICoreOptions } from '../../../dist/index.js';
+import { PlayerCore, ISoundAttributes, ICoreOptions } from '../../../../dist/index.js';
 
 // library
 import { PlayerUI } from './library/player/ui.js';

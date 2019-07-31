@@ -17,7 +17,7 @@ import { fileURLToPath } from 'url';
     }
 //}
 
-export class Bootstrap {
+export class Server {
 
     private application: express.Application;
     private env: string;
