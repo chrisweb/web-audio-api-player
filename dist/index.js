@@ -614,38 +614,38 @@ var PlayerCore = /** @class */ (function () {
         });
     };
     PlayerCore.prototype.play = function (whichSound, playTimeOffset) {
-        // TODO: check the available codecs and defined sources, play the first one that has matches and available codec
-        // TODO: let user define order of preferred codecs for playerback
         var _this = this;
-        // get the current sound if any
-        var currentSound = this._getSoundFromQueue();
-        // if there is a sound currently being played
-        if (currentSound !== null && currentSound.isPlaying) {
-            // stop the current sound
-            this.stop();
-        }
-        // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
-        var sound = this._getSoundFromQueue(whichSound);
-        // if there is no sound we could play, do nothing
-        if (sound === null) {
-            return;
-            // TODO: throw an error?
-        }
-        // if the user wants to play the sound from a certain position
-        if (playTimeOffset !== undefined) {
-            sound.playTimeOffset = playTimeOffset;
-        }
-        // has the sound already been loaded?
-        if (!sound.isBuffered) {
-            this._loadSound(sound).then(function () {
-                _this._play(sound);
-            }).catch(function (error) {
-                // TODO: handle error
-            });
-        }
-        else {
-            this._play(sound);
-        }
+        return new Promise(function (resolve, reject) {
+            // TODO: check the available codecs and defined sources, play the first one that has matches and available codec
+            // TODO: let user define order of preferred codecs for playerback
+            // get the current sound if any
+            var currentSound = _this._getSoundFromQueue();
+            // if there is a sound currently being played
+            if (currentSound !== null && currentSound.isPlaying) {
+                // stop the current sound
+                _this.stop();
+            }
+            // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
+            var sound = _this._getSoundFromQueue(whichSound);
+            // if there is no sound we could play, do nothing
+            if (sound === null) {
+                throw new Error('no more sounds in array');
+                // TODO: throw an error?
+            }
+            // if the user wants to play the sound from a certain position
+            if (playTimeOffset !== undefined) {
+                sound.playTimeOffset = playTimeOffset;
+            }
+            // has the sound already been loaded?
+            if (!sound.isBuffered) {
+                _this._loadSound(sound).then(function () {
+                    return _this._play(sound).then(resolve).catch(reject);
+                }).catch(reject);
+            }
+            else {
+                _this._play(sound).then(resolve).catch(reject);
+            }
+        });
     };
     PlayerCore.prototype._play = function (sound) {
         var _this = this;
@@ -657,7 +657,7 @@ var PlayerCore = /** @class */ (function () {
             }
         };
         // create a new source node
-        this._playerAudio.createSourceNode(sourceNodeOptions).then(function (sourceNode) {
+        return this._playerAudio.createSourceNode(sourceNodeOptions).then(function (sourceNode) {
             sound.isPlaying = true;
             sound.sourceNode = sourceNode;
             // add the buffer to the source node

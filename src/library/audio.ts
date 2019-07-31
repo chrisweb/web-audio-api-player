@@ -183,7 +183,7 @@ class PlayerAudio {
 
     }
 
-    protected _bindContextStateListener(audioContext: AudioContext) {
+    protected _bindContextStateListener(audioContext: AudioContext): void {
 
         audioContext.onstatechange = () => {
 
@@ -395,7 +395,7 @@ class PlayerAudio {
 
         return this.getAudioContext().then((audioContext: AudioContext) => {
 
-            let sourceNode = audioContext.createBufferSource();
+            let sourceNode: AudioBufferSourceNode = audioContext.createBufferSource();
 
             // do we loop this song
             sourceNode.loop = sourceNodeOptions.loop;

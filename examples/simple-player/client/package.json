@@ -3,11 +3,17 @@
   "version": "3.0.5",
   "description": "web audio api player simple player example server client",
   "keywords": [
-    "api",
+    "web",
     "audio",
+    "api",
     "javascript",
+    "typescript",
     "player",
-    "web"
+    "promises",
+    "event-driven",
+    "play",
+    "sound",
+    "playlist"
   ],
   "homepage": "https://github.com/chrisweb/web-audio-api-player#readme",
   "bugs": {

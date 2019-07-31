@@ -94,7 +94,13 @@ class PlayerUI {
                 this._switchPlayerContext(playerContext);
             }
 
-            this.player.play('previous');
+            this.player.play('previous').catch((error) => {
+                let playerContext = this._buttonsBox.dataset['playerContext'];
+                console.log('player ui js-previous-button error:', error);
+                if (playerContext === 'on') {
+                    this._switchPlayerContext(playerContext);
+                }
+            });
 
         }
 
@@ -108,7 +114,13 @@ class PlayerUI {
                 this._switchPlayerContext(playerContext);
             }
 
-            this.player.play('next');
+            this.player.play('next').catch((error) => {
+                let playerContext = this._buttonsBox.dataset['playerContext'];
+                console.log('player ui js-next-button error:', error);
+                if (playerContext === 'on') {
+                    this._switchPlayerContext(playerContext);
+                }
+            });
 
         }
 

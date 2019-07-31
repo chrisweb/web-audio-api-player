@@ -3,11 +3,17 @@
   "version": "1.0.0",
   "description": "web audio api player",
   "keywords": [
-    "api",
+    "web",
     "audio",
+    "api",
     "javascript",
+    "typescript",
     "player",
-    "web"
+    "promises",
+    "event-driven",
+    "play",
+    "sound",
+    "playlist"
   ],
   "homepage": "https://github.com/chrisweb/web-audio-api-player#readme",
   "bugs": {

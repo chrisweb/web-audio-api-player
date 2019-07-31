@@ -378,63 +378,63 @@ export class PlayerCore {
 
     }
 
-    public play(whichSound?: number | string | undefined, playTimeOffset?: number): void {
+    public play(whichSound?: number | string | undefined, playTimeOffset?: number): Promise<void> {
 
-        // TODO: check the available codecs and defined sources, play the first one that has matches and available codec
-        // TODO: let user define order of preferred codecs for playerback
+        return new Promise((resolve, reject) => {
 
-        // get the current sound if any
-        let currentSound = this._getSoundFromQueue();
+            // TODO: check the available codecs and defined sources, play the first one that has matches and available codec
+            // TODO: let user define order of preferred codecs for playerback
 
-        // if there is a sound currently being played
-        if (currentSound !== null && currentSound.isPlaying) {
+            // get the current sound if any
+            let currentSound = this._getSoundFromQueue();
 
-            // stop the current sound
-            this.stop();
+            // if there is a sound currently being played
+            if (currentSound !== null && currentSound.isPlaying) {
 
-        }
+                // stop the current sound
+                this.stop();
 
-        // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
-        let sound = this._getSoundFromQueue(whichSound);
+            }
 
-        // if there is no sound we could play, do nothing
-        if (sound === null) {
+            // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
+            let sound = this._getSoundFromQueue(whichSound);
 
-            return;
+            // if there is no sound we could play, do nothing
+            if (sound === null) {
 
-            // TODO: throw an error?
+                throw new Error('no more sounds in array');
 
-        }
+                // TODO: throw an error?
 
-        // if the user wants to play the sound from a certain position
-        if (playTimeOffset !== undefined) {
+            }
 
-            sound.playTimeOffset = playTimeOffset;
+            // if the user wants to play the sound from a certain position
+            if (playTimeOffset !== undefined) {
 
-        }
+                sound.playTimeOffset = playTimeOffset;
 
-        // has the sound already been loaded?
-        if (!sound.isBuffered) {
+            }
 
-            this._loadSound(sound).then(() => {
+            // has the sound already been loaded?
+            if (!sound.isBuffered) {
 
-                this._play(sound);
+                this._loadSound(sound).then(() => {
 
-            }).catch((error) => {
+                    return this._play(sound).then(resolve).catch(reject);
 
-                // TODO: handle error
+                }).catch(reject);
 
-            });
+            } else {
 
-        } else {
+                this._play(sound).then(resolve).catch(reject);
 
-            this._play(sound);
+            }
 
-        }
+        });
 
     }
 
-    protected _play(sound: ISound): void {
+    protected _play(sound: ISound): Promise<void> {
 
         // source node options
         let sourceNodeOptions = {
@@ -445,7 +445,7 @@ export class PlayerCore {
         };
 
         // create a new source node
-        this._playerAudio.createSourceNode(sourceNodeOptions).then((sourceNode) => {
+        return this._playerAudio.createSourceNode(sourceNodeOptions).then((sourceNode) => {
 
             sound.isPlaying = true;
             sound.sourceNode = sourceNode;
