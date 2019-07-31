@@ -1,8 +1,17 @@
 [![Dependencies](https://david-dm.org/chrisweb/web-audio-api-player/status.svg)](https://david-dm.org/chrisweb/web-audio-api-player)
 [![Dependencies](https://david-dm.org/chrisweb/web-audio-api-player/dev-status.png)](https://david-dm.org/chrisweb/web-audio-api-player)
-[![GitHub release](https://img.shields.io/github/release/chrisweb/web-audio-api-player.svg)](https://github.com/chrisweb/web-audio-api-player/releases)
+[![npm version](https://img.shields.io/npm/v/web-audio-api-player.svg?style=flat)](https://www.npmjs.com/package/web-audio-api-player)
+[![GitHub license](https://img.shields.io/github/license/chrisweb/web-audio-api-player)](https://github.com/chrisweb/web-audio-api-player/blob/master/LICENSE)
 
 # web audio API player
+
+## installation
+
+web audio API player is published to the [npm registry](https://npm.im/web-audio-api-player) so you can install it with either [npm](https://www.npmjs.com/get-npm) or [yarn](https://yarnpkg.com)  
+
+`npm install web-audio-api-player`  
+
+😔 there is no documentation yet, but check out the source code of the [simple player example](examples/simple-player)  
 
 ## W3C web audio API
 
@@ -12,7 +21,7 @@
 
 Support tables for audio features, [caniuse: web audio API / audio element / formats ...](https://caniuse.com/#search=audio)  
 
-## build
+## development: build
 
 install the latest nodejs (if you haven't already) [nodejs](https://nodejs.org)  
 update npm to latest version
@@ -32,19 +41,19 @@ to build the distributions
 
 in devlopment you can use watch to rebuild every time you edit a typescript file  
 
-## development (watch)
+## development: watch
 
 `npm run watch`
 
-## linting
+## development: linting
 
 to lint the typescript files  
 
 `npm run lint`
 
-## usage
+## examples
 
-the best way to get started is to check out the examples folder, start with [simple example](examples/simple-player)  
+the best way to get started is to check out the examples folder, start with [simple player example](examples/simple-player)
 
 ## notes about problems I encountered during development
 
