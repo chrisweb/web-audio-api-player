@@ -12,7 +12,7 @@
     "audio",
     "api"
   ],
-  "main": "build/server.js",
+  "main": "build/bootstrap.js",
   "license": "MIT",
   "name": "web-audio-api-player_simple-example",
   "repository": {
