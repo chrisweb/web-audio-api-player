@@ -61,7 +61,7 @@ the best way to get started is to check out the examples folder, start with [sim
 
 As of now (25.05.2019) the web audio api typings seems to be included in lib.d.ts, so removing them from package.json:  
 
-```
+```json
   "dependencies": {
     "@types/webaudioapi": "0.0.27"
   },
@@ -75,8 +75,8 @@ the current [dom.d.ts on github](https://github.com/microsoft/TypeScript/blob/ma
 
 TSlint will be deprecated [github ticket](https://github.com/palantir/tslint/issues/4534)  
 
-	> we plan to deprecate TSLint and focus our efforts instead on improving ESLint’s TypeScript support  
-    
+> we plan to deprecate TSLint and focus our efforts instead on improving ESLint’s TypeScript support  
+
 Their [blog post](https://medium.com/palantir/tslint-in-2019-1a144c2317a9) announcing that [TSLint](https://github.com/palantir/tslint) will be deprecated in 2019 and you should switch to [ESLint](https://github.com/eslint/eslint) when TSLint is officially deprecated  
 
 ## TODOs (help wanted 😊)
@@ -87,7 +87,7 @@ Their [blog post](https://medium.com/palantir/tslint-in-2019-1a144c2317a9) annou
 * write more documentation
 * add a contribution guide
 * write tests!!! (goal 100% coverage), add [tests coverage badge](https://coveralls.io)
-* [abort](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort) the loading of the sound if the user clicks play and then pause (or stop / next / previous) before the end of the buffering process 
+* [abort](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort) the loading of the sound if the user clicks play and then pause (or stop / next / previous) before the end of the buffering process
 * allow cross fading songs "on end" if it's the next song in a playlist
 * currently the "find song in queue" can't retrieve songs by queue index, is this useful anyway?
 * implement suspend and resume: ctx.suspend() and resume of the context on pause / stop or if for some time no sound was played? ... to free device resources, as suspend returns a promise, does this mean suspending and resuming takes time? if so how much time does it take, based on that information we can decide when and how often we should resume / suspend
@@ -99,8 +99,8 @@ Their [blog post](https://medium.com/palantir/tslint-in-2019-1a144c2317a9) annou
 * add a loop song and loop queue mode
 * handle all error cases that are still unhandled
 * add support for more codecs (flac, wav, ogg vorbis, opus, aac): also check the available codecs and defined sources, play the first one that has matches and available codec, let user define order of preferred codecs for playerback
-* add [browser compatibility table badge](https://saucelabs.com/blog/new-open-sauce-ui-and-refreshed-build-status-badges) in readme 
-* add [travis](https://travis-ci.org) build check and badge 
+* add [browser compatibility table badge](https://saucelabs.com/blog/new-open-sauce-ui-and-refreshed-build-status-badges) in readme
+* add [travis](https://travis-ci.org) build check and badge
 * add UI screenshot to readme
 * add demo (github pages)
 * for position and volume, allow to use a percentage or a value
