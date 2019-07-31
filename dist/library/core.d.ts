@@ -48,8 +48,8 @@ export declare class PlayerCore {
     setPositionInSeconds(soundPositionInSeconds: number): void;
     protected _loadSound(sound: ISound): Promise<ISound | PlayerError>;
     protected _decodeSound(sound: ISound, resolve: Function, reject: Function): void;
-    play(whichSound?: number | string | undefined, playTimeOffset?: number): boolean;
-    protected _play(sound: ISound): boolean;
+    play(whichSound?: number | string | undefined, playTimeOffset?: number): void;
+    protected _play(sound: ISound): void;
     protected _onEnded(): void;
     /**
      * whichSound is optional, if set it can be the sound id or if it's

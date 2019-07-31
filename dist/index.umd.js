@@ -634,7 +634,7 @@
             var sound = this._getSoundFromQueue(whichSound);
             // if there is no sound we could play, do nothing
             if (sound === null) {
-                return false;
+                return;
                 // TODO: throw an error?
             }
             // if the user wants to play the sound from a certain position
@@ -644,13 +644,13 @@
             // has the sound already been loaded?
             if (!sound.isBuffered) {
                 this._loadSound(sound).then(function () {
-                    return _this._play(sound);
+                    _this._play(sound);
                 }).catch(function (error) {
                     // TODO: handle error
                 });
             }
             else {
-                return this._play(sound);
+                this._play(sound);
             }
         };
         PlayerCore.prototype._play = function (sound) {
@@ -697,7 +697,6 @@
             }).catch(function (error) {
                 // TODO: handle error
             });
-            return true;
         };
         PlayerCore.prototype._onEnded = function () {
             // get the current sound if any
