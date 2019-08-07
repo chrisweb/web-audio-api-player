@@ -86,35 +86,33 @@ var PlayerSound = /** @class */ (function () {
     return PlayerSound;
 }());
 
+// Note to self: AudioGraph documentation
+// https://developer.mozilla.org/en-US/docs/Web/API/AudioNode
 var PlayerAudio = /** @class */ (function () {
     function PlayerAudio(options) {
-        var _this = this;
+        this._volume = 80;
         this._audioContext = null;
         this._audioGraph = null;
-        // initial context state is still "closed"
-        this._contextState = 'closed';
-        this._volume = options.volume;
+        this._autoCreateContextOnFirstTouch = true;
+        if ('volume' in options) {
+            this.changeVolume(options.volume);
+        }
+        if ('autoCreateContextOnFirstTouch' in options) {
+            this.setAutoCreateContextOnFirstTouch(options.autoCreateContextOnFirstTouch);
+        }
         if ('customAudioContext' in options
             && options.customAudioContext !== null
             && options.customAudioContext !== undefined) {
             this.setAudioContext(options.customAudioContext);
         }
         else {
-            this._audioContext = this._createAudioContext();
+            this._createAudioContextOnFirstTouch();
         }
         if ('customAudioGraph' in options
             && options.customAudioGraph !== null
             && options.customAudioGraph !== undefined) {
             this.setAudioGraph(options.customAudioGraph);
         }
-        else {
-            this._createAudioGraph()
-                .then(function (audioGraph) {
-                _this._audioGraph = audioGraph;
-            });
-        }
-        // TODO: to speed up things would it be better to create a context in the constructor?
-        // and suspend the context upon creating it until it gets used?
     }
     PlayerAudio.prototype.decodeAudio = function (arrayBuffer) {
         return this.getAudioContext().then(function (audioContext) {
@@ -128,45 +126,50 @@ var PlayerAudio = /** @class */ (function () {
             return Promise.resolve(audioBufferPromise);
         });
     };
-    /*interface IWindow {
-        AudioContext: typeof AudioContext;
-        webkitAudioContext: typeof AudioContext;
-    }*/
-    //declare var window: Window;
     PlayerAudio.prototype._createAudioContext = function () {
-        var MyAudioContext = window.AudioContext || window.webkitAudioContext;
-        // initialize the audio context
-        var audioContext = new MyAudioContext();
-        // bind the listener for the context state changes
-        this._bindContextStateListener(audioContext);
-        // set the "initial" state to running
-        this._contextState = 'running';
-        return audioContext;
-    };
-    PlayerAudio.prototype._bindContextStateListener = function (audioContext) {
         var _this = this;
-        audioContext.onstatechange = function () {
-            _this._contextState = audioContext.state;
-            if (_this._contextState === 'closed') {
-                _this._audioContext = null;
+        return new Promise(function (resolve, reject) {
+            var MyAudioContext = window.AudioContext || window.webkitAudioContext;
+            // initialize the audio context
+            try {
+                _this._audioContext = new MyAudioContext();
+                resolve();
             }
-        };
+            catch (error) {
+                reject(error);
+            }
+        });
+    };
+    PlayerAudio.prototype._createAudioContextRemoveListener = function () {
+        document.removeEventListener('touchstart', this._createAudioContextRemoveListener.bind(this), false);
+        document.removeEventListener('mousedown', this._createAudioContextRemoveListener.bind(this), false);
+        this.getAudioContext().then(function () {
+        });
+    };
+    PlayerAudio.prototype._createAudioContextOnFirstTouch = function () {
+        if (this._autoCreateContextOnFirstTouch) {
+            document.addEventListener('touchstart', this._createAudioContextRemoveListener.bind(this), false);
+            document.addEventListener('mousedown', this._createAudioContextRemoveListener.bind(this), false);
+        }
     };
     PlayerAudio.prototype.getAudioContext = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
-            if (_this._contextState === 'closed') {
-                var audioContext = _this._createAudioContext();
-                _this._audioContext = audioContext;
-                resolve(audioContext);
+            if (_this._audioContext === null) {
+                _this._createAudioContext().then(function () {
+                    resolve(_this._audioContext);
+                }).catch(reject);
             }
-            else if (_this._contextState === 'suspended') {
+            else if (_this._audioContext.state === 'suspended') {
                 _this._unfreezeAudioContext().then(function () {
                     resolve(_this._audioContext);
                 });
             }
-            else {
+            else if (_this._audioContext.state === 'running') {
                 resolve(_this._audioContext);
+            }
+            else {
+                console.log('audioContext.state: ', _this._audioContext.state);
             }
         });
     };
@@ -183,7 +186,6 @@ var PlayerAudio = /** @class */ (function () {
     };
     PlayerAudio.prototype._setAudioContext = function (audioContext) {
         this._audioContext = audioContext;
-        this._bindContextStateListener(audioContext);
     };
     PlayerAudio.prototype._destroyAudioContext = function () {
         var _this = this;
@@ -260,14 +262,18 @@ var PlayerAudio = /** @class */ (function () {
                 // connect the gain node to the destination (speakers)
                 // https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
                 _this._audioGraph.gainNode.connect(audioContext.destination);
-                // update volume
-                _this.changeGainValue(_this._volume);
+                // update volume (gainValue)
+                var gainValue = _this._volume / 100;
+                _this._changeGainValue(gainValue);
+                // resolve
                 resolve(_this._audioGraph);
             });
         });
     };
     PlayerAudio.prototype._destroyAudioGraph = function () {
-        this._audioGraph.gainNode.disconnect();
+        if (this._audioGraph !== null) {
+            this._audioGraph.gainNode.disconnect();
+        }
         // TODO: disconnect other nodes!?
         this._audioGraph = null;
     };
@@ -289,29 +295,40 @@ var PlayerAudio = /** @class */ (function () {
         });
     };
     PlayerAudio.prototype.connectSourceNodeToGraphNodes = function (sourceNode) {
-        sourceNode.connect(this._audioGraph.gainNode);
-        if ('analyserNode' in this._audioGraph
-            && this._audioGraph.analyserNode !== null
-            && this._audioGraph.analyserNode !== undefined) {
-            sourceNode.connect(this._audioGraph.analyserNode);
-        }
-        if ('delayNode' in this._audioGraph
-            && this._audioGraph.delayNode !== null
-            && this._audioGraph.delayNode !== undefined) {
-            sourceNode.connect(this._audioGraph.delayNode);
-        }
-        // TODO: handle other types of nodes as well
-        // do it recursivly!?
+        this.getAudioGraph().then(function (audioGraph) {
+            sourceNode.connect(audioGraph.gainNode);
+            if ('analyserNode' in audioGraph
+                && audioGraph.analyserNode !== null
+                && audioGraph.analyserNode !== undefined) {
+                sourceNode.connect(audioGraph.analyserNode);
+            }
+            if ('delayNode' in audioGraph
+                && audioGraph.delayNode !== null
+                && audioGraph.delayNode !== undefined) {
+                sourceNode.connect(audioGraph.delayNode);
+            }
+            // TODO: handle other types of nodes as well
+            // do it recursivly!?
+        });
     };
     PlayerAudio.prototype.destroySourceNode = function (sourceNode) {
         sourceNode.disconnect();
         sourceNode = null;
         return sourceNode;
     };
-    PlayerAudio.prototype.changeGainValue = function (volume) {
+    PlayerAudio.prototype.changeVolume = function (volume) {
+        this._volume = volume;
+    };
+    PlayerAudio.prototype._changeGainValue = function (gainValue) {
         this.getAudioGraph().then(function (audioGraph) {
-            audioGraph.gainNode.gain.value = volume / 100;
+            audioGraph.gainNode.gain.value = gainValue;
         });
+    };
+    PlayerAudio.prototype.setAutoCreateContextOnFirstTouch = function (autoCreate) {
+        this._autoCreateContextOnFirstTouch = autoCreate;
+    };
+    PlayerAudio.prototype.getAutoCreateContextOnFirstTouch = function () {
+        return this._autoCreateContextOnFirstTouch;
     };
     return PlayerAudio;
 }());
@@ -410,6 +427,10 @@ var PlayerCore = /** @class */ (function () {
         this._customAudioGraph = null;
         // a custom audio context created by the user
         this._customAudioContext = null;
+        // the volume level before we muted
+        this._postMuteVolume = null;
+        // is muted?
+        this._isMuted = false;
         // constants
         this.WHERE_IN_QUEUE_AT_END = 'append';
         this.WHERE_IN_QUEUE_AT_START = 'prepend';
@@ -509,13 +530,19 @@ var PlayerCore = /** @class */ (function () {
     };
     PlayerCore.prototype.setVolume = function (volume) {
         this._volume = volume;
-        this._playerAudio.changeGainValue(volume);
+        this._playerAudio.changeVolume(volume);
+        this._isMuted = false;
     };
     PlayerCore.prototype.getVolume = function () {
         return this._volume;
     };
     PlayerCore.prototype.mute = function () {
+        this._postMuteVolume = this.getVolume();
         this.setVolume(0);
+        this._isMuted = true;
+    };
+    PlayerCore.prototype.unMute = function () {
+        this.setVolume(this._postMuteVolume);
     };
     PlayerCore.prototype.setPosition = function (soundPositionInPercent) {
         var _this = this;

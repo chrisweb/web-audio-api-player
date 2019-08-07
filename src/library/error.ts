@@ -1,5 +1,4 @@
-﻿
-export interface IPlayerError extends Error {
+﻿export interface IPlayerError extends Error {
     code: number | null;
 }
 

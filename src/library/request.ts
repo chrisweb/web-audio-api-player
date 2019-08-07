@@ -1,6 +1,3 @@
-
-'use strict';
-
 import { PlayerError, IPlayerError } from './error';
 import { IOnProgress } from './sound';
 

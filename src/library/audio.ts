@@ -1,64 +1,5 @@
-
-'use strict';
-
-import { PlayerError, IPlayerError } from './error';
-
 // Note to self: AudioGraph documentation
 // https://developer.mozilla.org/en-US/docs/Web/API/AudioNode
-/*
-export interface IWaveTable {
-}
-
-// https://developer.mozilla.org/en-US/docs/Web/API/AudioContext
-export interface IAudioContext {
-
-    destination: AudioDestinationNode; // readonly
-    sampleRate: number; // readonly
-    currentTime: number; // readonly
-    listener: AudioListener; // readonly
-    activeSourceCount: number; // readonly
-
-    state: string; // readonly
-
-    createBuffer(numberOfChannels: number, length: number, sampleRate: number): AudioBuffer;
-    createBuffer(buffer: ArrayBuffer, mixToMono: boolean): AudioBuffer;
-    // old decodeAudioData
-    //decodeAudioData(audioData: ArrayBuffer, decodeSuccessCallback?: Function, decodeErrorCallback?: Function): void;
-    // newer decodeAudioData
-    decodeAudioData(audioData: ArrayBuffer): Promise<AudioBuffer>;
-    createBufferSource(): AudioBufferSourceNode;
-    createMediaElementSource(mediaElement: HTMLMediaElement): MediaElementAudioSourceNode;
-    createMediaStreamSource(mediaStreamMediaStream: MediaStream): MediaStreamAudioSourceNode;
-    createMediaStreamDestination(): MediaStreamAudioDestinationNode;
-    createScriptProcessor(bufferSize: number, numberOfInputChannels?: number, numberOfOutputChannels?: number): ScriptProcessorNode;
-    createAnalyser(): AnalyserNode;
-    createGain(): GainNode;
-    createDelay(maxDelayTime?: number): DelayNode;
-    createBiquadFilter(): BiquadFilterNode;
-    createWaveShaper(): WaveShaperNode;
-    createPanner(): PannerNode;
-    createConvolver(): ConvolverNode;
-    createChannelSplitter(numberOfOutputs?: number): ChannelSplitterNode;
-    createChannelMerger(numberOfInputs?: number): ChannelMergerNode;
-    createDynamicsCompressor(): DynamicsCompressorNode;
-    createOscillator(): OscillatorNode;
-    createWaveTable(real: Float32Array, imag: Float32Array): IWaveTable;
-
-    onstatechange(): void;
-    close(): Promise<void>;
-    suspend(): Promise<void>;
-    resume(): Promise<void>;
-}
-
-declare var webkitAudioContext: {
-    prototype: IAudioContext;
-    new (): IAudioContext;
-};
-
-declare var AudioContext: {
-    prototype: IAudioContext;
-    new (): IAudioContext;
-};*/
 
 interface IAudioGraph {
     // https://developer.mozilla.org/en-US/docs/Web/API/GainNode
@@ -90,9 +31,10 @@ interface IAudioGraph {
 }
 
 interface IAudioOptions {
-    volume: number;
+    volume?: number;
     customAudioContext?: AudioContext;
     customAudioGraph?: IAudioGraph;
+    autoCreateContextOnFirstTouch?: boolean;
 }
 
 interface ISourceNodeOptions {
@@ -102,41 +44,34 @@ interface ISourceNodeOptions {
 
 class PlayerAudio {
 
-    protected _volume: number;
+    protected _volume: number = 80;
     protected _audioContext: AudioContext | null = null;
-    protected _contextState: string;
     protected _audioGraph: IAudioGraph | null = null;
+    protected _autoCreateContextOnFirstTouch: boolean = true;
 
     constructor(options?: IAudioOptions) {
 
-        // initial context state is still "closed"
-        this._contextState = 'closed';
+        if ('volume' in options) {
+            this.changeVolume(options.volume);
+        }
 
-        this._volume = options.volume;
+        if ('autoCreateContextOnFirstTouch' in options) {
+            this.setAutoCreateContextOnFirstTouch(options.autoCreateContextOnFirstTouch);
+        }
 
         if ('customAudioContext' in options
             && options.customAudioContext !== null
             && options.customAudioContext !== undefined) {
             this.setAudioContext(options.customAudioContext);
         } else {
-            this._audioContext = this._createAudioContext();
+            this._createAudioContextOnFirstTouch();
         }
 
         if ('customAudioGraph' in options
             && options.customAudioGraph !== null
             && options.customAudioGraph !== undefined) {
             this.setAudioGraph(options.customAudioGraph);
-        } else {
-            this._createAudioGraph()
-                .then((audioGraph: IAudioGraph) => {
-
-                    this._audioGraph = audioGraph;
-
-                });
         }
-
-        // TODO: to speed up things would it be better to create a context in the constructor?
-        // and suspend the context upon creating it until it gets used?
 
     }
 
@@ -159,41 +94,41 @@ class PlayerAudio {
 
     }
 
-    /*interface IWindow {
-        AudioContext: typeof AudioContext;
-        webkitAudioContext: typeof AudioContext;
-    }*/
+    protected _createAudioContext(): Promise<void> {
 
-    //declare var window: Window;
+        return new Promise((resolve, reject) => {
 
-    protected _createAudioContext(): AudioContext {
+            let MyAudioContext: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
 
-        let MyAudioContext: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+            // initialize the audio context
+            try {
+                this._audioContext = new MyAudioContext();
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
 
-        // initialize the audio context
-        let audioContext = new MyAudioContext();
-
-        // bind the listener for the context state changes
-        this._bindContextStateListener(audioContext);
-
-        // set the "initial" state to running
-        this._contextState = 'running';
-
-        return audioContext;
+        });
 
     }
 
-    protected _bindContextStateListener(audioContext: AudioContext): void {
+    protected _createAudioContextRemoveListener() {
 
-        audioContext.onstatechange = () => {
+        document.removeEventListener('touchstart', this._createAudioContextRemoveListener.bind(this), false);
+        document.removeEventListener('mousedown', this._createAudioContextRemoveListener.bind(this), false);
 
-            this._contextState = audioContext.state;
+        this.getAudioContext().then(() => {
 
-            if (this._contextState === 'closed') {
-                this._audioContext = null;
-            }
+        });
 
-        };
+    }
+
+    protected _createAudioContextOnFirstTouch(): void {
+
+        if (this._autoCreateContextOnFirstTouch) {
+            document.addEventListener('touchstart', this._createAudioContextRemoveListener.bind(this), false);
+            document.addEventListener('mousedown', this._createAudioContextRemoveListener.bind(this), false);
+        }
 
     }
 
@@ -201,15 +136,13 @@ class PlayerAudio {
 
         return new Promise((resolve, reject) => {
 
-            if (this._contextState === 'closed') {
+            if (this._audioContext === null) {
 
-                let audioContext = this._createAudioContext();
+                this._createAudioContext().then(() => {
+                    resolve(this._audioContext);
+                }).catch(reject);
 
-                this._audioContext = audioContext;
-
-                resolve(audioContext);
-
-            } else if (this._contextState === 'suspended') {
+            } else if (this._audioContext.state === 'suspended') {
 
                 this._unfreezeAudioContext().then(() => {
 
@@ -217,10 +150,12 @@ class PlayerAudio {
 
                 });
 
-            } else {
+            } else if (this._audioContext.state === 'running') {
 
                 resolve(this._audioContext);
 
+            } else {
+                console.log('audioContext.state: ', this._audioContext.state);
             }
 
         });
@@ -245,11 +180,9 @@ class PlayerAudio {
 
     }
 
-    protected _setAudioContext(audioContext: AudioContext) {
+    protected _setAudioContext(audioContext: AudioContext): void {
 
         this._audioContext = audioContext;
-
-        this._bindContextStateListener(audioContext);
 
     }
 
@@ -263,7 +196,7 @@ class PlayerAudio {
 
     }
 
-    protected _unfreezeAudioContext(): Promise<void> {
+    public _unfreezeAudioContext(): Promise<void> {
 
         // did resume get implemented
         if (typeof this._audioContext.suspend === 'undefined') {
@@ -283,7 +216,7 @@ class PlayerAudio {
 
     }
 
-    protected _freezeAudioContext(): Promise<void> {
+    public _freezeAudioContext(): Promise<void> {
 
         // did suspend get implemented
         if (typeof this._audioContext.suspend === 'undefined') {
@@ -299,7 +232,7 @@ class PlayerAudio {
 
     }
 
-    public setAudioGraph(audioGraph: IAudioGraph) {
+    public setAudioGraph(audioGraph: IAudioGraph): void {
 
         if (this._audioGraph !== null) {
             this._destroyAudioGraph();
@@ -351,7 +284,6 @@ class PlayerAudio {
 
     }
 
-
     protected _createAudioGraph(): Promise<IAudioGraph> {
 
         return new Promise((resolve, reject) => {
@@ -370,9 +302,12 @@ class PlayerAudio {
                 // https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
                 this._audioGraph.gainNode.connect(audioContext.destination);
 
-                // update volume
-                this.changeGainValue(this._volume);
+                // update volume (gainValue)
+                const gainValue = this._volume / 100;
 
+                this._changeGainValue(gainValue);
+
+                // resolve
                 resolve(this._audioGraph);
 
             });
@@ -383,7 +318,9 @@ class PlayerAudio {
 
     protected _destroyAudioGraph(): void {
 
-        this._audioGraph.gainNode.disconnect();
+        if (this._audioGraph !== null) {
+            this._audioGraph.gainNode.disconnect();
+        }
 
         // TODO: disconnect other nodes!?
 
@@ -420,32 +357,36 @@ class PlayerAudio {
 
     }
 
-    public connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode) {
+    public connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode): void {
 
-        sourceNode.connect(this._audioGraph.gainNode);
+        this.getAudioGraph().then((audioGraph: IAudioGraph) => {
 
-        if ('analyserNode' in this._audioGraph
-            && this._audioGraph.analyserNode !== null
-            && this._audioGraph.analyserNode !== undefined) {
+            sourceNode.connect(audioGraph.gainNode);
 
-            sourceNode.connect(this._audioGraph.analyserNode);
+            if ('analyserNode' in audioGraph
+                && audioGraph.analyserNode !== null
+                && audioGraph.analyserNode !== undefined) {
 
-        }
+                sourceNode.connect(audioGraph.analyserNode);
 
-        if ('delayNode' in this._audioGraph
-            && this._audioGraph.delayNode !== null
-            && this._audioGraph.delayNode !== undefined) {
+            }
 
-            sourceNode.connect(this._audioGraph.delayNode);
+            if ('delayNode' in audioGraph
+                && audioGraph.delayNode !== null
+                && audioGraph.delayNode !== undefined) {
 
-        }
+                sourceNode.connect(audioGraph.delayNode);
 
-        // TODO: handle other types of nodes as well
-        // do it recursivly!?
+            }
+
+            // TODO: handle other types of nodes as well
+            // do it recursivly!?
+
+        });
 
     }
 
-    public destroySourceNode(sourceNode: AudioBufferSourceNode) {
+    public destroySourceNode(sourceNode: AudioBufferSourceNode): AudioBufferSourceNode {
 
         sourceNode.disconnect();
 
@@ -455,13 +396,31 @@ class PlayerAudio {
 
     }
 
-    public changeGainValue(volume: number) {
+    public changeVolume(volume: number): void {
+
+        this._volume = volume;
+
+    }
+
+    protected _changeGainValue(gainValue: number): void {
 
         this.getAudioGraph().then((audioGraph: IAudioGraph) => {
 
-            audioGraph.gainNode.gain.value = volume / 100;
+            audioGraph.gainNode.gain.value = gainValue;
 
         });
+
+    }
+
+    public setAutoCreateContextOnFirstTouch(autoCreate: boolean): void {
+
+        this._autoCreateContextOnFirstTouch = autoCreate;
+
+    }
+
+    public getAutoCreateContextOnFirstTouch(): boolean {
+
+        return this._autoCreateContextOnFirstTouch;
 
     }
 

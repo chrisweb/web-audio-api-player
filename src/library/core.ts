@@ -1,6 +1,3 @@
-
-'use strict';
-
 import { PlayerSound, ISound, ISoundAttributes, ISoundSource } from './sound';
 import { PlayerAudio, IAudioGraph, IAudioOptions } from './audio';
 import { PlayerRequest } from './request';
@@ -45,6 +42,10 @@ export class PlayerCore {
     protected _customAudioContext: AudioContext | null = null;
     // stop the song currently being played on (queue) reset
     protected _stopOnReset: boolean;
+    // the volume level before we muted
+    protected _postMuteVolume: number = null;
+    // is muted?
+    protected _isMuted: boolean = false;
 
     // constants
     readonly WHERE_IN_QUEUE_AT_END: string = 'append';
@@ -203,7 +204,9 @@ export class PlayerCore {
 
         this._volume = volume;
 
-        this._playerAudio.changeGainValue(volume);
+        this._playerAudio.changeVolume(volume);
+
+        this._isMuted = false;
 
     }
 
@@ -215,7 +218,17 @@ export class PlayerCore {
 
     public mute() {
 
+        this._postMuteVolume = this.getVolume();
+
         this.setVolume(0);
+
+        this._isMuted = true;
+
+    }
+
+    public unMute() {
+
+        this.setVolume(this._postMuteVolume);
 
     }
 

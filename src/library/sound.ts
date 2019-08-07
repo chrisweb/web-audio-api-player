@@ -1,9 +1,4 @@
-
-'use strict';
-
 import { IRequested } from './request';
-import { PlayerError, IPlayerError } from './error';
-import { IAudioGraph } from './audio';
 
 export interface ISoundSource {
     url: string;

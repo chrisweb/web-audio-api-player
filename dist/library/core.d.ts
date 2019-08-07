@@ -25,6 +25,8 @@ export declare class PlayerCore {
     protected _customAudioGraph: IAudioGraph | null;
     protected _customAudioContext: AudioContext | null;
     protected _stopOnReset: boolean;
+    protected _postMuteVolume: number;
+    protected _isMuted: boolean;
     readonly WHERE_IN_QUEUE_AT_END: string;
     readonly WHERE_IN_QUEUE_AT_START: string;
     readonly WHERE_IN_QUEUE_AFTER_CURRENT: string;
@@ -44,6 +46,7 @@ export declare class PlayerCore {
     setVolume(volume: number): void;
     getVolume(): number;
     mute(): void;
+    unMute(): void;
     setPosition(soundPositionInPercent: number): void;
     setPositionInSeconds(soundPositionInSeconds: number): void;
     protected _loadSound(sound: ISound): Promise<ISound | PlayerError>;
