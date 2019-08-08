@@ -31,10 +31,10 @@ interface IAudioGraph {
 }
 
 interface IAudioOptions {
-    volume?: number;
-    customAudioContext?: AudioContext;
-    customAudioGraph?: IAudioGraph;
-    autoCreateContextOnFirstTouch?: boolean;
+    customAudioContext: AudioContext;
+    customAudioGraph: IAudioGraph;
+    createAudioContextOnFirstUserInteraction: boolean;
+    persistVolume: boolean;
 }
 
 interface ISourceNodeOptions {
@@ -44,53 +44,45 @@ interface ISourceNodeOptions {
 
 class PlayerAudio {
 
-    protected _volume: number = 80;
+    protected _volume: number;
     protected _audioContext: AudioContext | null = null;
     protected _audioGraph: IAudioGraph | null = null;
-    protected _autoCreateContextOnFirstTouch: boolean = true;
+    protected _createAudioContextOnFirstUserInteraction: boolean;
+    protected _persistVolume: boolean;
 
-    constructor(options?: IAudioOptions) {
+    constructor(options: IAudioOptions) {
 
-        if ('volume' in options) {
-            this.changeVolume(options.volume);
-        }
+        this.setPersistVolume(options.persistVolume);
+        this.setAutoCreateContextOnFirstTouch(options.createAudioContextOnFirstUserInteraction);
 
-        if ('autoCreateContextOnFirstTouch' in options) {
-            this.setAutoCreateContextOnFirstTouch(options.autoCreateContextOnFirstTouch);
-        }
-
-        if ('customAudioContext' in options
-            && options.customAudioContext !== null
+        if (options.customAudioContext !== null
             && options.customAudioContext !== undefined) {
             this.setAudioContext(options.customAudioContext);
         } else {
-            this._createAudioContextOnFirstTouch();
+            this._autoCreateAudioContextOnFirstUserInteraction();
         }
 
-        if ('customAudioGraph' in options
-            && options.customAudioGraph !== null
+        if (options.customAudioGraph !== null
             && options.customAudioGraph !== undefined) {
             this.setAudioGraph(options.customAudioGraph);
         }
 
     }
 
-    public decodeAudio(arrayBuffer: ArrayBuffer): Promise<AudioBuffer> {
+    public async decodeAudio(arrayBuffer: ArrayBuffer): Promise<AudioBuffer> {
 
-        return this.getAudioContext().then((audioContext: AudioContext) => {
+        const audioContext = await this.getAudioContext();
 
-            // Note to self:
-            // newer decodeAudioData returns promise, older accept as second
-            // and third parameter a success and an error callback funtion
-            // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/decodeAudioData
+        // Note to self:
+        // newer decodeAudioData returns promise, older accept as second
+        // and third parameter a success and an error callback funtion
+        // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/decodeAudioData
 
-            let audioBufferPromise = audioContext.decodeAudioData(arrayBuffer);
+        let audioBufferPromise = audioContext.decodeAudioData(arrayBuffer);
 
-            // decodeAudioData returns a promise of type PromiseLike
-            // using resolve to return a promise of type Promise
-            return Promise.resolve(audioBufferPromise);
-
-        });
+        // decodeAudioData returns a promise of type PromiseLike
+        // using resolve to return a promise of type Promise
+        return Promise.resolve(audioBufferPromise);
 
     }
 
@@ -112,10 +104,10 @@ class PlayerAudio {
 
     }
 
-    protected _createAudioContextRemoveListener() {
+    protected _autoCreateAudioContextRemoveListener() {
 
-        document.removeEventListener('touchstart', this._createAudioContextRemoveListener.bind(this), false);
-        document.removeEventListener('mousedown', this._createAudioContextRemoveListener.bind(this), false);
+        document.removeEventListener('touchstart', this._autoCreateAudioContextRemoveListener.bind(this), false);
+        document.removeEventListener('mousedown', this._autoCreateAudioContextRemoveListener.bind(this), false);
 
         this.getAudioContext().then(() => {
 
@@ -123,11 +115,11 @@ class PlayerAudio {
 
     }
 
-    protected _createAudioContextOnFirstTouch(): void {
+    protected _autoCreateAudioContextOnFirstUserInteraction(): void {
 
-        if (this._autoCreateContextOnFirstTouch) {
-            document.addEventListener('touchstart', this._createAudioContextRemoveListener.bind(this), false);
-            document.addEventListener('mousedown', this._createAudioContextRemoveListener.bind(this), false);
+        if (this._createAudioContextOnFirstUserInteraction) {
+            document.addEventListener('touchstart', this._autoCreateAudioContextRemoveListener.bind(this), false);
+            document.addEventListener('mousedown', this._autoCreateAudioContextRemoveListener.bind(this), false);
         }
 
     }
@@ -303,7 +295,7 @@ class PlayerAudio {
                 this._audioGraph.gainNode.connect(audioContext.destination);
 
                 // update volume
-                this.changeVolume(this._volume);
+                this.changeVolume(this._volume, false);
 
                 // resolve
                 resolve(this._audioGraph);
@@ -394,14 +386,30 @@ class PlayerAudio {
 
     }
 
-    public changeVolume(volume: number): void {
+    public changeVolume(volume: number, forceUpdateUserVolume: boolean = true): number {
+
+        if (this._persistVolume) {
+
+            const userVolume = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
+
+            if (!isNaN(userVolume) && !forceUpdateUserVolume) {
+                volume = userVolume;
+            } else {
+                if (forceUpdateUserVolume) {
+                    localStorage.setItem('WebAudioAPIPlayerVolume', volume.toString());
+                }
+            }
+
+        }
+
+        // update volume (gainValue)
+        const gainValue = volume / 100;
+
+        this._changeGainValue(gainValue);
 
         this._volume = volume;
 
-        // update volume (gainValue)
-        const gainValue = this._volume / 100;
-
-        this._changeGainValue(gainValue);
+        return volume;
 
     }
 
@@ -417,13 +425,25 @@ class PlayerAudio {
 
     public setAutoCreateContextOnFirstTouch(autoCreate: boolean): void {
 
-        this._autoCreateContextOnFirstTouch = autoCreate;
+        this._createAudioContextOnFirstUserInteraction = autoCreate;
 
     }
 
     public getAutoCreateContextOnFirstTouch(): boolean {
 
-        return this._autoCreateContextOnFirstTouch;
+        return this._createAudioContextOnFirstUserInteraction;
+
+    }
+
+    public setPersistVolume(persistVolume: boolean): void {
+
+        this._persistVolume = persistVolume;
+
+    }
+
+    public getPersistVolume(): boolean {
+
+        return this._persistVolume;
 
     }
 

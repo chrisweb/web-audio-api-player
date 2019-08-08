@@ -40,6 +40,7 @@ class PlayerUI {
 
         // set the initial volume to the volume input range
         this._volumeSlider.value = String(this.player.getVolume());
+
         // TODO: use the localstorage or indexeddb to persist the user volume
 
     }

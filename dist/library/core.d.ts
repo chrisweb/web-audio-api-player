@@ -10,6 +10,9 @@ export interface ICoreOptions {
     audioGraph?: IAudioGraph;
     audioContext?: AudioContext;
     stopOnReset?: boolean;
+    visibilityAutoMute?: boolean;
+    createAudioContextOnFirstUserInteraction?: boolean;
+    persistVolume?: boolean;
 }
 export declare class PlayerCore {
     protected _isWebAudioApiSupported: boolean;
@@ -28,6 +31,8 @@ export declare class PlayerCore {
     protected _postMuteVolume: number;
     protected _isMuted: boolean;
     protected _visibilityAutoMute: boolean;
+    protected _createAudioContextOnFirstUserInteraction: boolean;
+    protected _persistVolume: boolean;
     readonly WHERE_IN_QUEUE_AT_END: string;
     readonly WHERE_IN_QUEUE_AT_START: string;
     readonly WHERE_IN_QUEUE_AFTER_CURRENT: string;
@@ -48,6 +53,7 @@ export declare class PlayerCore {
     getVolume(): number;
     mute(): void;
     unMute(): void;
+    isMuted(): boolean;
     setPosition(soundPositionInPercent: number): void;
     setPositionInSeconds(soundPositionInSeconds: number): void;
     protected _loadSound(sound: ISound): Promise<ISound | PlayerError>;

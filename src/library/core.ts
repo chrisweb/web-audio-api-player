@@ -12,6 +12,9 @@ export interface ICoreOptions {
     audioGraph?: IAudioGraph;
     audioContext?: AudioContext;
     stopOnReset?: boolean;
+    visibilityAutoMute?: boolean;
+    createAudioContextOnFirstUserInteraction?: boolean;
+    persistVolume?: boolean;
 }
 
 export class PlayerCore {
@@ -47,7 +50,11 @@ export class PlayerCore {
     // is muted?
     protected _isMuted: boolean = false;
     // automatically mute if visibility changes to invisible
-    protected _visibilityAutoMute: boolean = false;
+    protected _visibilityAutoMute: boolean;
+    // auto create audiocontext on first touch / click
+    protected _createAudioContextOnFirstUserInteraction: boolean;
+    // save the volume value in localstorage
+    protected _persistVolume: boolean;
 
     // constants
     readonly WHERE_IN_QUEUE_AT_END: string = 'append';
@@ -61,13 +68,16 @@ export class PlayerCore {
 
     constructor(playerOptions: ICoreOptions = {}) {
 
-        let defaultOptions = {
+        let defaultOptions: ICoreOptions = {
             volume: 80,
             loopQueue: false,
             soundsBaseUrl: '',
             playingProgressIntervalTime: 1000,
             playNextOnEnded: true,
-            stopOnReset: true
+            stopOnReset: true,
+            visibilityAutoMute: false,
+            createAudioContextOnFirstUserInteraction: true,
+            persistVolume: true
         };
 
         let options = Object.assign({}, defaultOptions, playerOptions);
@@ -80,6 +90,9 @@ export class PlayerCore {
         this._playNextOnEnded = options.playNextOnEnded;
         this._loopQueue = options.loopQueue;
         this._stopOnReset = options.stopOnReset;
+        this._visibilityAutoMute = options.visibilityAutoMute;
+        this._createAudioContextOnFirstUserInteraction = options.createAudioContextOnFirstUserInteraction;
+        this._persistVolume = options.persistVolume;
 
         if (typeof options.audioContext !== 'undefined') {
             this._customAudioContext = options.audioContext;
@@ -108,13 +121,17 @@ export class PlayerCore {
         }
 
         let audioOptions: IAudioOptions = {
-            volume: this._volume,
             customAudioContext: this._customAudioContext,
-            customAudioGraph: this._customAudioGraph
+            customAudioGraph: this._customAudioGraph,
+            createAudioContextOnFirstUserInteraction: this._createAudioContextOnFirstUserInteraction,
+            persistVolume: this._persistVolume
         };
 
         // player audio library instance
         this._playerAudio = new PlayerAudio(audioOptions);
+
+        // update the volume
+        this._volume = this._playerAudio.changeVolume(this._volume, false);
 
     }
 
@@ -177,9 +194,7 @@ export class PlayerCore {
 
         // check if a song is getting played and stop it
         if (this._stopOnReset) {
-
             this.stop();
-
         }
 
         // TODO: destroy all the sounds or clear the cached buffers?
@@ -204,10 +219,7 @@ export class PlayerCore {
 
     public setVolume(volume: number): void {
 
-        this._volume = volume;
-
-        this._playerAudio.changeVolume(volume);
-
+        this._volume = this._playerAudio.changeVolume(volume, true);
         this._isMuted = false;
 
     }
@@ -218,19 +230,29 @@ export class PlayerCore {
 
     }
 
-    public mute() {
+    public mute(): void {
 
-        this._postMuteVolume = this.getVolume();
+        const currentVolume = this.getVolume();
 
-        this.setVolume(0);
+        this._postMuteVolume = currentVolume;
+
+        this._playerAudio.changeVolume(0, false);
 
         this._isMuted = true;
 
     }
 
-    public unMute() {
+    public unMute(): void {
 
-        this.setVolume(this._postMuteVolume);
+        this._playerAudio.changeVolume(this._postMuteVolume, false);
+
+        this._isMuted = false;
+
+    }
+
+    public isMuted(): boolean {
+
+        return this._isMuted;
 
     }
 
@@ -278,7 +300,7 @@ export class PlayerCore {
 
     }
 
-    public setPositionInSeconds(soundPositionInSeconds: number) {
+    public setPositionInSeconds(soundPositionInSeconds: number): void {
 
         // get the current sound if any
         let currentSound = this._getSoundFromQueue();

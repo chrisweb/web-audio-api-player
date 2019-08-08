@@ -14,10 +14,10 @@ interface IAudioGraph {
     waveShaperNode?: WaveShaperNode;
 }
 interface IAudioOptions {
-    volume?: number;
-    customAudioContext?: AudioContext;
-    customAudioGraph?: IAudioGraph;
-    autoCreateContextOnFirstTouch?: boolean;
+    customAudioContext: AudioContext;
+    customAudioGraph: IAudioGraph;
+    createAudioContextOnFirstUserInteraction: boolean;
+    persistVolume: boolean;
 }
 interface ISourceNodeOptions {
     loop: boolean;
@@ -27,12 +27,13 @@ declare class PlayerAudio {
     protected _volume: number;
     protected _audioContext: AudioContext | null;
     protected _audioGraph: IAudioGraph | null;
-    protected _autoCreateContextOnFirstTouch: boolean;
-    constructor(options?: IAudioOptions);
+    protected _createAudioContextOnFirstUserInteraction: boolean;
+    protected _persistVolume: boolean;
+    constructor(options: IAudioOptions);
     decodeAudio(arrayBuffer: ArrayBuffer): Promise<AudioBuffer>;
     protected _createAudioContext(): Promise<void>;
-    protected _createAudioContextRemoveListener(): void;
-    protected _createAudioContextOnFirstTouch(): void;
+    protected _autoCreateAudioContextRemoveListener(): void;
+    protected _autoCreateAudioContextOnFirstUserInteraction(): void;
     getAudioContext(): Promise<AudioContext>;
     setAudioContext(audioContext: AudioContext): void;
     protected _setAudioContext(audioContext: AudioContext): void;
@@ -46,9 +47,11 @@ declare class PlayerAudio {
     createSourceNode(sourceNodeOptions: ISourceNodeOptions): Promise<AudioBufferSourceNode>;
     connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode): void;
     destroySourceNode(sourceNode: AudioBufferSourceNode): AudioBufferSourceNode;
-    changeVolume(volume: number): void;
+    changeVolume(volume: number, forceUpdateUserVolume?: boolean): number;
     protected _changeGainValue(gainValue: number): void;
     setAutoCreateContextOnFirstTouch(autoCreate: boolean): void;
     getAutoCreateContextOnFirstTouch(): boolean;
+    setPersistVolume(persistVolume: boolean): void;
+    getPersistVolume(): boolean;
 }
 export { PlayerAudio, IAudioGraph, IAudioOptions };

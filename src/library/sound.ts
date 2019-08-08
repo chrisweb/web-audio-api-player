@@ -84,7 +84,7 @@ export class PlayerSound implements ISound {
     public duration: number | null;
     public firstTimePlayed: boolean;
 
-    // events
+    // callbacks
     public onLoading: IOnProgress;
     public onPlaying: IOnProgress;
     public onEnded: IOnEnded;

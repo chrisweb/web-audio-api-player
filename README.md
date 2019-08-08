@@ -83,26 +83,40 @@ Their [blog post](https://medium.com/palantir/tslint-in-2019-1a144c2317a9) annou
 
 * create a react example
 * create a vue.js example
-* put the web audio API player on npm and add npm version badge / license badge / ... [shields.io](http://shields.io/)
-* write more documentation
+* create an example using the fileReader
+
+```javascript
+var fileInput = document.querySelector('input[type="file"]');
+fileInput.addEventListener('change', function(event) {  
+  var reader = new FileReader();
+  reader.onload = function(event) {
+    playerCore._decodeSound(this.result);
+  };
+  reader.readAsArrayBuffer(this.files[0]);
+}, false);
+```
+
+* instead of the ArrayBuffer use the MediaElementAudioSourceNode, make it optional to still use the ArrayBuffer
+* cache (preload) AudioBuffers in indexeddb, let the user set the amount of cached AudioBuffers, remove from cache by least used and by date when cache is full
+* cache songs for offline mode? indexdb is not very big, check if doable because saving a playlist of songs might exhaust the free space
+* write a documentation
 * add a contribution guide
 * write tests!!! (goal 100% coverage), add [tests coverage badge](https://coveralls.io)
 * [abort](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort) the loading of the sound if the user clicks play and then pause (or stop / next / previous) before the end of the buffering process
-* allow cross fading songs "on end" if it's the next song in a playlist
+* replace XMLHttpRequest with fetch?
+* allow cross fading songs "on end" if it's the next song in a playlist (or just fade out / fade in)
 * currently the "find song in queue" can't retrieve songs by queue index, is this useful anyway?
-* implement suspend and resume: ctx.suspend() and resume of the context on pause / stop or if for some time no sound was played? ... to free device resources, as suspend returns a promise, does this mean suspending and resuming takes time? if so how much time does it take, based on that information we can decide when and how often we should resume / suspend
-* (?) use the html audio element for backwards compatibility for IE11 and mobile android devices? [caniuse audio-api](http://caniuse.com/#feat=audio-api)
+* use suspend and resume if for some time no sound was played? ... to free device resources. As suspend returns a promise, does this mean suspending and resuming takes time? if so how much time does it take, based on that information we can decide after how much time it makes sense to suspend the ctx to save device resources
 * use the [requestAnimation](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) frame or the [requestidlecallback](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback) instead of setInterval for playing progress callback?
 * use web workers, especially for the decoding of the ArrayBuffer into an AudioBuffer, to not block the main thread while decoding?
-* cache (preload) AudioBuffers in localstorage, let the user set the amount of cached AudioBuffers, remove from cache by least used and by date when cache is full
 * add shuffle mode
 * add a loop song and loop queue mode
 * handle all error cases that are still unhandled
 * add support for more codecs (flac, wav, ogg vorbis, opus, aac): also check the available codecs and defined sources, play the first one that has matches and available codec, let user define order of preferred codecs for playerback
-* add [browser compatibility table badge](https://saucelabs.com/blog/new-open-sauce-ui-and-refreshed-build-status-badges) in readme
-* add [travis](https://travis-ci.org) build check and badge
-* add UI screenshot to readme
-* add demo (github pages)
+* add saucelabs browser testing and their badge [browser compatibility table badge](https://saucelabs.com/blog/new-open-sauce-ui-and-refreshed-build-status-badges) in readme
+* add [travis](https://travis-ci.org) continous integration and badge
+* add improve UI style and then add a screenshot to readme of example
+* add live demo (via github pages)
 * for position and volume, allow to use a percentage or a value
 * add hooks to the sound object for all the native source node events [AudioBufferSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode)
 
@@ -130,6 +144,11 @@ Their [blog post](https://medium.com/palantir/tslint-in-2019-1a144c2317a9) annou
 * replace [gulp](https://gulpjs.com/) with [rollup](https://github.com/rollup/rollup) as new module bundler
 * use [pkg.module](https://github.com/rollup/rollup/wiki/pkg.module) to distribute a UMD as well as an "ES6 modules" version
 * rewrite the simple example with vanilla js instead of jquery
+* put the web audio API player on npm and add npm version badge / license badge / ... [shields.io](http://shields.io/)
+* implement suspend and resume: ctx.suspend() and resume
+* add an option that uses the visibility API to automatically mute and unmute a sound when the visibility changes
+* rewrite how the audiocontext is created, for browser that enforce that a user interaction has taken place before a context can be running
+* add option to persist the user volume choice using the localstorage
 
 ## License
 
