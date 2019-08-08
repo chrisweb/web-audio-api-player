@@ -8,7 +8,6 @@ var PlayerSound = /** @class */ (function () {
             this.sources = soundAttributes.sources;
         }
         this.id = soundAttributes.id;
-        this.playlistId = soundAttributes.playlistId || null;
         this.loop = soundAttributes.loop || false;
         // the user can set the duration manually
         // this is usefull if we need to convert the position percentage into seconds but don't want to preload the song

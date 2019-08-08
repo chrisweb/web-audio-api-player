@@ -22,7 +22,6 @@ export interface ISoundAttributes {
     // and / or audioBuffer in which case the source url is not needed
     sources?: (ISoundSource | string)[] | string;
     id: number;
-    playlistId?: number | null;
     loop?: boolean;
     audioBuffer?: AudioBuffer | null;
     arrayBuffer?: ArrayBuffer | null;
@@ -64,7 +63,6 @@ export class PlayerSound implements ISound {
 
     public sources: (ISoundSource | string)[];
     public id: number;
-    public playlistId: number | null;
     public loop: boolean;
     public url: string;
 
@@ -103,7 +101,6 @@ export class PlayerSound implements ISound {
         }
 
         this.id = soundAttributes.id;
-        this.playlistId = soundAttributes.playlistId || null;
         this.loop = soundAttributes.loop || false;
 
         // the user can set the duration manually

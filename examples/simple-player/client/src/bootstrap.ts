@@ -18,7 +18,6 @@ let playerUI = new PlayerUI(player);
 let firstSoundAttributes: ISoundAttributes = {
     sources: '1314412&format=mp31',
     id: 1314412,
-    playlistId: 0,
     onLoading: (loadingProgress, maximumValue, currentValue) => {
         console.log('loading: ', loadingProgress, maximumValue, currentValue);
         playerUI.changeLoadingProgress(loadingProgress);
@@ -56,7 +55,6 @@ console.log(firstSound);
 let secondSoundAttributes: ISoundAttributes = {
     sources: '1214935&format=ogg1',
     id: 1214935,
-    playlistId: 0,
     onLoading: (loadingProgress, maximumValue, currentValue) => {
         console.log('loading: ', loadingProgress, maximumValue, currentValue);
         playerUI.changeLoadingProgress(loadingProgress);

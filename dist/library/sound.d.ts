@@ -15,7 +15,6 @@ export interface IOnAnyAction {
 export interface ISoundAttributes {
     sources?: (ISoundSource | string)[] | string;
     id: number;
-    playlistId?: number | null;
     loop?: boolean;
     audioBuffer?: AudioBuffer | null;
     arrayBuffer?: ArrayBuffer | null;
@@ -50,7 +49,6 @@ export interface IOptions {
 export declare class PlayerSound implements ISound {
     sources: (ISoundSource | string)[];
     id: number;
-    playlistId: number | null;
     loop: boolean;
     url: string;
     sourceNode: AudioBufferSourceNode | null;
