@@ -90,6 +90,9 @@ let secondSound = player.addSoundToQueue(secondSoundAttributes);
 
 console.log(secondSound);
 
+// turn un feature: if page becomes invisible auto mute, unmute when page becomes visible again
+player.setVisibilityAutoMute(true);
+
 // halt the audio hardware access temporarily to reduce CPU and battery usage
 /*player.getAudioContext().then((audioContext) => {
     audioContext.suspend();

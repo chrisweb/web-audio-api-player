@@ -46,6 +46,8 @@ export class PlayerCore {
     protected _postMuteVolume: number = null;
     // is muted?
     protected _isMuted: boolean = false;
+    // automatically mute if visibility changes to invisible
+    protected _visibilityAutoMute: boolean = false;
 
     // constants
     readonly WHERE_IN_QUEUE_AT_END: string = 'append';
@@ -876,6 +878,49 @@ export class PlayerCore {
 
         });
 
+    }
+
+    public setAutoCreateContextOnFirstTouch(autoCreate: boolean): void {
+        this._playerAudio.setAutoCreateContextOnFirstTouch(autoCreate);
+    }
+
+    public getAutoCreateContextOnFirstTouch(): boolean {
+        return this._playerAudio.getAutoCreateContextOnFirstTouch();
+    }
+
+    public setVisibilityAutoMute(visibilityAutoMute: boolean): void {
+
+        this._visibilityAutoMute = visibilityAutoMute;
+
+        if (visibilityAutoMute) {
+            document.addEventListener('visibilitychange', this._handleVisibilityChange.bind(this), false);
+        } else {
+            document.removeEventListener('visibilitychange', this._handleVisibilityChange.bind(this), false);
+        }
+
+    }
+
+    public getVisibilityAutoMute(): boolean {
+        return this._visibilityAutoMute;
+    }
+
+    protected _handleVisibilityChange() {
+
+        let hiddenKeyword: string;
+
+        if (typeof document.hidden !== 'undefined') { // Opera 12.10 and Firefox 18 and later support
+            hiddenKeyword = 'hidden';
+        } else if (typeof (document as any).msHidden !== 'undefined') {
+            hiddenKeyword = 'msHidden';
+        } else if (typeof (document as any).webkitHidden !== 'undefined') {
+            hiddenKeyword = 'webkitHidden';
+        }
+
+        if ((document as any)[hiddenKeyword]) {
+            this.mute();
+        } else {
+            this.unMute();
+        }
     }
 
 }

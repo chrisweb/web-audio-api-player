@@ -302,10 +302,8 @@ class PlayerAudio {
                 // https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
                 this._audioGraph.gainNode.connect(audioContext.destination);
 
-                // update volume (gainValue)
-                const gainValue = this._volume / 100;
-
-                this._changeGainValue(gainValue);
+                // update volume
+                this.changeVolume(this._volume);
 
                 // resolve
                 resolve(this._audioGraph);
@@ -399,6 +397,11 @@ class PlayerAudio {
     public changeVolume(volume: number): void {
 
         this._volume = volume;
+
+        // update volume (gainValue)
+        const gainValue = this._volume / 100;
+
+        this._changeGainValue(gainValue);
 
     }
 

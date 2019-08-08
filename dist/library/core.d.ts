@@ -27,6 +27,7 @@ export declare class PlayerCore {
     protected _stopOnReset: boolean;
     protected _postMuteVolume: number;
     protected _isMuted: boolean;
+    protected _visibilityAutoMute: boolean;
     readonly WHERE_IN_QUEUE_AT_END: string;
     readonly WHERE_IN_QUEUE_AT_START: string;
     readonly WHERE_IN_QUEUE_AFTER_CURRENT: string;
@@ -76,4 +77,9 @@ export declare class PlayerCore {
     getAudioGraph(): Promise<IAudioGraph>;
     setAudioContext(customAudioContext: AudioContext): void;
     getAudioContext(): Promise<AudioContext>;
+    setAutoCreateContextOnFirstTouch(autoCreate: boolean): void;
+    getAutoCreateContextOnFirstTouch(): boolean;
+    setVisibilityAutoMute(visibilityAutoMute: boolean): void;
+    getVisibilityAutoMute(): boolean;
+    protected _handleVisibilityChange(): void;
 }

@@ -268,9 +268,8 @@
                     // connect the gain node to the destination (speakers)
                     // https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
                     _this._audioGraph.gainNode.connect(audioContext.destination);
-                    // update volume (gainValue)
-                    var gainValue = _this._volume / 100;
-                    _this._changeGainValue(gainValue);
+                    // update volume
+                    _this.changeVolume(_this._volume);
                     // resolve
                     resolve(_this._audioGraph);
                 });
@@ -324,6 +323,9 @@
         };
         PlayerAudio.prototype.changeVolume = function (volume) {
             this._volume = volume;
+            // update volume (gainValue)
+            var gainValue = this._volume / 100;
+            this._changeGainValue(gainValue);
         };
         PlayerAudio.prototype._changeGainValue = function (gainValue) {
             this.getAudioGraph().then(function (audioGraph) {
@@ -437,6 +439,8 @@
             this._postMuteVolume = null;
             // is muted?
             this._isMuted = false;
+            // automatically mute if visibility changes to invisible
+            this._visibilityAutoMute = false;
             // constants
             this.WHERE_IN_QUEUE_AT_END = 'append';
             this.WHERE_IN_QUEUE_AT_START = 'prepend';
@@ -961,6 +965,42 @@
                     resolve(audioContext);
                 }).catch(reject);
             });
+        };
+        PlayerCore.prototype.setAutoCreateContextOnFirstTouch = function (autoCreate) {
+            this._playerAudio.setAutoCreateContextOnFirstTouch(autoCreate);
+        };
+        PlayerCore.prototype.getAutoCreateContextOnFirstTouch = function () {
+            return this._playerAudio.getAutoCreateContextOnFirstTouch();
+        };
+        PlayerCore.prototype.setVisibilityAutoMute = function (visibilityAutoMute) {
+            this._visibilityAutoMute = visibilityAutoMute;
+            if (visibilityAutoMute) {
+                document.addEventListener('visibilitychange', this._handleVisibilityChange.bind(this), false);
+            }
+            else {
+                document.removeEventListener('visibilitychange', this._handleVisibilityChange.bind(this), false);
+            }
+        };
+        PlayerCore.prototype.getVisibilityAutoMute = function () {
+            return this._visibilityAutoMute;
+        };
+        PlayerCore.prototype._handleVisibilityChange = function () {
+            var hiddenKeyword;
+            if (typeof document.hidden !== 'undefined') { // Opera 12.10 and Firefox 18 and later support
+                hiddenKeyword = 'hidden';
+            }
+            else if (typeof document.msHidden !== 'undefined') {
+                hiddenKeyword = 'msHidden';
+            }
+            else if (typeof document.webkitHidden !== 'undefined') {
+                hiddenKeyword = 'webkitHidden';
+            }
+            if (document[hiddenKeyword]) {
+                this.mute();
+            }
+            else {
+                this.unMute();
+            }
         };
         return PlayerCore;
     }());
