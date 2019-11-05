@@ -11,13 +11,63 @@ web audio API player is published to the [npm registry](https://npm.im/web-audio
 
 `npm install web-audio-api-player`  
 
-😔 there is no documentation yet, but check out the source code of the [simple player example](examples/simple-player)  
+😔 there is almost no documentation yet (see below), but check out the source code of the [simple player example](examples/simple-player) to get started  
+
+## documentation
+
+This player has two modes, SOUND_MODE_AUDIO which uses the audio element to load sounds via the audio element and SOUND_MODE_FETCH to load sounds via the web audio API. Here are some of the differences between the two:
+
+### the web audio API
+
+* No support for streaming
+* Files get loaded using fetch, the loading progress is in percent and it is a single value between 0 and 100 percent loaded
+* A song has to be fully fetched before it can be turned into a buffer and hence before the playback can start
+
+For a more complete list of features, check out the w3c [web audio API features list](https://www.w3.org/TR/webaudio/#Features) in their [candidate recommendation document](https://www.w3.org/TR/webaudio/#Features)
+
+### the audio element
+
+* Support for streaming
+* Files get loaded using the audio element, the loading progress is not just a single value, it can be split into multiple parts (time ranges), so for example the start of a song from 0 to 10 percent got loaded, then there is a blank of not yet loaded data and then also the part from 35 to 60 percent has been loaded
+* A song can be played as soon as a big enough portion of the sound has been loaded (what "big enough" means, is that the browser calculates how much of the sounds needs to get loaded to be able to start playing it and continue loading (streaming) what is left without having to pause the sound at some time during the play process until the end of the playback)
+
+### features clarification
+
+You might have read (like I did) a lot of outdated web audio articles which stated the web audio element lacks a lot of features the web audio API has and that hence it is not suited to create complex audio software or for example be used in games where you might want to add effects and filters to sounds.
+
+TLDR; This is not true anymore and especially not true for this library. Yes the audio element if used as standalone lacks a lot of features. But this library does combine the web audio element with the web audio API.
+
+If you use this library, the difference is only how the sound (song) gets loaded (see list of differences above). If using fetch the source is a Buffer and if using the audio element well the source is an media element. Everything that happens after is the same. This is why you can change in the player options the SOUND_MODE, to either load the sound using [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) or load / stream it using the [audio element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio). But this influences only how the sound get loaded (fetched), if loaded via audio element, we use the web audio API [createMediaElementSource method](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaElementSource) of the audiocontext to pass it to the audiocontext of the web audio API. After feeding the web audio API with the input from the web audio element, the playback and what you do with it is being handled by the web audio API.
+
+### so which SOUND_MODE should I use
+
+It depends on what you intend to build.
+
+If build a game where you have a lot (of small sounds) that get (pre-)loaded and maybe cached but played later at some time after they finished loading, use SOUND_MODE_FETCH. It's progress is easier to understand, because when the loading progress of the sound has reached 100% you know it can be played. To display the loading progress a simple [HTML progress element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) is enough.
+
+If you build a music player, use the SOUND_MODE_AUDIO as you might to want to start playing the sound (song) as quickly as possible and don't care if it has fully loaded yet as long as the part that has been loaded is enough to play the song until the end (while the rest of it is being streamed from the server in the background). To display the time range(s) that have been loaded you could for example uses a [2D canvas element](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D).
+
+### advanced usage
+
+#### You can create and then inject your own AudioContext
+
+You can inject your own, if you want to resuse an existing one your app already created:
+...
+
+You can also take the one created by the library and alter it the way you want:
+...
+
+#### You can create and then inject your own AudioGraph (audio routing graph)
+
+This is especially useful if you want to add your own nodes to the AudioGraph (audio routing graph). For example you may want to add an [AnalyserNode](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode) or a pannerNode, delayNode or any other node that is available in the web audio API.
 
 ## W3C web audio API
 
 [W3C Candidate Recommendation, 18 September 2018](https://www.w3.org/TR/webaudio/)  
 
-[Editor’s Draft, 28 February 2019](https://webaudio.github.io/web-audio-api/)  
+[Editor’s Draft, 8 August 2019](https://webaudio.github.io/web-audio-api/)  
+
+[MDN Web Audio API section](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)  
 
 Support tables for audio features, [caniuse: web audio API / audio element / formats ...](https://caniuse.com/#search=audio)  
 
@@ -96,10 +146,15 @@ fileInput.addEventListener('change', function(event) {
 }, false);
 ```
 
+* completly rewrite the sources system, where you can define multiple variants of a sound but with different codecs, app needs to check which codecs are supported by the device and choose one, use should be able to define which codec is preferred if playback support for multiple codecs is available
+* implement audiocontext to close to release memory?
+* feature to use the browser notification system to alert which song is being played
 * instead of the ArrayBuffer use the MediaElementAudioSourceNode, make it optional to still use the ArrayBuffer
-* cache (preload) AudioBuffers in indexeddb, let the user set the amount of cached AudioBuffers, remove from cache by least used and by date when cache is full
-* cache songs for offline mode? indexdb is not very big, check if doable because saving a playlist of songs might exhaust the free space
+* preload AudioBuffers in indexeddb (first song, next song, current song if loop or previous is triggered ...), let the developer set the amount of pre-loaded AudioBuffers, remove from "cache" by least used and by date when "cache" is full
+* cache songs for offline mode? indexdb is not very big (filesystem?), check if doable because saving a playlist of songs might exhaust the free space
+* some methods return a promise others don't, use promises for all to make it more consistent?
 * write a documentation
+* make a list of all possible errors (set a distinct code for each error)
 * add a contribution guide
 * write tests!!! (goal 100% coverage), add [tests coverage badge](https://coveralls.io)
 * [abort](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort) the loading of the sound if the user clicks play and then pause (or stop / next / previous) before the end of the buffering process
@@ -110,7 +165,7 @@ fileInput.addEventListener('change', function(event) {
 * use the [requestAnimation](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) frame or the [requestidlecallback](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback) instead of setInterval for playing progress callback?
 * use web workers, especially for the decoding of the ArrayBuffer into an AudioBuffer, to not block the main thread while decoding?
 * add shuffle mode
-* add a loop song and loop queue mode
+* add a loop song and loop queue mode (<https://webaudio.github.io/web-audio-api/#looping-AudioBufferSourceNode>)
 * handle all error cases that are still unhandled
 * add support for more codecs (flac, wav, ogg vorbis, opus, aac): also check the available codecs and defined sources, play the first one that has matches and available codec, let user define order of preferred codecs for playerback
 * add saucelabs browser testing and their badge [browser compatibility table badge](https://saucelabs.com/blog/new-open-sauce-ui-and-refreshed-build-status-badges) in readme
@@ -119,6 +174,7 @@ fileInput.addEventListener('change', function(event) {
 * add live demo (via github pages)
 * for position and volume, allow to use a percentage or a value
 * add hooks to the sound object for all the native source node events [AudioBufferSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode)
+* add (stereo) panning
 
 ## DONE
 

@@ -1,8 +1,7 @@
-import { IRequested } from './request';
-
 export interface ISoundSource {
     url: string;
     codec?: string;
+    isPreferred?: boolean;
 }
 
 export interface IOnProgress {
@@ -18,9 +17,9 @@ export interface IOnAnyAction {
 }
 
 export interface ISoundAttributes {
-    // sources are not mandatory as user can provide an arrayBuffer
+    // source(s) are NOT mandatory as user can provide an arrayBuffer
     // and / or audioBuffer in which case the source url is not needed
-    sources?: (ISoundSource | string)[] | string;
+    source?: (ISoundSource)[] | ISoundSource;
     id: number;
     loop?: boolean;
     audioBuffer?: AudioBuffer | null;
@@ -37,22 +36,29 @@ export interface ISoundAttributes {
     onResumed?: IOnAnyAction;
 }
 
-export interface ISound extends ISoundAttributes, IRequested {
-    sourceNode: AudioBufferSourceNode | null;
+export interface ISound extends ISoundAttributes, ISoundSource {
+    audioBufferSourceNode: AudioBufferSourceNode | null;
+    mediaElementAudioSourceNode: MediaElementAudioSourceNode | null;
+    isReadyToPLay: boolean;
     isBuffered: boolean;
     isBuffering: boolean;
     audioBuffer: AudioBuffer | null;
     arrayBuffer: ArrayBuffer | null;
     audioBufferDate: Date | null;
+    loadingProgress: number;
     playTimeOffset: number;
     startTime: number;
     playTime: number;
     playedTimePercentage: number;
     isPlaying: boolean;
-    sources: (ISoundSource | string)[];
+    source: (ISoundSource)[] | ISoundSource;
+    url: string | null;
     codec: string | null;
     duration: number | null;
     firstTimePlayed: boolean;
+    audioElement: HTMLAudioElement | null;
+    getCurrentTime(): number;
+    getDuration(): number;
 }
 
 export interface IOptions {
@@ -61,26 +67,28 @@ export interface IOptions {
 
 export class PlayerSound implements ISound {
 
-    public sources: (ISoundSource | string)[];
+    public source: (ISoundSource)[] | ISoundSource;
+    public url: string | null = null;
+    public codec: string | null = null;
     public id: number;
     public loop: boolean;
-    public url: string;
-
-    public sourceNode: AudioBufferSourceNode | null;
-    public isBuffered: boolean;
-    public isBuffering: boolean;
-    public audioBuffer: AudioBuffer | null;
-    public arrayBuffer: ArrayBuffer | null;
-    public audioBufferDate: Date | null;
-    public playTimeOffset: number;
-    public startTime: number;
-    public playTime: number;
-    public playedTimePercentage: number;
-    public isPlaying: boolean;
-    public loadingProgress: number;
-    public codec: string;
-    public duration: number | null;
-    public firstTimePlayed: boolean;
+    public audioBufferSourceNode: AudioBufferSourceNode | null = null;
+    public mediaElementAudioSourceNode: MediaElementAudioSourceNode | null = null;
+    public isReadyToPLay: boolean = false;
+    public isBuffered: boolean = false;
+    public isBuffering: boolean = false;
+    public audioElement: HTMLAudioElement | null = null;
+    public audioBuffer: AudioBuffer | null = null;
+    public arrayBuffer: ArrayBuffer | null = null;
+    public audioBufferDate: Date | null = null;
+    public playTimeOffset: number = 0;
+    public startTime: number = 0;
+    public playTime: number = 0;
+    public playedTimePercentage: number = 0;
+    public isPlaying: boolean = false;
+    public loadingProgress: number = 0;
+    public duration: number | null = null;
+    public firstTimePlayed: boolean = true;
 
     // callbacks
     public onLoading: IOnProgress;
@@ -94,10 +102,10 @@ export class PlayerSound implements ISound {
     constructor(soundAttributes: ISoundAttributes) {
 
         // user provided values
-        if (typeof soundAttributes.sources === 'string') {
-            this.sources = [soundAttributes.sources];
+        if (!Array.isArray(soundAttributes.source)) {
+            this.source = [soundAttributes.source];
         } else {
-            this.sources = soundAttributes.sources;
+            this.source = soundAttributes.source;
         }
 
         this.id = soundAttributes.id;
@@ -107,8 +115,6 @@ export class PlayerSound implements ISound {
         // this is usefull if we need to convert the position percentage into seconds but don't want to preload the song
         // to get the duration the song has to get preloaded as the duration is a property of the audioBuffer
         this.duration = soundAttributes.duration || null;
-
-        this.firstTimePlayed = true;
 
         if (typeof soundAttributes.onLoading === 'function') {
             this.onLoading = soundAttributes.onLoading;
@@ -152,33 +158,51 @@ export class PlayerSound implements ISound {
             this.onResumed = null;
         }
 
+        // if the arrayBufferType is injected through the sound attributes
         let arrayBufferType: string = typeof soundAttributes.arrayBuffer;
 
         if (arrayBufferType === 'ArrayBuffer') {
             this.arrayBuffer = soundAttributes.arrayBuffer;
-        } else {
-            this.arrayBuffer = null;
         }
 
+        // if the audioBuffer is injected through the sound attributes
         let audioBufferType: string = typeof soundAttributes.audioBuffer;
 
         if (audioBufferType === 'AudioBuffer') {
             this.audioBuffer = soundAttributes.audioBuffer;
+            this.isBuffering = false;
+            this.isBuffered = true;
             this.audioBufferDate = new Date();
-        } else {
-            this.audioBuffer = null;
-            this.audioBufferDate = null;
+            this.duration = this.getDuration();
         }
 
-        // default values
-        this.sourceNode = null;
-        this.isBuffered = false;
-        this.isBuffering = false;
-        this.playTimeOffset = 0;
-        this.startTime = 0;
-        this.playTime = 0;
-        this.playedTimePercentage = 0;
-        this.isPlaying = false;
+    }
+
+    public getCurrentTime(): number {
+
+        let currentTime: number;
+
+        if (this.audioBufferSourceNode !== null) {
+            currentTime = this.audioBufferSourceNode.context.currentTime;
+        } else if (this.mediaElementAudioSourceNode !== null) {
+            currentTime = this.audioElement.currentTime;
+        }
+
+        return currentTime;
+
+    }
+
+    public getDuration(): number {
+
+        let duration: number;
+
+        if (this.audioBufferSourceNode !== null) {
+            duration = this.audioBufferSourceNode.buffer.duration;
+        } else if (this.mediaElementAudioSourceNode !== null) {
+            duration = this.audioElement.duration;
+        }
+
+        return duration;
 
     }
 

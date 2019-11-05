@@ -34,7 +34,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "tslint": "5.18.0",
-    "typescript": "3.5.3"
+    "tslint": "5.20.0",
+    "typescript": "3.6.4"
   }
 }

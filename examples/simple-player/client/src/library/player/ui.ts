@@ -95,7 +95,7 @@ class PlayerUI {
                 this._switchPlayerContext(playerContext);
             }
 
-            this.player.play('previous').catch((error) => {
+            this.player.play({ whichSound: 'previous' }).catch((error) => {
                 let playerContext = this._buttonsBox.dataset['playerContext'];
                 console.log('player ui js-previous-button error:', error);
                 if (playerContext === 'on') {
@@ -115,7 +115,7 @@ class PlayerUI {
                 this._switchPlayerContext(playerContext);
             }
 
-            this.player.play('next').catch((error) => {
+            this.player.play({ whichSound: 'next' }).catch((error) => {
                 let playerContext = this._buttonsBox.dataset['playerContext'];
                 console.log('player ui js-next-button error:', error);
                 if (playerContext === 'on') {

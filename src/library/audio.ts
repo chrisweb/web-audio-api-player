@@ -1,3 +1,7 @@
+import { PlayerCore, typeSoundModes } from './core';
+import { ISound } from './sound';
+import { PlayerError } from './error';
+
 // Note to self: AudioGraph documentation
 // https://developer.mozilla.org/en-US/docs/Web/API/AudioNode
 
@@ -31,15 +35,36 @@ interface IAudioGraph {
 }
 
 interface IAudioOptions {
-    customAudioContext: AudioContext;
-    customAudioGraph: IAudioGraph;
-    createAudioContextOnFirstUserInteraction: boolean;
+    customAudioContext?: AudioContext;
+    customAudioGraph?: IAudioGraph;
+    createAudioContextOnFirstUserInteraction?: boolean;
     persistVolume: boolean;
+    loadSoundMode: typeSoundModes;
 }
 
-interface ISourceNodeOptions {
-    loop: boolean;
+interface IAudioBufferSourceOptions extends AudioBufferSourceOptions {
     onEnded: Function;
+    /* AudioBufferSourceOptions:
+    AudioBuffer? buffer;
+    float detune = 0;
+    boolean loop = false;
+    double loopEnd = 0;
+    double loopStart = 0;
+    float playbackRate = 1;
+    */
+}
+
+interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions {
+    onEnded: Function;
+    /* MediaElementAudioSourceOptions:
+    required HTMLMediaElement mediaElement;
+    */
+   loop: boolean;
+}
+
+interface IMediaElementAudioSourceNode extends MediaElementAudioSourceNode {
+    onended: Function;
+    loop: boolean;
 }
 
 class PlayerAudio {
@@ -49,23 +74,29 @@ class PlayerAudio {
     protected _audioGraph: IAudioGraph | null = null;
     protected _createAudioContextOnFirstUserInteraction: boolean;
     protected _persistVolume: boolean;
+    protected _loadSoundMode: typeSoundModes;
 
     constructor(options: IAudioOptions) {
 
         this.setPersistVolume(options.persistVolume);
-        this.setAutoCreateContextOnFirstTouch(options.createAudioContextOnFirstUserInteraction);
+        this._setAutoCreateContextOnFirstTouch(options.createAudioContextOnFirstUserInteraction);
+        this.setLoadSoundMode(options.loadSoundMode);
 
-        if (options.customAudioContext !== null
-            && options.customAudioContext !== undefined) {
-            this.setAudioContext(options.customAudioContext);
-        } else {
+        this.setAudioContext(options.customAudioContext);
+
+        if (options.customAudioContext === null) {
             this._autoCreateAudioContextOnFirstUserInteraction();
         }
 
-        if (options.customAudioGraph !== null
-            && options.customAudioGraph !== undefined) {
-            this.setAudioGraph(options.customAudioGraph);
+        if (!this._createAudioContextOnFirstUserInteraction) {
+            // if the autdioContext shouldn't be created on first user
+            // interaction, we create it during initialization
+            this.getAudioContext().catch(() => {
+                throw new PlayerError('audio context setup failed');
+            });
         }
+
+        this.setAudioGraph(options.customAudioGraph);
 
     }
 
@@ -107,10 +138,11 @@ class PlayerAudio {
     protected _autoCreateAudioContextRemoveListener() {
 
         document.removeEventListener('touchstart', this._autoCreateAudioContextRemoveListener.bind(this), false);
+        document.removeEventListener('touchend', this._autoCreateAudioContextRemoveListener.bind(this), false);
         document.removeEventListener('mousedown', this._autoCreateAudioContextRemoveListener.bind(this), false);
 
-        this.getAudioContext().then(() => {
-
+        this.getAudioContext().catch(() => {
+            throw new PlayerError('audio context setup failed');
         });
 
     }
@@ -119,6 +151,7 @@ class PlayerAudio {
 
         if (this._createAudioContextOnFirstUserInteraction) {
             document.addEventListener('touchstart', this._autoCreateAudioContextRemoveListener.bind(this), false);
+            document.addEventListener('touchend', this._autoCreateAudioContextRemoveListener.bind(this), false);
             document.addEventListener('mousedown', this._autoCreateAudioContextRemoveListener.bind(this), false);
         }
 
@@ -137,9 +170,7 @@ class PlayerAudio {
             } else if (this._audioContext.state === 'suspended') {
 
                 this._unfreezeAudioContext().then(() => {
-
                     resolve(this._audioContext);
-
                 });
 
             } else if (this._audioContext.state === 'running') {
@@ -147,6 +178,7 @@ class PlayerAudio {
                 resolve(this._audioContext);
 
             } else {
+                // TODO: are other states possible?
                 console.log('audioContext.state: ', this._audioContext.state);
             }
 
@@ -178,13 +210,11 @@ class PlayerAudio {
 
     }
 
-    protected _destroyAudioContext(): Promise<void> {
+    protected async _destroyAudioContext(): Promise<void> {
 
-        return this._audioContext.close().then(() => {
+        await this._audioContext.close();
 
-            this._audioContext = null;
-
-        });
+        this._audioContext = null;
 
     }
 
@@ -231,9 +261,11 @@ class PlayerAudio {
         }
 
         // check if there is gain node
-        if (!('gainNode' in audioGraph)
-            || audioGraph.gainNode === null
-            || audioGraph.gainNode === undefined) {
+        if (audioGraph !== null &&
+            (!('gainNode' in audioGraph)
+                || audioGraph.gainNode === null
+                || audioGraph.gainNode === undefined)
+        ) {
 
             this.getAudioContext().then((audioContext: AudioContext) => {
 
@@ -294,8 +326,10 @@ class PlayerAudio {
                 // https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
                 this._audioGraph.gainNode.connect(audioContext.destination);
 
-                // update volume
-                this.changeVolume(this._volume, false);
+                // update the gainValue (volume)
+                const gainValue = this._volume / 100;
+
+                this._changeGainValue(gainValue);
 
                 // resolve
                 resolve(this._audioGraph);
@@ -318,41 +352,73 @@ class PlayerAudio {
 
     }
 
-    public createSourceNode(sourceNodeOptions: ISourceNodeOptions): Promise<AudioBufferSourceNode> {
+    public async createAudioBufferSourceNode(audioBufferSourceOptions: IAudioBufferSourceOptions, sound: ISound): Promise<void> {
 
-        return this.getAudioContext().then((audioContext: AudioContext) => {
+        const audioContext = await this.getAudioContext();
 
-            let sourceNode: AudioBufferSourceNode = audioContext.createBufferSource();
+        let audioBufferSourceNode: AudioBufferSourceNode = audioContext.createBufferSource();
 
-            // do we loop this song
-            sourceNode.loop = sourceNodeOptions.loop;
+        sound.audioBufferSourceNode = audioBufferSourceNode;
 
-            // if the song ends destroy it's audioGraph as the source can't be reused anyway
-            // NOTE: the onended handler won't have any effect if the loop property is set to
-            // true, as the audio won't stop playing. To see the effect in this case you'd
-            // have to use AudioBufferSourceNode.stop()
-            sourceNode.onended = () => {
+        // do we loop this song
+        audioBufferSourceNode.loop = audioBufferSourceOptions.loop;
 
-                sourceNodeOptions.onEnded();
+        let that = this;
 
-                sourceNode.disconnect();
-
-                sourceNode = null;
-
-            };
-
-            return sourceNode;
-
-        });
+        // if the song ends destroy it's audioGraph as the source can't be reused anyway
+        // NOTE: the onended handler won't have any effect if the loop property is set to
+        // true, as the audio won't stop playing. To see the effect in this case you'd
+        // have to use AudioBufferSourceNode.stop()
+        audioBufferSourceNode.onended = (event: Event) => {
+            audioBufferSourceOptions.onEnded(event);
+            that.destroySourceNode(sound);
+        };
 
     }
 
-    public connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode): void {
+    public async createMediaElementSourceNode(sourceNodeOptions: IMediaElementAudioSourceOptions, sound: ISound): Promise<void> {
 
+        const audioContext = await this.getAudioContext();
+        let mediaElementAudioSourceNode: IMediaElementAudioSourceNode;
+
+        try {
+            mediaElementAudioSourceNode = audioContext.createMediaElementSource(sourceNodeOptions.mediaElement) as IMediaElementAudioSourceNode;
+        } catch (error) {
+            throw new PlayerError(error);
+        }
+
+        sound.mediaElementAudioSourceNode = mediaElementAudioSourceNode;
+
+        // do we loop this song
+        mediaElementAudioSourceNode.loop = sourceNodeOptions.loop;
+
+        // ??? no onEnded on MediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/onended
+        // ??? mediaElementAudioSourceNode.mediaElement.ended
+
+        let that = this;
+
+        // if the song ends destroy it's audioGraph as the source can't be reused anyway
+        // NOTE: the onEnded handler won't have any effect if the loop property is set to
+        // true, as the audio won't stop playing. To see the effect in this case you'd
+        // have to use AudioBufferSourceNode.stop()
+        mediaElementAudioSourceNode.onended = (event: Event) => {
+            that.destroySourceNode(sound);
+            // TODO on end destroy the audio element, probably not if loop enabled, but if loop
+            // is disabled, maybe still a good idea to keep it (cache?), but not all audio elements
+            // because of memory consumption if suddenly hundreds of audio elements in one page
+        };
+
+    }
+
+    public connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode | IMediaElementAudioSourceNode): void {
+
+        // audio routing graph
         this.getAudioGraph().then((audioGraph: IAudioGraph) => {
 
+            // https://developer.mozilla.org/en-US/docs/Web/API/GainNode
             sourceNode.connect(audioGraph.gainNode);
 
+            // https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode
             if ('analyserNode' in audioGraph
                 && audioGraph.analyserNode !== null
                 && audioGraph.analyserNode !== undefined) {
@@ -361,6 +427,7 @@ class PlayerAudio {
 
             }
 
+            // https://developer.mozilla.org/en-US/docs/Web/API/DelayNode
             if ('delayNode' in audioGraph
                 && audioGraph.delayNode !== null
                 && audioGraph.delayNode !== undefined) {
@@ -369,29 +436,69 @@ class PlayerAudio {
 
             }
 
+            // https://developer.mozilla.org/en-US/docs/Web/API/PannerNode
+            if ('pannerNode' in audioGraph
+                && audioGraph.pannerNode !== null
+                && audioGraph.pannerNode !== undefined) {
+
+                sourceNode.connect(audioGraph.pannerNode);
+
+            }
+
+            // https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode
+
             // TODO: handle other types of nodes as well
+            // https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode
+            // https://developer.mozilla.org/en-US/docs/Web/API/ChannelMergerNode
+            // https://developer.mozilla.org/en-US/docs/Web/API/ChannelSplitterNode
+            // https://developer.mozilla.org/en-US/docs/Web/API/ConvolverNode
+            // https://developer.mozilla.org/en-US/docs/Web/API/DynamicsCompressorNode
+            // https://developer.mozilla.org/en-US/docs/Web/API/IIRFilterNode
+            // https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode
+            // https://developer.mozilla.org/en-US/docs/Web/API/WaveShaperNode
+
             // do it recursivly!?
+            // let the user chose the order in which they get connected?
 
         });
 
     }
 
-    public destroySourceNode(sourceNode: AudioBufferSourceNode): AudioBufferSourceNode {
+    public destroySourceNode(sound: ISound): void {
 
-        sourceNode.disconnect();
+        // destroy the source node
+        if (sound.audioBufferSourceNode !== null) {
 
-        sourceNode = null;
+            sound.audioBufferSourceNode.disconnect();
 
-        return sourceNode;
+        } else if (sound.mediaElementAudioSourceNode !== null) {
+
+            sound.mediaElementAudioSourceNode.disconnect();
+
+        } else {
+            throw new PlayerError('can\'t destroy as no source node in sound');
+        }
+
+        // the audio buffer source node we set it to null, to let it get destroyed
+        // by the garbage collector as you can't reuse an audio buffer source node
+        // (after it got stopped) as specified in the specs
+        sound.audioBufferSourceNode = null;
+
+        // an media element source node can be reused (there is no stop method, only
+        // a pause method) so we don't set it to null
+        //sound.mediaElementAudioSourceNode = null;
 
     }
 
-    public changeVolume(volume: number, forceUpdateUserVolume: boolean = true): number {
+    public changeVolume({ volume, sound = null, forceUpdateUserVolume = true }: { volume: number; sound?: ISound; forceUpdateUserVolume?: boolean; }): number {
 
         if (this._persistVolume) {
 
             const userVolume = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
 
+            // we sometimes change the volume, for a fade in/out or when muting, but
+            // in this cases we don't want to update the user's persisted volume, in
+            // which case forceUpdateUserVolume is false else it would be true
             if (!isNaN(userVolume) && !forceUpdateUserVolume) {
                 volume = userVolume;
             } else {
@@ -402,10 +509,14 @@ class PlayerAudio {
 
         }
 
-        // update volume (gainValue)
-        const gainValue = volume / 100;
+        // update the player volume / gain value
+        const volumeLevel = volume / 100;
 
-        this._changeGainValue(gainValue);
+        if (sound !== null) {
+            sound.audioElement.volume = volumeLevel;
+        } else {
+            this._changeGainValue(volumeLevel);
+        }
 
         this._volume = volume;
 
@@ -423,15 +534,12 @@ class PlayerAudio {
 
     }
 
-    public setAutoCreateContextOnFirstTouch(autoCreate: boolean): void {
+    protected _setAutoCreateContextOnFirstTouch(autoCreate: boolean): void {
 
+        // protected as this can only be used during initialization, if false
+        // the audioContext is created by default during Initialization and this
+        // can't be undone or changed later on
         this._createAudioContextOnFirstUserInteraction = autoCreate;
-
-    }
-
-    public getAutoCreateContextOnFirstTouch(): boolean {
-
-        return this._createAudioContextOnFirstUserInteraction;
 
     }
 
@@ -447,6 +555,18 @@ class PlayerAudio {
 
     }
 
+    public setLoadSoundMode(loadSoundMode: typeSoundModes): void {
+
+        this._loadSoundMode = loadSoundMode;
+
+    }
+
+    public getLoadSoundMode(): typeSoundModes {
+
+        return this._loadSoundMode;
+
+    }
+
 }
 
-export { PlayerAudio, IAudioGraph, IAudioOptions };
+export { PlayerAudio, IAudioGraph, IAudioOptions, IAudioBufferSourceOptions, IMediaElementAudioSourceOptions, IMediaElementAudioSourceNode };
