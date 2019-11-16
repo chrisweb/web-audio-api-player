@@ -2,7 +2,7 @@
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
     (global = global || self, factory(global['web-audio-api-player'] = {}));
-}(this, function (exports) { 'use strict';
+}(this, (function (exports) { 'use strict';
 
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation. All rights reserved.
@@ -456,20 +456,40 @@
             });
         };
         PlayerAudio.prototype.connectSourceNodeToGraphNodes = function (sourceNode) {
+            // audio routing graph
             this.getAudioGraph().then(function (audioGraph) {
+                // https://developer.mozilla.org/en-US/docs/Web/API/GainNode
                 sourceNode.connect(audioGraph.gainNode);
+                // https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode
                 if ('analyserNode' in audioGraph
                     && audioGraph.analyserNode !== null
                     && audioGraph.analyserNode !== undefined) {
                     sourceNode.connect(audioGraph.analyserNode);
                 }
+                // https://developer.mozilla.org/en-US/docs/Web/API/DelayNode
                 if ('delayNode' in audioGraph
                     && audioGraph.delayNode !== null
                     && audioGraph.delayNode !== undefined) {
                     sourceNode.connect(audioGraph.delayNode);
                 }
+                // https://developer.mozilla.org/en-US/docs/Web/API/PannerNode
+                if ('pannerNode' in audioGraph
+                    && audioGraph.pannerNode !== null
+                    && audioGraph.pannerNode !== undefined) {
+                    sourceNode.connect(audioGraph.pannerNode);
+                }
+                // https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode
                 // TODO: handle other types of nodes as well
+                // https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode
+                // https://developer.mozilla.org/en-US/docs/Web/API/ChannelMergerNode
+                // https://developer.mozilla.org/en-US/docs/Web/API/ChannelSplitterNode
+                // https://developer.mozilla.org/en-US/docs/Web/API/ConvolverNode
+                // https://developer.mozilla.org/en-US/docs/Web/API/DynamicsCompressorNode
+                // https://developer.mozilla.org/en-US/docs/Web/API/IIRFilterNode
+                // https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode
+                // https://developer.mozilla.org/en-US/docs/Web/API/WaveShaperNode
                 // do it recursivly!?
+                // let the user chose the order in which they get connected?
             });
         };
         PlayerAudio.prototype.destroySourceNode = function (sound) {
@@ -1521,5 +1541,5 @@
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
-}));
+})));
 //# sourceMappingURL=index.umd.js.map

@@ -1,6 +1,6 @@
 {
   "name": "web-audio-api-player",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "web audio api player",
   "keywords": [
     "web",
@@ -40,10 +40,10 @@
     "watch": "rollup -cw ./scripts/dist.js"
   },
   "devDependencies": {
-    "rollup": "1.23.1",
-    "rollup-plugin-typescript2": "0.24.3",
-    "tslint": "5.20.0",
+    "rollup": "1.27.0",
+    "rollup-plugin-typescript2": "0.25.2",
+    "tslint": "5.20.1",
     "tslint-eslint-rules": "5.4.0",
-    "typescript": "3.6.4"
+    "typescript": "3.7.2"
   }
 }

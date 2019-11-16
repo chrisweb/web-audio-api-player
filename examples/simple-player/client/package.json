@@ -1,6 +1,6 @@
 {
   "name": "web-audio-api-player_simple-player_example_client",
-  "version": "3.0.6",
+  "version": "4.0.0",
   "description": "web audio api player simple player example server client",
   "keywords": [
     "web",
@@ -34,7 +34,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "tslint": "5.20.0",
-    "typescript": "3.6.4"
+    "tslint": "5.20.1",
+    "typescript": "3.7.2"
   }
 }

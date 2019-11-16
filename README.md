@@ -74,7 +74,14 @@ Support tables for audio features, [caniuse: web audio API / audio element / for
 ## development: build
 
 install the latest nodejs (if you haven't already) [nodejs](https://nodejs.org)  
-update npm to latest version
+
+install or update to the latest git version [git scm downloads](https://git-scm.com/downloads) (During installation at the step "choosing the default editor used by Git", if like me you are using visual studio code you might want to chose the new option "use visual studio code as Git's default editor") (also if like me you are on windows, at the step "adjusting your PATH environment", ensure the second radio button option is selected "git from the line and also from 3rd-party software" to ensure git is added to the windows PATH, which will allow you to use git with any command line tool like windows powershell for example)  
+
+git clone this repository if you haven't already
+
+open your favorite command line tool and go to the root directory of this repository
+
+update npm to latest version  
 
 `npm install npm@latest -g`
 
@@ -100,6 +107,18 @@ in devlopment you can use watch to rebuild every time you edit a typescript file
 to lint the typescript files  
 
 `npm run lint`
+
+## npm deployment
+
+login to npmjs.com  
+
+`npm login`
+
+before hitting running the command ensure the version of your package in the package.json has been updated  
+
+publish a new version on npmjs  
+
+`npm publish`
 
 ## examples
 
