@@ -120,24 +120,6 @@ publish a new version on npmjs
 
 `npm publish`
 
-## publish package on github
-
-!! if you use two way authentification on github, instead of login in with your password (on the command line) you need to create a personal access token and use that token as password [github personal access token documentation](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line)  
-
-[configuring npm for use with GitHub Packages documentation](https://help.github.com/en/github/managing-packages-with-github-packages/configuring-npm-for-use-with-github-packages)  
-
-use the "publishConfig" option in your package.json  
-
-`"publishConfig": { "registry": "https://npm.pkg.github.com/" }`
-
-authenticate  
-
-`npm login --registry=https://npm.pkg.github.com/`
-
-publish  
-
-`npm publish`
-
 ## examples
 
 the best way to get started is to check out the examples folder, start with [simple player example](examples/simple-player)

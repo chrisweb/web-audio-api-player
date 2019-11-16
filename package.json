@@ -21,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chrisweb/web-audio-api-player.git"
+    "url": "ssh://git@github.com/chrisweb/web-audio-api-player.git"
   },
   "license": "MIT",
   "author": "chrisweb <chris963@gmail.com> (https://chris.lu)",
@@ -45,8 +45,5 @@
     "tslint": "5.20.1",
     "tslint-eslint-rules": "5.4.0",
     "typescript": "3.7.2"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
   }
 }
