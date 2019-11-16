@@ -108,7 +108,7 @@ to lint the typescript files
 
 `npm run lint`
 
-## npm deployment
+## publish package on npmjs.com
 
 login to npmjs.com  
 
@@ -117,6 +117,22 @@ login to npmjs.com
 before hitting running the command ensure the version of your package in the package.json has been updated  
 
 publish a new version on npmjs  
+
+`npm publish`
+
+## publish package on github
+
+!! if you use two way authentification on github, instead of login in with your password (on the command line) you need to create a personal access token and use that token as password [github personal access token documentation](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line)  
+
+use the "publishConfig" option in your package.json  
+
+`"publishConfig": { "registry": "https://npm.pkg.github.com/" }`
+
+authenticate  
+
+`npm login --registry=https://npm.pkg.github.com/`
+
+publish  
 
 `npm publish`
 
