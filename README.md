@@ -17,7 +17,7 @@ web audio API player is published to the [npm registry](https://npm.im/web-audio
 
 This player has two modes, SOUND_MODE_AUDIO which uses the audio element to load sounds via the audio element and SOUND_MODE_FETCH to load sounds via the web audio API. Here are some of the differences between the two:
 
-### the web audio API
+### the web audio API (SOUND_MODE_FETCH)
 
 * No support for streaming
 * Files get loaded using fetch, the loading progress is in percent and it is a single value between 0 and 100 percent loaded
@@ -25,7 +25,7 @@ This player has two modes, SOUND_MODE_AUDIO which uses the audio element to load
 
 For a more complete list of features, check out the w3c [web audio API features list](https://www.w3.org/TR/webaudio/#Features) in their [candidate recommendation document](https://www.w3.org/TR/webaudio/#Features)
 
-### the audio element
+### the audio element (SOUND_MODE_AUDIO)
 
 * Support for streaming
 * Files get loaded using the audio element, the loading progress is not just a single value, it can be split into multiple parts (time ranges), so for example the start of a song from 0 to 10 percent got loaded, then there is a blank of not yet loaded data and then also the part from 35 to 60 percent has been loaded
@@ -87,7 +87,7 @@ update npm to latest version
 
 install the dependencies
 
-`npm install`
+`npm i`
 
 to build the distributions  
 
@@ -139,14 +139,6 @@ As of now (25.05.2019) the web audio api typings seems to be included in lib.d.t
 Unfortunatly the defined window does not have AudioContext:  
 check out [[open] github ticket (as of 06/2019)](https://github.com/microsoft/TypeScript/issues/31686)  
 the current [dom.d.ts on github](https://github.com/microsoft/TypeScript/blob/master/src/lib/dom.generated.d.ts)  
-
-### linting setup notes
-
-TSlint will be deprecated [github ticket](https://github.com/palantir/tslint/issues/4534)  
-
-> we plan to deprecate TSLint and focus our efforts instead on improving ESLint’s TypeScript support  
-
-Their [blog post](https://medium.com/palantir/tslint-in-2019-1a144c2317a9) announcing that [TSLint](https://github.com/palantir/tslint) will be deprecated in 2019 and you should switch to [ESLint](https://github.com/eslint/eslint) when TSLint is officially deprecated  
 
 ## TODOs (help wanted 😊)
 
@@ -224,6 +216,7 @@ fileInput.addEventListener('change', function(event) {
 * add an option that uses the visibility API to automatically mute and unmute a sound when the visibility changes
 * rewrite how the audiocontext is created, for browser that enforce that a user interaction has taken place before a context can be running
 * add option to persist the user volume choice using the localstorage
+* switch from tslint to eslint with typescript-eslint plugin / parser: TSlint will be deprecated [github ticket](https://github.com/palantir/tslint/issues/4534), read their [blog post](https://medium.com/palantir/tslint-in-2019-1a144c2317a9) and then switch to [ESLint](https://github.com/eslint/eslint)
 
 ## License
 

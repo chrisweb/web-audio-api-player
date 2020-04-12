@@ -15,7 +15,7 @@ export class PlayerRequest {
 
         return new Promise(function (resolve, reject) {
 
-            let xhr = new XMLHttpRequest();
+            const xhr = new XMLHttpRequest();
 
             // TODO: abort the request?
             // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort
@@ -26,7 +26,7 @@ export class PlayerRequest {
             // set the expected response type from the server to arraybuffer
             xhr.responseType = 'arraybuffer';
 
-            xhr.onload = function () {
+            xhr.onload = function (): void {
 
                 // gets called even on for example 404, so check the status
                 if (xhr.status === 200) {
@@ -43,9 +43,9 @@ export class PlayerRequest {
 
             };
 
-            xhr.onprogress = function (event) {
+            xhr.onprogress = function (event): void {
 
-                let percentage = 100 / (event.total / event.loaded);
+                const percentage = 100 / (event.total / event.loaded);
 
                 // update value on sound object
                 requested.loadingProgress = percentage;
@@ -57,7 +57,7 @@ export class PlayerRequest {
             };
 
             // also reject for any kind of network errors
-            xhr.onerror = function () {
+            xhr.onerror = function (): void {
 
                 reject(new PlayerError('xhr network error'));
 

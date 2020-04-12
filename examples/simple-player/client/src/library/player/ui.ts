@@ -19,7 +19,7 @@ class PlayerUI {
 
     }
 
-    protected _prepareUI() {
+    protected _prepareUI(): void {
 
         // NOTE TO SELF: compatibility goal: minimum IE11
 
@@ -45,7 +45,7 @@ class PlayerUI {
 
     }
 
-    protected _createListeners() {
+    protected _createListeners(): void {
 
         // some performance tests:
         // https://jsperf.com/js-get-elements
@@ -56,7 +56,7 @@ class PlayerUI {
 
     }
 
-    protected _onClickButtonsBox(event: Event) {
+    protected _onClickButtonsBox(event: Event): void {
 
         event.preventDefault();
 
@@ -68,7 +68,7 @@ class PlayerUI {
 
         if ($button.id === 'js-play-pause-button') {
 
-            let playerContext = this._buttonsBox.dataset['playerContext'];
+            const playerContext = this._buttonsBox.dataset['playerContext'];
 
             switch (playerContext) {
                 // is playing
@@ -89,14 +89,14 @@ class PlayerUI {
 
             this._setPlayingProgress(0);
 
-            let playerContext = this._buttonsBox.dataset['playerContext'];
+            const playerContext = this._buttonsBox.dataset['playerContext'];
 
             if (playerContext === 'off') {
                 this._switchPlayerContext(playerContext);
             }
 
             this.player.play({ whichSound: 'previous' }).catch((error) => {
-                let playerContext = this._buttonsBox.dataset['playerContext'];
+                const playerContext = this._buttonsBox.dataset['playerContext'];
                 console.log('player ui js-previous-button error:', error);
                 if (playerContext === 'on') {
                     this._switchPlayerContext(playerContext);
@@ -109,14 +109,14 @@ class PlayerUI {
 
             this._setPlayingProgress(0);
 
-            let playerContext = this._buttonsBox.dataset['playerContext'];
+            const playerContext = this._buttonsBox.dataset['playerContext'];
 
             if (playerContext === 'off') {
                 this._switchPlayerContext(playerContext);
             }
 
             this.player.play({ whichSound: 'next' }).catch((error) => {
-                let playerContext = this._buttonsBox.dataset['playerContext'];
+                const playerContext = this._buttonsBox.dataset['playerContext'];
                 console.log('player ui js-next-button error:', error);
                 if (playerContext === 'on') {
                     this._switchPlayerContext(playerContext);
@@ -139,31 +139,31 @@ class PlayerUI {
 
     }
 
-    protected _onChangeVolume(event: Event) {
+    protected _onChangeVolume(event: Event): void {
 
         // styling the html5 range:
         // http://brennaobrien.com/blog/2014/05/style-input-type-range-in-every-browser.html
 
-        let rangeElement = event.target as HTMLInputElement;
-        let value = parseInt(rangeElement.value);
+        const rangeElement = event.target as HTMLInputElement;
+        const value = parseInt(rangeElement.value);
 
         this.player.setVolume(value);
 
     }
 
-    protected _onChangePlayingProgress(event: Event) {
+    protected _onChangePlayingProgress(event: Event): void {
 
-        let rangeElement = event.target as HTMLInputElement;
-        let value = parseInt(rangeElement.value);
+        const rangeElement = event.target as HTMLInputElement;
+        const value = parseInt(rangeElement.value);
 
         this.player.setPosition(value);
 
     }
 
-    protected _switchPlayerContext(currentPlayerContext: string) {
+    protected _switchPlayerContext(currentPlayerContext: string): void {
 
-        let $playIcon = document.getElementById('js-play');
-        let $pauseIcon = document.getElementById('js-pause');
+        const $playIcon = document.getElementById('js-play');
+        const $pauseIcon = document.getElementById('js-pause');
         let newPlayerContext;
 
         switch (currentPlayerContext) {
@@ -185,37 +185,37 @@ class PlayerUI {
 
     }
 
-    protected _setPlayingProgress(percentage: number) {
+    protected _setPlayingProgress(percentage: number): void {
 
         this._playingProgressBar.value = percentage.toString();
 
     }
 
-    protected _setLoadingProgress(percentage: number) {
+    protected _setLoadingProgress(percentage: number): void {
 
         this._loadingProgressBar.value = percentage.toString();
 
     }
 
-    public changePlayingProgress(percentage: number) {
+    public changePlayingProgress(percentage: number): void {
 
         this._setPlayingProgress(percentage);
 
     }
 
-    public changeLoadingProgress(percentage: number) {
+    public changeLoadingProgress(percentage: number): void {
 
         this._setLoadingProgress(percentage);
 
     }
 
-    public resetUI() {
+    public resetUI(): void {
 
         this._switchPlayerContext('on');
 
     }
 
-    protected _destroyListeners() {
+    protected _destroyListeners(): void {
 
         this._buttonsBox.removeEventListener('click', this._onClickButtonsBox.bind(this));
         this._volumeSlider.removeEventListener('change', this._onChangeVolume.bind(this));
@@ -227,7 +227,7 @@ class PlayerUI {
 
     }
 
-    public deconstructor() {
+    public deconstructor(): void {
 
         this._destroyListeners();
 

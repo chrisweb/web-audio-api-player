@@ -34,10 +34,11 @@
     }
 
     function __awaiter(thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
         return new (P || (P = Promise))(function (resolve, reject) {
             function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
             function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
             step((generator = generator.apply(thisArg, _arguments || [])).next());
         });
     }
@@ -236,6 +237,7 @@
         PlayerAudio.prototype._createAudioContext = function () {
             var _this = this;
             return new Promise(function (resolve, reject) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 var MyAudioContext = window.AudioContext || window.webkitAudioContext;
                 // initialize the audio context
                 try {
@@ -386,7 +388,7 @@
                     _this._changeGainValue(gainValue);
                     // resolve
                     resolve(_this._audioGraph);
-                });
+                }).catch(reject);
             });
         };
         PlayerAudio.prototype._destroyAudioGraph = function () {
@@ -398,7 +400,8 @@
         };
         PlayerAudio.prototype.createAudioBufferSourceNode = function (audioBufferSourceOptions, sound) {
             return __awaiter(this, void 0, void 0, function () {
-                var audioContext, audioBufferSourceNode, that;
+                var audioContext, audioBufferSourceNode;
+                var _this = this;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0: return [4 /*yield*/, this.getAudioContext()];
@@ -408,14 +411,13 @@
                             sound.audioBufferSourceNode = audioBufferSourceNode;
                             // do we loop this song
                             audioBufferSourceNode.loop = audioBufferSourceOptions.loop;
-                            that = this;
                             // if the song ends destroy it's audioGraph as the source can't be reused anyway
                             // NOTE: the onended handler won't have any effect if the loop property is set to
                             // true, as the audio won't stop playing. To see the effect in this case you'd
                             // have to use AudioBufferSourceNode.stop()
                             audioBufferSourceNode.onended = function (event) {
                                 audioBufferSourceOptions.onEnded(event);
-                                that.destroySourceNode(sound);
+                                _this.destroySourceNode(sound);
                             };
                             return [2 /*return*/];
                     }
@@ -424,7 +426,8 @@
         };
         PlayerAudio.prototype.createMediaElementSourceNode = function (sourceNodeOptions, sound) {
             return __awaiter(this, void 0, void 0, function () {
-                var audioContext, mediaElementAudioSourceNode, that;
+                var audioContext, mediaElementAudioSourceNode;
+                var _this = this;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0: return [4 /*yield*/, this.getAudioContext()];
@@ -439,13 +442,14 @@
                             sound.mediaElementAudioSourceNode = mediaElementAudioSourceNode;
                             // do we loop this song
                             mediaElementAudioSourceNode.loop = sourceNodeOptions.loop;
-                            that = this;
+                            // ??? no onEnded on MediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/onended
+                            // ??? mediaElementAudioSourceNode.mediaElement.ended
                             // if the song ends destroy it's audioGraph as the source can't be reused anyway
                             // NOTE: the onEnded handler won't have any effect if the loop property is set to
                             // true, as the audio won't stop playing. To see the effect in this case you'd
                             // have to use AudioBufferSourceNode.stop()
-                            mediaElementAudioSourceNode.onended = function (event) {
-                                that.destroySourceNode(sound);
+                            mediaElementAudioSourceNode.onended = function () {
+                                _this.destroySourceNode(sound);
                                 // TODO on end destroy the audio element, probably not if loop enabled, but if loop
                                 // is disabled, maybe still a good idea to keep it (cache?), but not all audio elements
                                 // because of memory consumption if suddenly hundreds of audio elements in one page
@@ -700,6 +704,7 @@
         PlayerCore.prototype._detectAudioContextSupport = function () {
             // basic audio context detection
             var audioContextSupported = false;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (typeof window.webkitAudioContext !== 'undefined') {
                 audioContextSupported = true;
             }
@@ -759,7 +764,7 @@
             this.resetQueue();
         };
         PlayerCore.prototype.getQueue = function () {
-            // TODO: is the needed?
+            // TODO: is this needed?
             return this._queue;
         };
         PlayerCore.prototype.setVolume = function (volume) {
@@ -850,6 +855,7 @@
         };
         PlayerCore.prototype._loadSound = function (sound) {
             var loadSoundPromise;
+            var notImplementedError;
             switch (this._loadSoundMode) {
                 case PlayerCore.SOUND_MODE_AUDIO:
                     loadSoundPromise = this._loadSoundUsingAudioElement(sound);
@@ -859,7 +865,7 @@
                     break;
                 case PlayerCore.SOUND_MODE_FETCH:
                     // TODO: implement fetch
-                    var notImplementedError = new PlayerError(PlayerCore.SOUND_MODE_FETCH + ' is not implemented yet', 1);
+                    notImplementedError = new PlayerError(PlayerCore.SOUND_MODE_FETCH + ' is not implemented yet', 1);
                     loadSoundPromise = Promise.reject(notImplementedError);
                     break;
             }
@@ -889,12 +895,12 @@
                     sound.duration = audioElement.duration;
                     sound.isReadyToPLay = true;
                     _this._initializeAudioElementListeners(sound);
-                    sound.audioElement.addEventListener('canplaythrough', function (event) {
-                        console.log('BBBBBBBBBBBB', event, sound);
+                    sound.audioElement.addEventListener('canplaythrough', function () {
+                        //console.log('BBBBBBBBBBBB', event, sound);
                         resolve(sound);
                     });
-                    sound.audioElement.addEventListener('error', function (event) {
-                        console.log('CCCCCCCCCCCC', event, sound);
+                    sound.audioElement.addEventListener('error', function () {
+                        //console.log('CCCCCCCCCCCC', event, sound);
                         var soundLoadingError = new PlayerError('loading sound failed');
                         reject(soundLoadingError);
                     });
@@ -960,20 +966,20 @@
             // waiting
             // see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event
             // TODO: how does canplaythrough behave if the source is a stream?
-            sound.audioElement.addEventListener('progress', function (event) {
-                console.log('AAAAAAAAAAA', event, sound.audioElement.buffered.length, sound.audioElement.duration);
-                for (var i = 0; i < sound.audioElement.buffered.length; i++) {
+            sound.audioElement.addEventListener('progress', function () {
+                //console.log('AAAAAAAAAAA', event, sound.audioElement.buffered.length, sound.audioElement.duration);
+                /*for (let i = 0; i < sound.audioElement.buffered.length; i++) {
                     console.log('********buffered', sound.audioElement.buffered.start(i), sound.audioElement.buffered.end(i));
-                }
-                if (sound.audioElement.buffered.length > 0
+                }*/
+                /*if (sound.audioElement.buffered.length > 0
                     && !isNaN(sound.audioElement.duration)) {
-                    var endBuf = sound.audioElement.buffered.end(0);
-                    var soFar = ((endBuf / sound.audioElement.duration) * 100);
-                    console.log('********buffered222222 soFar', soFar);
-                }
+                        const endBuf = sound.audioElement.buffered.end(0);
+                        const soFar = ((endBuf / sound.audioElement.duration) * 100);
+                        console.log('********buffered222222 soFar', soFar);
+                }*/
                 sound.loadingProgress = sound.audioElement.duration;
             });
-            sound.audioElement.addEventListener('timeupdate', function (event) {
+            sound.audioElement.addEventListener('timeupdate', function () {
                 sound.duration = sound.audioElement.duration;
             });
         };
@@ -1370,7 +1376,7 @@
                     error = 'unrecognised codec';
                     break;
             }
-            if (!!error) {
+            if (error) {
                 throw new PlayerError(error);
             }
             return this._checkMimeTypesSupport(mediaMimeTypes);
@@ -1380,7 +1386,7 @@
             var isSupported = false;
             mediaMimeTypes.forEach(function (mediaMimeType) {
                 var isMediaTypeSupported = deviceAudio.canPlayType(mediaMimeType).replace(/^no$/, '');
-                if (!!isMediaTypeSupported) {
+                if (isMediaTypeSupported) {
                     isSupported = true;
                 }
             });
@@ -1508,13 +1514,16 @@
             var hiddenKeyword;
             if (typeof document.hidden !== 'undefined') { // Opera 12.10 and Firefox 18 and later support
                 hiddenKeyword = 'hidden';
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             }
             else if (typeof document.msHidden !== 'undefined') {
                 hiddenKeyword = 'msHidden';
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             }
             else if (typeof document.webkitHidden !== 'undefined') {
                 hiddenKeyword = 'webkitHidden';
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (document[hiddenKeyword]) {
                 this.mute();
             }

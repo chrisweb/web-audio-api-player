@@ -33,6 +33,11 @@ interface IMediaElementAudioSourceNode extends MediaElementAudioSourceNode {
     onended: Function;
     loop: boolean;
 }
+export interface IChangeVolumeOptions {
+    volume: number;
+    sound?: ISound;
+    forceUpdateUserVolume?: boolean;
+}
 declare class PlayerAudio {
     protected _volume: number;
     protected _audioContext: AudioContext | null;
@@ -59,11 +64,7 @@ declare class PlayerAudio {
     createMediaElementSourceNode(sourceNodeOptions: IMediaElementAudioSourceOptions, sound: ISound): Promise<void>;
     connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode | IMediaElementAudioSourceNode): void;
     destroySourceNode(sound: ISound): void;
-    changeVolume({ volume, sound, forceUpdateUserVolume }: {
-        volume: number;
-        sound?: ISound;
-        forceUpdateUserVolume?: boolean;
-    }): number;
+    changeVolume({ volume, sound, forceUpdateUserVolume }: IChangeVolumeOptions): number;
     protected _changeGainValue(gainValue: number): void;
     protected _setAutoCreateContextOnFirstTouch(autoCreate: boolean): void;
     setPersistVolume(persistVolume: boolean): void;

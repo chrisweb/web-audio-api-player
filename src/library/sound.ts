@@ -61,10 +61,6 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     getDuration(): number;
 }
 
-export interface IOptions {
-
-}
-
 export class PlayerSound implements ISound {
 
     public source: (ISoundSource)[] | ISoundSource;
@@ -74,21 +70,21 @@ export class PlayerSound implements ISound {
     public loop: boolean;
     public audioBufferSourceNode: AudioBufferSourceNode | null = null;
     public mediaElementAudioSourceNode: MediaElementAudioSourceNode | null = null;
-    public isReadyToPLay: boolean = false;
-    public isBuffered: boolean = false;
-    public isBuffering: boolean = false;
+    public isReadyToPLay = false;
+    public isBuffered = false;
+    public isBuffering = false;
     public audioElement: HTMLAudioElement | null = null;
     public audioBuffer: AudioBuffer | null = null;
     public arrayBuffer: ArrayBuffer | null = null;
     public audioBufferDate: Date | null = null;
-    public playTimeOffset: number = 0;
-    public startTime: number = 0;
-    public playTime: number = 0;
-    public playedTimePercentage: number = 0;
-    public isPlaying: boolean = false;
-    public loadingProgress: number = 0;
+    public playTimeOffset = 0;
+    public startTime = 0;
+    public playTime = 0;
+    public playedTimePercentage = 0;
+    public isPlaying = false;
+    public loadingProgress = 0;
     public duration: number | null = null;
-    public firstTimePlayed: boolean = true;
+    public firstTimePlayed = true;
 
     // callbacks
     public onLoading: IOnProgress;
@@ -159,14 +155,14 @@ export class PlayerSound implements ISound {
         }
 
         // if the arrayBufferType is injected through the sound attributes
-        let arrayBufferType: string = typeof soundAttributes.arrayBuffer;
+        const arrayBufferType: string = typeof soundAttributes.arrayBuffer;
 
         if (arrayBufferType === 'ArrayBuffer') {
             this.arrayBuffer = soundAttributes.arrayBuffer;
         }
 
         // if the audioBuffer is injected through the sound attributes
-        let audioBufferType: string = typeof soundAttributes.audioBuffer;
+        const audioBufferType: string = typeof soundAttributes.audioBuffer;
 
         if (audioBufferType === 'AudioBuffer') {
             this.audioBuffer = soundAttributes.audioBuffer;

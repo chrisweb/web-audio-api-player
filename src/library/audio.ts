@@ -1,4 +1,4 @@
-import { PlayerCore, typeSoundModes } from './core';
+import { typeSoundModes } from './core';
 import { ISound } from './sound';
 import { PlayerError } from './error';
 
@@ -67,6 +67,12 @@ interface IMediaElementAudioSourceNode extends MediaElementAudioSourceNode {
     loop: boolean;
 }
 
+export interface IChangeVolumeOptions { 
+    volume: number;
+    sound?: ISound;
+    forceUpdateUserVolume?: boolean;
+}
+
 class PlayerAudio {
 
     protected _volume: number;
@@ -109,7 +115,7 @@ class PlayerAudio {
         // and third parameter a success and an error callback funtion
         // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/decodeAudioData
 
-        let audioBufferPromise = audioContext.decodeAudioData(arrayBuffer);
+        const audioBufferPromise = audioContext.decodeAudioData(arrayBuffer);
 
         // decodeAudioData returns a promise of type PromiseLike
         // using resolve to return a promise of type Promise
@@ -121,7 +127,8 @@ class PlayerAudio {
 
         return new Promise((resolve, reject) => {
 
-            let MyAudioContext: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const MyAudioContext: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
 
             // initialize the audio context
             try {
@@ -135,7 +142,7 @@ class PlayerAudio {
 
     }
 
-    protected _autoCreateAudioContextRemoveListener() {
+    protected _autoCreateAudioContextRemoveListener(): void {
 
         document.removeEventListener('touchstart', this._autoCreateAudioContextRemoveListener.bind(this), false);
         document.removeEventListener('touchend', this._autoCreateAudioContextRemoveListener.bind(this), false);
@@ -334,7 +341,7 @@ class PlayerAudio {
                 // resolve
                 resolve(this._audioGraph);
 
-            });
+            }).catch(reject);
 
         });
 
@@ -356,22 +363,20 @@ class PlayerAudio {
 
         const audioContext = await this.getAudioContext();
 
-        let audioBufferSourceNode: AudioBufferSourceNode = audioContext.createBufferSource();
+        const audioBufferSourceNode: AudioBufferSourceNode = audioContext.createBufferSource();
 
         sound.audioBufferSourceNode = audioBufferSourceNode;
 
         // do we loop this song
         audioBufferSourceNode.loop = audioBufferSourceOptions.loop;
 
-        let that = this;
-
         // if the song ends destroy it's audioGraph as the source can't be reused anyway
         // NOTE: the onended handler won't have any effect if the loop property is set to
         // true, as the audio won't stop playing. To see the effect in this case you'd
         // have to use AudioBufferSourceNode.stop()
-        audioBufferSourceNode.onended = (event: Event) => {
+        audioBufferSourceNode.onended = (event: Event): void => {
             audioBufferSourceOptions.onEnded(event);
-            that.destroySourceNode(sound);
+            this.destroySourceNode(sound);
         };
 
     }
@@ -395,14 +400,12 @@ class PlayerAudio {
         // ??? no onEnded on MediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/onended
         // ??? mediaElementAudioSourceNode.mediaElement.ended
 
-        let that = this;
-
         // if the song ends destroy it's audioGraph as the source can't be reused anyway
         // NOTE: the onEnded handler won't have any effect if the loop property is set to
         // true, as the audio won't stop playing. To see the effect in this case you'd
         // have to use AudioBufferSourceNode.stop()
-        mediaElementAudioSourceNode.onended = (event: Event) => {
-            that.destroySourceNode(sound);
+        mediaElementAudioSourceNode.onended = (): void => {
+            this.destroySourceNode(sound);
             // TODO on end destroy the audio element, probably not if loop enabled, but if loop
             // is disabled, maybe still a good idea to keep it (cache?), but not all audio elements
             // because of memory consumption if suddenly hundreds of audio elements in one page
@@ -490,7 +493,7 @@ class PlayerAudio {
 
     }
 
-    public changeVolume({ volume, sound = null, forceUpdateUserVolume = true }: { volume: number; sound?: ISound; forceUpdateUserVolume?: boolean; }): number {
+    public changeVolume({ volume, sound = null, forceUpdateUserVolume = true }: IChangeVolumeOptions): number {
 
         if (this._persistVolume) {
 

@@ -51,8 +51,6 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     getCurrentTime(): number;
     getDuration(): number;
 }
-export interface IOptions {
-}
 export declare class PlayerSound implements ISound {
     source: (ISoundSource)[] | ISoundSource;
     url: string | null;

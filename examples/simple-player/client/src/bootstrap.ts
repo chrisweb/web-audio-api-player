@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 
 'use strict';
 
@@ -16,24 +17,24 @@ import { PlayerUI } from './library/player/ui.js';
 // does only support loading files, no streams)
 // !!! for some details about the differencies of the two MODES
 // check out the documentation part of the readme
-let options: ICoreOptions = {
+const options: ICoreOptions = {
     soundsBaseUrl: 'https://mp3l.jamendo.com/?trackid=',
     playingProgressIntervalTime: 500,
     loadSoundMode: PlayerCore.SOUND_MODE_AUDIO
 };
 
 // create an instance of the player
-let player = new PlayerCore(options);
+const player = new PlayerCore(options);
 
 // create an instance of a basic UI we created for this example
 // as the player does not come with an UI you need to create
 // your own
-let playerUI = new PlayerUI(player);
+const playerUI = new PlayerUI(player);
 
 // create a first sound
 // all you need is to define a source and give each source an ID
 // using any of the callbacks is optional
-let firstSoundAttributes: ISoundAttributes = {
+const firstSoundAttributes: ISoundAttributes = {
     source: [{ url: '1314412&format=mp31', codec: 'mp3' }, { url: '1314412&format=ogg1', codec: 'ogg', isPreferred: true }],
     id: 1314412,
     onLoading: (loadingProgress, maximumValue, currentValue) => {
@@ -67,12 +68,12 @@ let firstSoundAttributes: ISoundAttributes = {
 };
 
 // add the first to the songs (sounds) queue
-let firstSound = player.addSoundToQueue({ soundAttributes: firstSoundAttributes });
+const firstSound = player.addSoundToQueue({ soundAttributes: firstSoundAttributes });
 
 console.log(firstSound);
 
 // create a second sound
-let secondSoundAttributes: ISoundAttributes = {
+const secondSoundAttributes: ISoundAttributes = {
     source: [{ url: '1214935&format=mp31', codec: 'mp3' }, { url: '1214935&format=ogg1', codec: 'ogg', isPreferred: true }],
     id: 1214935,
     onLoading: (loadingProgress, maximumValue, currentValue) => {
@@ -104,7 +105,7 @@ let secondSoundAttributes: ISoundAttributes = {
 };
 
 // add the second song (sound) to the queue
-let secondSound = player.addSoundToQueue({ soundAttributes: secondSoundAttributes });
+const secondSound = player.addSoundToQueue({ soundAttributes: secondSoundAttributes });
 
 console.log(secondSound);
 

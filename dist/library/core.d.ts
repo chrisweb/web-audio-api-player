@@ -20,6 +20,31 @@ export interface ICoreOptions {
     persistVolume?: boolean;
     loadSoundMode?: typeSoundModes;
 }
+interface ISoundsQueueOptions {
+    soundAttributes: ISoundAttributes;
+    whereInQueue?: string;
+}
+interface IDecodeSoundOptions {
+    sound: ISound;
+    resolve: Function;
+    reject: Function;
+}
+interface IPlayOptions {
+    whichSound?: number | string | undefined;
+    playTimeOffset?: number;
+}
+interface IFindSoundById {
+    soundId: string | number;
+    updateIndex: boolean;
+}
+interface IFindBestSourceResponse {
+    url: string | null;
+    codec?: string | null;
+}
+interface IGetSoundFromQueue {
+    whichSound?: string | number;
+    updateIndex?: boolean;
+}
 export declare class PlayerCore {
     protected _queue: ISound[];
     protected _volume: number;
@@ -56,10 +81,7 @@ export declare class PlayerCore {
     protected _webAudioElementOptions(): IAudioOptions;
     protected _detectAudioContextSupport(): boolean;
     protected _detectAudioElementSupport(): boolean;
-    addSoundToQueue({ soundAttributes, whereInQueue }: {
-        soundAttributes: ISoundAttributes;
-        whereInQueue?: string;
-    }): ISound;
+    addSoundToQueue({ soundAttributes, whereInQueue }: ISoundsQueueOptions): ISound;
     _appendSoundToQueue(sound: ISound): void;
     _prependSoundToQueue(sound: ISound): void;
     _addSoundToQueueAfterCurrent(sound: ISound): void;
@@ -77,15 +99,8 @@ export declare class PlayerCore {
     protected _loadSoundUsingAudioElement(sound: ISound): Promise<ISound | PlayerError>;
     protected _loadSoundUsingRequest(sound: ISound): Promise<ISound | PlayerError>;
     protected _initializeAudioElementListeners(sound: ISound): void;
-    protected _decodeSound({ sound, resolve, reject }: {
-        sound: ISound;
-        resolve: Function;
-        reject: Function;
-    }): void;
-    play({ whichSound, playTimeOffset }?: {
-        whichSound?: number | string | undefined;
-        playTimeOffset?: number;
-    }): Promise<void>;
+    protected _decodeSound({ sound, resolve, reject }: IDecodeSoundOptions): void;
+    play({ whichSound, playTimeOffset }?: IPlayOptions): Promise<void>;
     protected _play(sound: ISound): Promise<void>;
     protected _playAudioBuffer(sound: ISound): Promise<void>;
     protected _playMediaElementAudio(sound: ISound): Promise<void>;
@@ -95,18 +110,9 @@ export declare class PlayerCore {
      * whichSound is optional, if set it can be the sound id or if it's
      * a string it can be next / previous / first / last
      */
-    protected _getSoundFromQueue({ whichSound, updateIndex }?: {
-        whichSound?: string | number;
-        updateIndex?: boolean;
-    }): ISound | null;
-    protected _findSoundById({ soundId, updateIndex }: {
-        soundId: string | number;
-        updateIndex: boolean;
-    }): ISound | null;
-    protected _findBestSource(soundSource: (ISoundSource)[] | ISoundSource): {
-        url: string | null;
-        codec?: string | null;
-    };
+    protected _getSoundFromQueue({ whichSound, updateIndex }?: IGetSoundFromQueue): ISound | null;
+    protected _findSoundById({ soundId, updateIndex }: IFindSoundById): ISound | null;
+    protected _findBestSource(soundSource: (ISoundSource)[] | ISoundSource): IFindBestSourceResponse;
     protected _checkCodecSupport(codec: string): boolean;
     protected _checkMimeTypesSupport(mediaMimeTypes: string[]): boolean;
     pause(): void;

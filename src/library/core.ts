@@ -32,6 +32,42 @@ export interface ICoreOptions {
     loadSoundMode?: typeSoundModes;
 }
 
+interface ISoundsQueueOptions { 
+    soundAttributes: ISoundAttributes;
+    whereInQueue?: string;
+}
+
+interface IDecodeSoundOptions {
+    sound: ISound;
+    resolve: Function;
+    reject: Function;
+}
+
+interface IPlayOptions {
+    whichSound?: number | string | undefined;
+    playTimeOffset?: number;
+}
+
+interface IFindSoundById {
+    soundId: string | number;
+    updateIndex: boolean;
+}
+
+interface IFindBestSourceResponse {
+    url: string | null;
+    codec?: string | null;
+}
+
+interface IGetSoundFromQueue {
+    whichSound?: string | number;
+    updateIndex?: boolean;
+}
+
+interface IBestSource {
+    url: string | null;
+    codec?: string;
+}
+
 export class PlayerCore {
 
     // the sounds queue
@@ -63,7 +99,7 @@ export class PlayerCore {
     // the volume level before we muted
     protected _postMuteVolume: number = null;
     // is muted?
-    protected _isMuted: boolean = false;
+    protected _isMuted = false;
     // automatically mute if visibility changes to invisible
     protected _visibilityAutoMute: boolean;
     // auto create audiocontext on first touch / click
@@ -89,7 +125,7 @@ export class PlayerCore {
 
     constructor(playerOptions: ICoreOptions = {}) {
 
-        let defaultOptions: ICoreOptions = {
+        const defaultOptions: ICoreOptions = {
             volume: 80,
             loopQueue: false,
             loopSong: false,
@@ -105,7 +141,7 @@ export class PlayerCore {
             loadSoundMode: SOUND_MODE_AUDIO
         };
 
-        let options = Object.assign({}, defaultOptions, playerOptions);
+        const options = Object.assign({}, defaultOptions, playerOptions);
 
         this._volume = options.volume;
         this._soundsBaseUrl = options.soundsBaseUrl;
@@ -133,7 +169,7 @@ export class PlayerCore {
 
     }
 
-    protected _initialize() {
+    protected _initialize(): void {
 
         let audioOptions: IAudioOptions;
 
@@ -163,7 +199,7 @@ export class PlayerCore {
 
     protected _webAudioApiOptions(): IAudioOptions {
 
-        let webAudioApiOptions: IAudioOptions = {
+        const webAudioApiOptions: IAudioOptions = {
             customAudioContext: this._customAudioContext,
             customAudioGraph: this._customAudioGraph,
             createAudioContextOnFirstUserInteraction: this._createAudioContextOnFirstUserInteraction,
@@ -177,7 +213,7 @@ export class PlayerCore {
 
     protected _webAudioElementOptions(): IAudioOptions {
 
-        let webAudioElementOptions: IAudioOptions = {
+        const webAudioElementOptions: IAudioOptions = {
             customAudioContext: null,
             customAudioGraph: null,
             createAudioContextOnFirstUserInteraction: false,
@@ -194,6 +230,7 @@ export class PlayerCore {
         // basic audio context detection
         let audioContextSupported = false;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (typeof (window as any).webkitAudioContext !== 'undefined') {
             audioContextSupported = true;
         } else if (typeof AudioContext !== 'undefined') {
@@ -211,9 +248,9 @@ export class PlayerCore {
 
     }
 
-    public addSoundToQueue({ soundAttributes, whereInQueue = PlayerCore.WHERE_IN_QUEUE_AT_END }: { soundAttributes: ISoundAttributes; whereInQueue?: string; }): ISound {
+    public addSoundToQueue({ soundAttributes, whereInQueue = PlayerCore.WHERE_IN_QUEUE_AT_END }: ISoundsQueueOptions): ISound {
 
-        let sound: ISound = new PlayerSound(soundAttributes);
+        const sound: ISound = new PlayerSound(soundAttributes);
 
         // TODO: is queue just an array of sounds, or do we need something more complex with a position tracker?
 
@@ -258,7 +295,7 @@ export class PlayerCore {
 
         } else {
 
-            let afterCurrentIndex = this._currentIndex + 1;
+            const afterCurrentIndex = this._currentIndex + 1;
 
             this._queue.splice(afterCurrentIndex, 0, sound);
 
@@ -266,7 +303,7 @@ export class PlayerCore {
 
     }
 
-    public resetQueue() {
+    public resetQueue(): void {
 
         // check if a song is getting played and stop it
         if (this._stopOnReset) {
@@ -279,15 +316,15 @@ export class PlayerCore {
 
     }
 
-    public reset() {
+    public reset(): void {
 
         this.resetQueue();
 
     }
 
-    public getQueue() {
+    public getQueue(): ISound[] {
 
-        // TODO: is the needed?
+        // TODO: is this needed?
 
         return this._queue;
 
@@ -299,7 +336,7 @@ export class PlayerCore {
         this._isMuted = false;
 
         // get the current sound if any
-        let currentSound = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue();
 
         // if there is a sound currently being played
         if (currentSound !== null && currentSound.isPlaying) {
@@ -321,7 +358,7 @@ export class PlayerCore {
         this._postMuteVolume = currentVolume;
 
         // get the current sound if any
-        let currentSound = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue();
 
         // if there is a sound currently being played
         if (currentSound !== null && currentSound.isPlaying) {
@@ -335,7 +372,7 @@ export class PlayerCore {
     public unMute(): void {
 
         // get the current sound if any
-        let currentSound = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue();
 
         // if there is a sound currently being played
         if (currentSound !== null && currentSound.isPlaying) {
@@ -355,7 +392,7 @@ export class PlayerCore {
     public setPosition(soundPositionInPercent: number): void {
 
         // get the current sound if any
-        let currentSound = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue();
 
         // if there is a sound currently being played
         if (currentSound !== null) {
@@ -369,7 +406,7 @@ export class PlayerCore {
                     .then((sound: ISound) => {
 
                         // calculate the position in seconds
-                        let soundPositionInSeconds = (sound.duration / 100) * soundPositionInPercent;
+                        const soundPositionInSeconds = (sound.duration / 100) * soundPositionInPercent;
 
                         this.setPositionInSeconds(soundPositionInSeconds);
 
@@ -382,7 +419,7 @@ export class PlayerCore {
             } else {
 
                 // calculate the position in seconds
-                let soundPositionInSeconds = (currentSound.duration / 100) * soundPositionInPercent;
+                const soundPositionInSeconds = (currentSound.duration / 100) * soundPositionInPercent;
 
                 this.setPositionInSeconds(soundPositionInSeconds);
 
@@ -399,7 +436,7 @@ export class PlayerCore {
     public setPositionInSeconds(soundPositionInSeconds: number): void {
 
         // get the current sound if any
-        let currentSound = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue();
 
         // if there is a sound currently being played
         if (currentSound !== null) {
@@ -431,6 +468,7 @@ export class PlayerCore {
     protected _loadSound(sound: ISound): Promise<ISound | PlayerError> {
 
         let loadSoundPromise;
+        let notImplementedError;
 
         switch (this._loadSoundMode) {
             case PlayerCore.SOUND_MODE_AUDIO:
@@ -443,7 +481,7 @@ export class PlayerCore {
 
                 // TODO: implement fetch
 
-                const notImplementedError = new PlayerError(PlayerCore.SOUND_MODE_FETCH + ' is not implemented yet', 1);
+                notImplementedError = new PlayerError(PlayerCore.SOUND_MODE_FETCH + ' is not implemented yet', 1);
 
                 loadSoundPromise = Promise.reject(notImplementedError);
 
@@ -459,7 +497,7 @@ export class PlayerCore {
         return new Promise((resolve, reject) => {
 
             // extract the url and codec from sources
-            let { url, codec = null } = this._findBestSource(sound.source);
+            const { url, codec = null } = this._findBestSource(sound.source);
 
             sound.url = url;
             sound.codec = codec;
@@ -488,13 +526,13 @@ export class PlayerCore {
 
                 this._initializeAudioElementListeners(sound);
 
-                sound.audioElement.addEventListener('canplaythrough', (event) => {
-                    console.log('BBBBBBBBBBBB', event, sound);
+                sound.audioElement.addEventListener('canplaythrough', () => {
+                    //console.log('BBBBBBBBBBBB', event, sound);
                     resolve(sound);
                 });
 
-                sound.audioElement.addEventListener('error', (event) => {
-                    console.log('CCCCCCCCCCCC', event, sound);
+                sound.audioElement.addEventListener('error', () => {
+                    //console.log('CCCCCCCCCCCC', event, sound);
                     const soundLoadingError = new PlayerError('loading sound failed');
                     reject(soundLoadingError);
                 });
@@ -534,14 +572,14 @@ export class PlayerCore {
             if (sound.arrayBuffer === null && sound.audioBuffer === null) {
 
                 // extract the url and codec from sources
-                let { url, codec = null } = this._findBestSource(sound.source);
+                const { url, codec = null } = this._findBestSource(sound.source);
 
                 sound.url = url;
                 sound.codec = codec;
 
                 if (sound.url !== null) {
 
-                    let request = new PlayerRequest();
+                    const request = new PlayerRequest();
 
                     // change buffering state
                     sound.isBuffering = true;
@@ -572,7 +610,7 @@ export class PlayerCore {
 
     }
 
-    protected _initializeAudioElementListeners(sound: ISound) {
+    protected _initializeAudioElementListeners(sound: ISound): void {
 
         // TODO: use the events to change isReadyToPLay to true? like canplaythrough?
         // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio#Events
@@ -590,31 +628,34 @@ export class PlayerCore {
         // see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event
         // TODO: how does canplaythrough behave if the source is a stream?
 
-        sound.audioElement.addEventListener('progress', (event) => {
-            console.log('AAAAAAAAAAA', event, sound.audioElement.buffered.length, sound.audioElement.duration);
-            for (let i = 0; i < sound.audioElement.buffered.length; i++) {
-                console.log('********buffered', sound.audioElement.buffered.start(i), sound.audioElement.buffered.end(i));
-            }
+        sound.audioElement.addEventListener('progress', () => {
 
-            if (sound.audioElement.buffered.length > 0
+            //console.log('AAAAAAAAAAA', event, sound.audioElement.buffered.length, sound.audioElement.duration);
+
+            /*for (let i = 0; i < sound.audioElement.buffered.length; i++) {
+                console.log('********buffered', sound.audioElement.buffered.start(i), sound.audioElement.buffered.end(i));
+            }*/
+
+            /*if (sound.audioElement.buffered.length > 0
                 && !isNaN(sound.audioElement.duration)) {
-                let endBuf = sound.audioElement.buffered.end(0);
-                let soFar = ((endBuf / sound.audioElement.duration) * 100);
-                console.log('********buffered222222 soFar', soFar);
-            }
+                    const endBuf = sound.audioElement.buffered.end(0);
+                    const soFar = ((endBuf / sound.audioElement.duration) * 100);
+                    console.log('********buffered222222 soFar', soFar);
+            }*/
 
             sound.loadingProgress = sound.audioElement.duration;
+
         });
 
-        sound.audioElement.addEventListener('timeupdate', (event) => {
+        sound.audioElement.addEventListener('timeupdate', () => {
             sound.duration = sound.audioElement.duration;
         });
 
     }
 
-    protected _decodeSound({ sound, resolve, reject }: { sound: ISound; resolve: Function; reject: Function; }) {
+    protected _decodeSound({ sound, resolve, reject }: IDecodeSoundOptions): void {
 
-        let arrayBuffer = sound.arrayBuffer;
+        const arrayBuffer = sound.arrayBuffer;
 
         this._playerAudio.decodeAudio(arrayBuffer).then((audioBuffer: AudioBuffer) => {
 
@@ -635,7 +676,7 @@ export class PlayerCore {
 
     }
 
-    public play({ whichSound, playTimeOffset }: { whichSound?: number | string | undefined; playTimeOffset?: number; } = {}): Promise<void> {
+    public play({ whichSound, playTimeOffset }: IPlayOptions = {}): Promise<void> {
 
         return new Promise((resolve, reject) => {
 
@@ -643,7 +684,7 @@ export class PlayerCore {
             // TODO: let user define order of preferred codecs for playerback
 
             // get the current sound if any
-            let currentSound = this._getSoundFromQueue();
+            const currentSound = this._getSoundFromQueue();
 
             // if there is a sound currently being played, stop the current sound
             if (currentSound !== null && currentSound.isPlaying) {
@@ -651,7 +692,7 @@ export class PlayerCore {
             }
 
             // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
-            let sound = this._getSoundFromQueue({ whichSound });
+            const sound = this._getSoundFromQueue({ whichSound });
 
             // if there is no sound we could play, do nothing
             if (sound === null) {
@@ -715,7 +756,7 @@ export class PlayerCore {
         if (sound.audioBufferSourceNode === null) {
 
             // source node options
-            let sourceOptions: IAudioBufferSourceOptions = {
+            const sourceOptions: IAudioBufferSourceOptions = {
                 loop: sound.loop,
                 onEnded: (event: Event) => {
                     console.log('AudioBufferSourceNode ended', event);
@@ -731,7 +772,7 @@ export class PlayerCore {
 
         }
 
-        let audioBufferSourceNode: AudioBufferSourceNode = sound.audioBufferSourceNode;
+        const audioBufferSourceNode: AudioBufferSourceNode = sound.audioBufferSourceNode;
 
         // add the buffer to the source node
         audioBufferSourceNode.buffer = sound.audioBuffer;
@@ -758,7 +799,7 @@ export class PlayerCore {
         if (sound.mediaElementAudioSourceNode === null) {
 
             // source node options
-            let sourceOptions: IMediaElementAudioSourceOptions = {
+            const sourceOptions: IMediaElementAudioSourceOptions = {
                 loop: sound.loop,
                 onEnded: (event: Event) => {
                     console.log('MediaElementSourceNode ended', event);
@@ -775,7 +816,7 @@ export class PlayerCore {
 
         }
 
-        let mediaElementAudioSourceNode: IMediaElementAudioSourceNode = sound.mediaElementAudioSourceNode as IMediaElementAudioSourceNode;
+        const mediaElementAudioSourceNode: IMediaElementAudioSourceNode = sound.mediaElementAudioSourceNode as IMediaElementAudioSourceNode;
 
         // connect the source to the graph node(s)
         this._playerAudio.connectSourceNodeToGraphNodes(mediaElementAudioSourceNode);
@@ -831,17 +872,17 @@ export class PlayerCore {
 
     }
 
-    protected _onEnded() {
+    protected _onEnded(): void {
 
         // get the current sound if any
-        let currentSound = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue();
 
         // if there is a sound currently being played
         if (currentSound !== null && currentSound.isPlaying) {
 
-            let updateIndex = false;
+            const updateIndex = false;
 
-            let nextSound = this._getSoundFromQueue({ whichSound: 'next', updateIndex });
+            const nextSound = this._getSoundFromQueue({ whichSound: 'next', updateIndex });
 
             if (currentSound.onEnded !== null) {
 
@@ -891,7 +932,7 @@ export class PlayerCore {
      * whichSound is optional, if set it can be the sound id or if it's
      * a string it can be next / previous / first / last
      */
-    protected _getSoundFromQueue({ whichSound, updateIndex = true }: { whichSound?: string | number; updateIndex?: boolean; } = {}): ISound | null {
+    protected _getSoundFromQueue({ whichSound, updateIndex = true }: IGetSoundFromQueue = {}): ISound | null {
 
         let sound = null;
 
@@ -956,7 +997,7 @@ export class PlayerCore {
 
     }
 
-    protected _findSoundById({ soundId, updateIndex }: { soundId: string | number; updateIndex: boolean; }): ISound | null {
+    protected _findSoundById({ soundId, updateIndex }: IFindSoundById): ISound | null {
 
         let sound = null;
 
@@ -980,9 +1021,9 @@ export class PlayerCore {
 
     }
 
-    protected _findBestSource(soundSource: (ISoundSource)[] | ISoundSource): { url: string | null, codec?: string | null } {
+    protected _findBestSource(soundSource: (ISoundSource)[] | ISoundSource): IFindBestSourceResponse {
 
-        let bestSource: { url: string | null, codec?: string } = {
+        const bestSource: IBestSource = {
             url: null,
             codec: null
         };
@@ -1046,7 +1087,7 @@ export class PlayerCore {
     protected _checkCodecSupport(codec: string): boolean {
 
         let mediaMimeTypes: string[];
-        let error: string = '';
+        let error = '';
 
         switch (codec) {
             case 'ogg':
@@ -1088,7 +1129,7 @@ export class PlayerCore {
                 break;
         }
 
-        if (!!error) {
+        if (error) {
             throw new PlayerError(error);
         }
 
@@ -1098,15 +1139,15 @@ export class PlayerCore {
 
     protected _checkMimeTypesSupport(mediaMimeTypes: string[]): boolean {
 
-        let deviceAudio = new Audio();
+        const deviceAudio = new Audio();
 
-        let isSupported: boolean = false;
+        let isSupported = false;
 
         mediaMimeTypes.forEach((mediaMimeType) => {
 
-            let isMediaTypeSupported: string = deviceAudio.canPlayType(mediaMimeType).replace(/^no$/, '');
+            const isMediaTypeSupported: string = deviceAudio.canPlayType(mediaMimeType).replace(/^no$/, '');
 
-            if (!!isMediaTypeSupported) {
+            if (isMediaTypeSupported) {
                 isSupported = true;
             }
 
@@ -1116,16 +1157,16 @@ export class PlayerCore {
 
     }
 
-    public pause() {
+    public pause(): void {
 
         // get the current sound
-        let sound: ISound | null = this._getSoundFromQueue();
+        const sound: ISound | null = this._getSoundFromQueue();
 
         if (sound === null) {
             return;
         }
 
-        let timeAtPause = sound.getCurrentTime();
+        const timeAtPause = sound.getCurrentTime();
 
         sound.playTimeOffset += timeAtPause - sound.startTime;
 
@@ -1138,10 +1179,10 @@ export class PlayerCore {
 
     }
 
-    public stop() {
+    public stop(): void {
 
         // get the current sound
-        let sound: ISound | null = this._getSoundFromQueue();
+        const sound: ISound | null = this._getSoundFromQueue();
 
         if (sound === null) {
             return;
@@ -1167,7 +1208,7 @@ export class PlayerCore {
 
     }
 
-    protected _stop(sound: ISound) {
+    protected _stop(sound: ISound): void {
 
         // tell the source node to stop playing
         if (sound.audioBufferSourceNode !== null) {
@@ -1199,42 +1240,42 @@ export class PlayerCore {
 
     }
 
-    public next() {
+    public next(): void {
 
         // alias for play next
         this.play({ whichSound: 'next' });
 
     }
 
-    public previous() {
+    public previous(): void {
 
         // alias for play previous
         this.play({ whichSound: 'previous' });
 
     }
 
-    public first() {
+    public first(): void {
 
         // alias for play first
         this.play({ whichSound: 'first' });
 
     }
 
-    public last() {
+    public last(): void {
 
         // alias for play last
         this.play({ whichSound: 'last' });
 
     }
 
-    protected _playingProgress(sound: ISound) {
+    protected _playingProgress(sound: ISound): void {
 
-        let timeNow = sound.getCurrentTime();
+        const timeNow = sound.getCurrentTime();
 
         sound.playTime = (timeNow - sound.startTime) + sound.playTimeOffset;
 
-        let duration = sound.getDuration();
-        let playingPercentage = (sound.playTime / duration) * 100;
+        const duration = sound.getDuration();
+        const playingPercentage = (sound.playTime / duration) * 100;
 
         sound.playedTimePercentage = playingPercentage;
 
@@ -1242,7 +1283,7 @@ export class PlayerCore {
 
     }
 
-    public setAudioGraph(customAudioGraph: IAudioGraph) {
+    public setAudioGraph(customAudioGraph: IAudioGraph): void {
 
         this._playerAudio.setAudioGraph(customAudioGraph);
 
@@ -1266,7 +1307,7 @@ export class PlayerCore {
 
     }
 
-    public setAudioContext(customAudioContext: AudioContext) {
+    public setAudioContext(customAudioContext: AudioContext): void {
 
         this._playerAudio.setAudioContext(customAudioContext);
 
@@ -1306,18 +1347,23 @@ export class PlayerCore {
         return this._visibilityAutoMute;
     }
 
-    protected _handleVisibilityChange() {
+    protected _handleVisibilityChange(): void {
 
         let hiddenKeyword: string;
 
         if (typeof document.hidden !== 'undefined') { // Opera 12.10 and Firefox 18 and later support
             hiddenKeyword = 'hidden';
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } else if (typeof (document as any).msHidden !== 'undefined') {
             hiddenKeyword = 'msHidden';
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } else if (typeof (document as any).webkitHidden !== 'undefined') {
             hiddenKeyword = 'webkitHidden';
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((document as any)[hiddenKeyword]) {
             this.mute();
         } else {
