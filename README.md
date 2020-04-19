@@ -79,17 +79,17 @@ install the latest nodejs (if you haven't already) [nodejs](https://nodejs.org)
 
 install or update to the latest git version [git scm downloads](https://git-scm.com/downloads) (During installation at the step "choosing the default editor used by Git", if like me you are using visual studio code you might want to chose the new option "use visual studio code as Git's default editor") (also if like me you are on windows, at the step "adjusting your PATH environment", ensure the second radio button option is selected "git from the line and also from 3rd-party software" to ensure git is added to the windows PATH, which will allow you to use git with any command line tool like windows powershell for example)  
 
-git clone this repository if you haven't already
+git clone this repository to get a local copy  
 
-`git clone `
+`git clone git@github.com:chrisweb/web-audio-api-player.git`
 
-open your favorite command line tool and go to the root directory of this repository
+open your favorite command line tool and go to the root directory of this repository  
 
 update npm to latest version  
 
 `npm install npm@latest -g`
 
-install the dependencies
+install the dependencies  
 
 `npm i`
 
@@ -112,7 +112,27 @@ to lint the typescript files
 
 `npm run lint`
 
-## publish package on npmjs.com
+## contributing
+
+you should first open a ticket and explain what fix or improvement you want to provide on the [github issues page](https://github.com/chrisweb/web-audio-api-player/issues) of this project (remember the github ticket number you will need it for the commit message later on)
+
+go the [github page of this project](https://github.com/chrisweb/web-audio-api-player) and hit the fork button  
+
+follow the instructions in the previous section ["development: build"](#development-build), but instead of cloning this projects repository, clone your own fork of the project  
+
+`git clone git@github.com:YOUR_USERNAME/web-audio-api-player.git`
+
+when you are done coding, commit your local changes (if your commit is related to a ticket start your commit message with the "#TICKER_NUMBER")  
+
+`git commit -m "#TICKER_NUMBER commit message"`
+
+now open your forks github URL in your browser and hit the pull request button  
+
+## examples
+
+the best way to get started is to check out the examples folder, start with [simple player example](examples/simple-player)
+
+## note to self: publish package on npmjs.com
 
 login to npmjs.com  
 
@@ -123,10 +143,6 @@ before hitting running the command ensure the version of your package in the pac
 publish a new version on npmjs  
 
 `npm publish`
-
-## examples
-
-the best way to get started is to check out the examples folder, start with [simple player example](examples/simple-player)
 
 ## notes about problems I encountered during development
 
