@@ -5,15 +5,19 @@
 
 # web audio API player
 
+## About this project
+
+🎶 An opensource javascript (typescript) audio player for the browser, built using the Web Audio API
+
+😔 there is almost no documentation yet (there is some, see next section below), to learn how to use this library I recommend you check out the source code of the [simple player example](examples/simple-player) to get started  
+
+Want to help improve the documentation or contribute to this project by improving and fixing it, then first check out the [TODOs section](#todos-help-wanted-) below, maybe there is something in the list you want to help with. Any contribution, even things not listed on the TODO list are of course welcome. To get started check out the section ["contributing" section](#contributing) below.  
+
 ## installation
 
 web audio API player is published to the [npm registry](https://npm.im/web-audio-api-player) so you can install it with either [npm](https://www.npmjs.com/get-npm) or [yarn](https://yarnpkg.com)  
 
 `npm install web-audio-api-player`  
-
-😔 there is almost no documentation yet (there is some, see next section below), to learn how to use this library I recommend you check out the source code of the [simple player example](examples/simple-player) to get started  
-
-Want to help improve the documentation or contribute to this project by improving and fixing it, then first check out the [TODOs section](#todos-help-wanted-) below, maybe there is something in the list you want to help with. Any contribution, even things not listed on the TODO list are of course welcome. To get started with your own local development, check out the ["development build" section](#development-build) below.  
 
 ## documentation
 
