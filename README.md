@@ -81,6 +81,8 @@ install or update to the latest git version [git scm downloads](https://git-scm.
 
 git clone this repository if you haven't already
 
+`git clone `
+
 open your favorite command line tool and go to the root directory of this repository
 
 update npm to latest version  
