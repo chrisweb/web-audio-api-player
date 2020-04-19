@@ -11,7 +11,9 @@ web audio API player is published to the [npm registry](https://npm.im/web-audio
 
 `npm install web-audio-api-player`  
 
-😔 there is almost no documentation yet (see below), but check out the source code of the [simple player example](examples/simple-player) to get started  
+😔 there is almost no documentation yet (there is some, see next section below), to learn how to use this library I recommend you check out the source code of the [simple player example](examples/simple-player) to get started  
+
+Want to help improve the documentation or contribute to this project by improving and fixing it, then first check out the [TODOs section](#todos-help-wanted-) below, maybe there is something in the list you want to help with. Any contribution, even things not listed on the TODO list are of course welcome. To get started with your own local development, check out the ["development build" section](#development-build) below.  
 
 ## documentation
 
@@ -35,23 +37,23 @@ For a more complete list of features, check out the w3c [web audio API features 
 
 You might have read (like I did) a lot of outdated web audio articles which stated the web audio element lacks a lot of features the web audio API has and that hence it is not suited to create complex audio software or for example be used in games where you might want to add effects and filters to sounds.
 
-TLDR; This is not true anymore and especially not true for this library. Yes the audio element if used as standalone lacks a lot of features. But this library does combine the web audio element with the web audio API.
+TLDR; This is not true anymore and especially not true for this library. Yes the audio element if used as a standalone lacks a lot of features. But this library does combine the web audio element with the web audio API.
 
-If you use this library, the difference is only how the sound (song) gets loaded (see list of differences above). If using fetch the source is a Buffer and if using the audio element well the source is an media element. Everything that happens after is the same. This is why you can change in the player options the SOUND_MODE, to either load the sound using [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) or load / stream it using the [audio element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio). But this influences only how the sound get loaded (fetched), if loaded via audio element, we use the web audio API [createMediaElementSource method](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaElementSource) of the audiocontext to pass it to the audiocontext of the web audio API. After feeding the web audio API with the input from the web audio element, the playback and what you do with it is being handled by the web audio API.
+If you use this library, the difference is only how the sound (song) gets loaded (see list of differences above). If using fetch the source is a Buffer and if using the "HTML audio element" well the source is a media element. Everything that happens after is the same. This is why you can change in the player options the SOUND_MODE, to either load the sound using [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) or load / stream it using the [audio element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio). But this influences only how the sound get loaded (fetched), if loaded via audio element, we use the web audio API [createMediaElementSource method](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaElementSource) of the audiocontext to pass it to the audiocontext of the web audio API. After feeding the web audio API with the input from the web audio element, the playback and what you do with it is being handled by the web audio API.
 
 ### so which SOUND_MODE should I use
 
 It depends on what you intend to build.
 
-If build a game where you have a lot (of small sounds) that get (pre-)loaded and maybe cached but played later at some time after they finished loading, use SOUND_MODE_FETCH. It's progress is easier to understand, because when the loading progress of the sound has reached 100% you know it can be played. To display the loading progress a simple [HTML progress element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) is enough.
+If you build a game where you have a lot (of small sounds) that get (pre-)loaded and maybe cached but played later at some time after they finished loading, use SOUND_MODE_FETCH. It's progress is easier to understand, because when the loading progress of the sound has reached 100% you know it can be played. To display the loading progress a simple [HTML progress element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) is enough.
 
-If you build a music player, use the SOUND_MODE_AUDIO as you might to want to start playing the sound (song) as quickly as possible and don't care if it has fully loaded yet as long as the part that has been loaded is enough to play the song until the end (while the rest of it is being streamed from the server in the background). To display the time range(s) that have been loaded you could for example uses a [2D canvas element](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D).
+If you build a music player, use the SOUND_MODE_AUDIO as you might to want to start playing the sound (song) as quickly as possible and don't care if it has fully loaded yet as long as the part that has been loaded is enough to play the song until the end (while the rest of it is being streamed from the server in the background). To display the time range(s) that have been loaded you could for example use a [2D canvas element](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D).
 
 ### advanced usage
 
 #### You can create and then inject your own AudioContext
 
-You can inject your own, if you want to resuse an existing one your app already created:
+You can inject your own, if you want to reuse an existing one your app already created:
 ...
 
 You can also take the one created by the library and alter it the way you want:
@@ -96,7 +98,7 @@ to build the distributions
 
 `npm run build`
 
-in devlopment you can use watch to rebuild every time you edit a typescript file  
+in development you can use watch to rebuild every time you edit a typescript file  
 
 ## development: watch
 
@@ -136,7 +138,7 @@ As of now (25.05.2019) the web audio api typings seems to be included in lib.d.t
   },
 ```
 
-Unfortunatly the defined window does not have AudioContext:  
+Unfortunately the defined window does not have AudioContext:  
 check out [[open] github ticket (as of 06/2019)](https://github.com/microsoft/TypeScript/issues/31686)  
 the current [dom.d.ts on github](https://github.com/microsoft/TypeScript/blob/master/src/lib/dom.generated.d.ts)  
 
@@ -157,12 +159,12 @@ fileInput.addEventListener('change', function(event) {
 }, false);
 ```
 
-* completly rewrite the sources system, where you can define multiple variants of a sound but with different codecs, app needs to check which codecs are supported by the device and choose one, use should be able to define which codec is preferred if playback support for multiple codecs is available
+* completely rewrite the sources system, where you can define multiple variants of a sound but with different codecs, app needs to check which codecs are supported by the device and choose one, use should be able to define which codec is preferred if playback support for multiple codecs is available
 * implement audiocontext to close to release memory?
 * feature to use the browser notification system to alert which song is being played
 * instead of the ArrayBuffer use the MediaElementAudioSourceNode, make it optional to still use the ArrayBuffer
-* preload AudioBuffers in indexeddb (first song, next song, current song if loop or previous is triggered ...), let the developer set the amount of pre-loaded AudioBuffers, remove from "cache" by least used and by date when "cache" is full
-* cache songs for offline mode? indexdb is not very big (filesystem?), check if doable because saving a playlist of songs might exhaust the free space
+* preload AudioBuffers in indexeddb (first song, next song, current song if loop or previous is triggered ...), let the developer set the amount of preloaded AudioBuffers, remove from "cache" by least used and by date when "cache" is full
+* cache songs for offline mode? indexeddb is not very big (filesystem?), check if doable because saving a playlist of songs might exhaust the free space
 * some methods return a promise others don't, use promises for all to make it more consistent?
 * write a documentation
 * make a list of all possible errors (set a distinct code for each error)
@@ -178,9 +180,9 @@ fileInput.addEventListener('change', function(event) {
 * add shuffle mode
 * add a loop song and loop queue mode (<https://webaudio.github.io/web-audio-api/#looping-AudioBufferSourceNode>)
 * handle all error cases that are still unhandled
-* add support for more codecs (flac, wav, ogg vorbis, opus, aac): also check the available codecs and defined sources, play the first one that has matches and available codec, let user define order of preferred codecs for playerback
+* add support for more codecs (flac, wav, ogg vorbis, opus, aac): also check the available codecs and defined sources, play the first one that has matches and available codec, let user define order of preferred codecs for playback
 * add saucelabs browser testing and their badge [browser compatibility table badge](https://saucelabs.com/blog/new-open-sauce-ui-and-refreshed-build-status-badges) in readme
-* add [travis](https://travis-ci.org) continous integration and badge
+* add [travis](https://travis-ci.org) continuous integration and badge
 * add improve UI style and then add a screenshot to readme of example
 * add live demo (via github pages)
 * for position and volume, allow to use a percentage or a value
@@ -206,7 +208,7 @@ fileInput.addEventListener('change', function(event) {
 * play next song onEnded, add option to enable or disable automatic play next onEnded
 * add change position method
 * add loop queue option
-* make the core player options object optinal when initializing a new player
+* make the core player options object optional when initializing a new player
 * let the user modify the audio graph, for example by adding / removíng nodes like a filter node, a panner node ...
 * replace [gulp](https://gulpjs.com/) with [rollup](https://github.com/rollup/rollup) as new module bundler
 * use [pkg.module](https://github.com/rollup/rollup/wiki/pkg.module) to distribute a UMD as well as an "ES6 modules" version
