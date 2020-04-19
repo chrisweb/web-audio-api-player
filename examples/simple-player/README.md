@@ -60,17 +60,7 @@ open the project in your browser:
 
 ## linting
 
-### server
-
-```
-npm run lint:server
-```
-
-### client
-
-```
-npm run lint:client
-```
+the linting is now done via the npm run lint command of the main project
 
 ## notes about problems I encountered during development
 

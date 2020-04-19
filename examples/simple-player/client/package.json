@@ -29,7 +29,6 @@
   "scripts": {
     "build": "tsc -p ./",
     "build:debug": "tsc -p ./ --listFiles --traceResolution",
-    "lint": "tslint -p ./",
     "watch": "tsc -w"
   },
   "dependencies": {},
