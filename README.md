@@ -5,7 +5,7 @@
 
 # web audio API player
 
-<p align="center"><img width="400" src="./assets/web_audio_api_player_logo_small.png" alt="web audio API player logo"></p>
+<p align="center"><img width="202" height="225" src="./assets/web_audio_api_player_logo_small.png" alt="web audio API player logo"></p>
 
 ## About this project
 
