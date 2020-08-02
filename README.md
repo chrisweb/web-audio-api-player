@@ -148,7 +148,7 @@ login to npmjs.com
 
 `npm login`
 
-before hitting running the command ensure the version of your package in the package.json has been updated  
+!!! before using the next the command ensure the version of your package in the package.json has been updated  
 
 publish a new version on npmjs  
 
