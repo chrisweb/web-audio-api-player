@@ -1,22 +1,22 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
-    (global = global || self, factory(global['web-audio-api-player'] = {}));
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global['web-audio-api-player'] = {}));
 }(this, (function (exports) { 'use strict';
 
     /*! *****************************************************************************
-    Copyright (c) Microsoft Corporation. All rights reserved.
-    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-    this file except in compliance with the License. You may obtain a copy of the
-    License at http://www.apache.org/licenses/LICENSE-2.0
+    Copyright (c) Microsoft Corporation.
 
-    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-    MERCHANTABLITY OR NON-INFRINGEMENT.
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
 
-    See the Apache Version 2.0 License for specific language governing permissions
-    and limitations under the License.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
     ***************************************************************************** */
     /* global Reflect, Promise */
 
@@ -924,7 +924,9 @@
                 }
                 // if the sound has already an ArrayBuffer but no AudioBuffer
                 if (sound.arrayBuffer !== null && sound.audioBuffer === null) {
-                    return _this._decodeSound({ sound: sound, resolve: resolve, reject: reject });
+                    _this._decodeSound({ sound: sound }).then(function (sound) {
+                        resolve(sound);
+                    }).catch(reject);
                 }
                 // if the sound has no ArrayBuffer and also no AudioBuffer yet
                 if (sound.arrayBuffer === null && sound.audioBuffer === null) {
@@ -938,7 +940,9 @@
                         sound.isBuffering = true;
                         request.getArrayBuffer(sound).then(function (arrayBuffer) {
                             sound.arrayBuffer = arrayBuffer;
-                            return _this._decodeSound({ sound: sound, resolve: resolve, reject: reject });
+                            _this._decodeSound({ sound: sound }).then(function (sound) {
+                                resolve(sound);
+                            }).catch(reject);
                         }).catch(function (requestError) {
                             reject(requestError);
                         });
@@ -984,18 +988,18 @@
             });
         };
         PlayerCore.prototype._decodeSound = function (_a) {
-            var sound = _a.sound, resolve = _a.resolve, reject = _a.reject;
+            var sound = _a.sound;
             var arrayBuffer = sound.arrayBuffer;
-            this._playerAudio.decodeAudio(arrayBuffer).then(function (audioBuffer) {
+            return this._playerAudio.decodeAudio(arrayBuffer).then(function (audioBuffer) {
                 sound.audioBuffer = audioBuffer;
                 sound.isBuffering = false;
                 sound.isBuffered = true;
                 sound.audioBufferDate = new Date();
                 sound.duration = sound.audioBuffer.duration;
                 sound.isReadyToPLay = true;
-                resolve(sound);
+                return sound;
             }).catch(function (decodeAudioError) {
-                reject(decodeAudioError);
+                throw decodeAudioError;
             });
         };
         PlayerCore.prototype.play = function (_a) {

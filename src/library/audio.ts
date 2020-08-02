@@ -34,6 +34,10 @@ interface IAudioGraph {
     waveShaperNode?: WaveShaperNode;
 }
 
+interface IOnEnded {
+    (event?: Event): void
+}
+
 interface IAudioOptions {
     customAudioContext?: AudioContext;
     customAudioGraph?: IAudioGraph;
@@ -43,7 +47,7 @@ interface IAudioOptions {
 }
 
 interface IAudioBufferSourceOptions extends AudioBufferSourceOptions {
-    onEnded: Function;
+    onEnded: IOnEnded;
     /* AudioBufferSourceOptions:
     AudioBuffer? buffer;
     float detune = 0;
@@ -55,7 +59,7 @@ interface IAudioBufferSourceOptions extends AudioBufferSourceOptions {
 }
 
 interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions {
-    onEnded: Function;
+    onEnded: IOnEnded;
     /* MediaElementAudioSourceOptions:
     required HTMLMediaElement mediaElement;
     */
@@ -63,7 +67,7 @@ interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions
 }
 
 interface IMediaElementAudioSourceNode extends MediaElementAudioSourceNode {
-    onended: Function;
+    onended: IOnEnded;
     loop: boolean;
 }
 

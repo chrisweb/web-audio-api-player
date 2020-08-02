@@ -7,3 +7,7 @@ build
 
 # don't lint rollup dist scripts
 scripts
+
+# package json and lock
+package.json
+package-lock.json

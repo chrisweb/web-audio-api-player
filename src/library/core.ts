@@ -39,8 +39,6 @@ interface ISoundsQueueOptions {
 
 interface IDecodeSoundOptions {
     sound: ISound;
-    resolve: Function;
-    reject: Function;
 }
 
 interface IPlayOptions {
@@ -565,7 +563,11 @@ export class PlayerCore {
 
             // if the sound has already an ArrayBuffer but no AudioBuffer
             if (sound.arrayBuffer !== null && sound.audioBuffer === null) {
-                return this._decodeSound({ sound, resolve, reject });
+
+                this._decodeSound({ sound }).then((sound: ISound) => {
+                    resolve(sound);
+                }).catch(reject)
+
             }
 
             // if the sound has no ArrayBuffer and also no AudioBuffer yet
@@ -588,7 +590,9 @@ export class PlayerCore {
 
                         sound.arrayBuffer = arrayBuffer;
 
-                        return this._decodeSound({ sound, resolve, reject });
+                        this._decodeSound({ sound }).then((sound: ISound) => {
+                            resolve(sound);
+                        }).catch(reject)
 
                     }).catch((requestError: IPlayerError) => {
 
@@ -653,11 +657,11 @@ export class PlayerCore {
 
     }
 
-    protected _decodeSound({ sound, resolve, reject }: IDecodeSoundOptions): void {
+    protected _decodeSound({ sound }: IDecodeSoundOptions): Promise<ISound> {
 
         const arrayBuffer = sound.arrayBuffer;
 
-        this._playerAudio.decodeAudio(arrayBuffer).then((audioBuffer: AudioBuffer) => {
+        return this._playerAudio.decodeAudio(arrayBuffer).then((audioBuffer: AudioBuffer) => {
 
             sound.audioBuffer = audioBuffer;
             sound.isBuffering = false;
@@ -666,11 +670,11 @@ export class PlayerCore {
             sound.duration = sound.audioBuffer.duration;
             sound.isReadyToPLay = true;
 
-            resolve(sound);
+            return sound;
 
         }).catch((decodeAudioError: IPlayerError) => {
 
-            reject(decodeAudioError);
+            throw decodeAudioError;
 
         });
 

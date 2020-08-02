@@ -5,6 +5,8 @@
 
 # web audio API player
 
+<p align="center"><img width="400" src="./assets/web_audio_api_player_logo_small.png" alt="web audio API player logo"></p>
+
 ## About this project
 
 🎶 An opensource javascript (typescript) audio player for the browser, built using the Web Audio API  

@@ -15,6 +15,9 @@ interface IAudioGraph {
     oscillatorNode?: OscillatorNode;
     waveShaperNode?: WaveShaperNode;
 }
+interface IOnEnded {
+    (event?: Event): void;
+}
 interface IAudioOptions {
     customAudioContext?: AudioContext;
     customAudioGraph?: IAudioGraph;
@@ -23,14 +26,14 @@ interface IAudioOptions {
     loadSoundMode: typeSoundModes;
 }
 interface IAudioBufferSourceOptions extends AudioBufferSourceOptions {
-    onEnded: Function;
+    onEnded: IOnEnded;
 }
 interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions {
-    onEnded: Function;
+    onEnded: IOnEnded;
     loop: boolean;
 }
 interface IMediaElementAudioSourceNode extends MediaElementAudioSourceNode {
-    onended: Function;
+    onended: IOnEnded;
     loop: boolean;
 }
 export interface IChangeVolumeOptions {

@@ -26,8 +26,6 @@ interface ISoundsQueueOptions {
 }
 interface IDecodeSoundOptions {
     sound: ISound;
-    resolve: Function;
-    reject: Function;
 }
 interface IPlayOptions {
     whichSound?: number | string | undefined;
@@ -99,7 +97,7 @@ export declare class PlayerCore {
     protected _loadSoundUsingAudioElement(sound: ISound): Promise<ISound | PlayerError>;
     protected _loadSoundUsingRequest(sound: ISound): Promise<ISound | PlayerError>;
     protected _initializeAudioElementListeners(sound: ISound): void;
-    protected _decodeSound({ sound, resolve, reject }: IDecodeSoundOptions): void;
+    protected _decodeSound({ sound }: IDecodeSoundOptions): Promise<ISound>;
     play({ whichSound, playTimeOffset }?: IPlayOptions): Promise<void>;
     protected _play(sound: ISound): Promise<void>;
     protected _playAudioBuffer(sound: ISound): Promise<void>;
