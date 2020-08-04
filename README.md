@@ -9,7 +9,7 @@
 
 ## About this project
 
-🎶 An opensource javascript (typescript) audio player for the browser, built using the Web Audio API  
+🎶 An opensource javascript (typescript) audio player for the browser, built using the Web Audio API with support for HTML5 audio elements
 
 this player can be added to any javascript project and extended in many ways, it is not bound to a specific UI, this player is just a core that can be used to create any kind of player you can imagine and even be used to play sound in video games or for any other sound / song playing needs you may have  
 
