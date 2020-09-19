@@ -1,6 +1,6 @@
 {
   "name": "web-audio-api-player",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "web audio api player",
   "keywords": [
     "web",
@@ -40,12 +40,12 @@
     "watch": "rollup -cw ./scripts/dist.js"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "3.7.1",
-    "@typescript-eslint/parser": "3.7.1",
-    "eslint": "7.6.0",
+    "@typescript-eslint/eslint-plugin": "4.1.1",
+    "@typescript-eslint/parser": "4.1.1",
+    "eslint": "7.9.0",
     "eslint-plugin-import": "2.22.0",
-    "rollup": "2.23.0",
-    "rollup-plugin-typescript2": "0.27.1",
-    "typescript": "3.9.7"
+    "rollup": "2.27.1",
+    "rollup-plugin-typescript2": "0.27.2",
+    "typescript": "4.0.3"
   }
 }
