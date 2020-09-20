@@ -65,6 +65,7 @@ function __generator(thisArg, body) {
     }
 }
 
+var SOUND_STATE_STOPPED = 'sound_state_stopped';
 var PlayerSound = /** @class */ (function () {
     function PlayerSound(soundAttributes) {
         this.url = null;
@@ -82,7 +83,7 @@ var PlayerSound = /** @class */ (function () {
         this.startTime = 0;
         this.playTime = 0;
         this.playedTimePercentage = 0;
-        this.isPlaying = false;
+        this.state = SOUND_STATE_STOPPED;
         this.loadingProgress = 0;
         this.duration = null;
         this.firstTimePlayed = true;
@@ -176,6 +177,10 @@ var PlayerSound = /** @class */ (function () {
         }
         return duration;
     };
+    // static constants
+    PlayerSound.SOUND_STATE_STOPPED = 'sound_state_stopped';
+    PlayerSound.SOUND_STATE_PAUSED = 'sound_state_paused';
+    PlayerSound.SOUND_STATE_PLAYING = 'sound_state_playing';
     return PlayerSound;
 }());
 
@@ -198,7 +203,7 @@ var PlayerAudio = /** @class */ (function () {
         this._audioGraph = null;
         this.setPersistVolume(options.persistVolume);
         this._setAutoCreateContextOnFirstTouch(options.createAudioContextOnFirstUserInteraction);
-        this.setLoadSoundMode(options.loadSoundMode);
+        this.setLoadPlayerMode(options.loadPlayerMode);
         this.setAudioContext(options.customAudioContext);
         if (options.customAudioContext === null) {
             this._autoCreateAudioContextOnFirstUserInteraction();
@@ -553,11 +558,11 @@ var PlayerAudio = /** @class */ (function () {
     PlayerAudio.prototype.getPersistVolume = function () {
         return this._persistVolume;
     };
-    PlayerAudio.prototype.setLoadSoundMode = function (loadSoundMode) {
-        this._loadSoundMode = loadSoundMode;
+    PlayerAudio.prototype.setLoadPlayerMode = function (loadPlayerMode) {
+        this._loadPlayerMode = loadPlayerMode;
     };
-    PlayerAudio.prototype.getLoadSoundMode = function () {
-        return this._loadSoundMode;
+    PlayerAudio.prototype.getLoadPlayerMode = function () {
+        return this._loadPlayerMode;
     };
     return PlayerAudio;
 }());
@@ -605,7 +610,7 @@ var PlayerRequest = /** @class */ (function () {
     return PlayerRequest;
 }());
 
-var SOUND_MODE_AUDIO = 'sound_mode_audio';
+var PLAYER_MODE_AUDIO = 'player_mode_audio';
 var PlayerCore = /** @class */ (function () {
     function PlayerCore(playerOptions) {
         if (playerOptions === void 0) { playerOptions = {}; }
@@ -632,7 +637,7 @@ var PlayerCore = /** @class */ (function () {
             visibilityAutoMute: false,
             createAudioContextOnFirstUserInteraction: true,
             persistVolume: true,
-            loadSoundMode: SOUND_MODE_AUDIO
+            loadPlayerMode: PLAYER_MODE_AUDIO
         };
         var options = Object.assign({}, defaultOptions, playerOptions);
         this._volume = options.volume;
@@ -647,7 +652,7 @@ var PlayerCore = /** @class */ (function () {
         this._visibilityAutoMute = options.visibilityAutoMute;
         this._createAudioContextOnFirstUserInteraction = options.createAudioContextOnFirstUserInteraction;
         this._persistVolume = options.persistVolume;
-        this._loadSoundMode = options.loadSoundMode;
+        this._loadPlayerMode = options.loadPlayerMode;
         if (typeof options.audioContext !== 'undefined') {
             this._customAudioContext = options.audioContext;
         }
@@ -658,14 +663,14 @@ var PlayerCore = /** @class */ (function () {
     }
     PlayerCore.prototype._initialize = function () {
         var audioOptions;
-        switch (this._loadSoundMode) {
-            case PlayerCore.SOUND_MODE_AUDIO:
+        switch (this._loadPlayerMode) {
+            case PlayerCore.PLAYER_MODE_AUDIO:
                 if (!this._detectAudioContextSupport()) {
                     throw new PlayerError('audio context is not supported by this device');
                 }
                 audioOptions = this._webAudioApiOptions();
                 break;
-            case PlayerCore.SOUND_MODE_AJAX:
+            case PlayerCore.PLAYER_MODE_AJAX:
                 if (!this._detectAudioElementSupport()) {
                     throw new PlayerError('audio context is not supported by this device');
                 }
@@ -681,7 +686,7 @@ var PlayerCore = /** @class */ (function () {
             customAudioGraph: this._customAudioGraph,
             createAudioContextOnFirstUserInteraction: this._createAudioContextOnFirstUserInteraction,
             persistVolume: this._persistVolume,
-            loadSoundMode: this._loadSoundMode
+            loadPlayerMode: this._loadPlayerMode
         };
         return webAudioApiOptions;
     };
@@ -691,7 +696,7 @@ var PlayerCore = /** @class */ (function () {
             customAudioGraph: null,
             createAudioContextOnFirstUserInteraction: false,
             persistVolume: this._persistVolume,
-            loadSoundMode: this._loadSoundMode
+            loadPlayerMode: this._loadPlayerMode
         };
         return webAudioElementOptions;
     };
@@ -767,7 +772,7 @@ var PlayerCore = /** @class */ (function () {
         // get the current sound if any
         var currentSound = this._getSoundFromQueue();
         // if there is a sound currently being played
-        if (currentSound !== null && currentSound.isPlaying) {
+        if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
             this._playerAudio.changeVolume({ volume: volume, sound: currentSound, forceUpdateUserVolume: true });
         }
     };
@@ -780,7 +785,7 @@ var PlayerCore = /** @class */ (function () {
         // get the current sound if any
         var currentSound = this._getSoundFromQueue();
         // if there is a sound currently being played
-        if (currentSound !== null && currentSound.isPlaying) {
+        if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
             this._playerAudio.changeVolume({ volume: 0, sound: currentSound, forceUpdateUserVolume: false });
         }
         this._isMuted = true;
@@ -789,7 +794,7 @@ var PlayerCore = /** @class */ (function () {
         // get the current sound if any
         var currentSound = this._getSoundFromQueue();
         // if there is a sound currently being played
-        if (currentSound !== null && currentSound.isPlaying) {
+        if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
             this._playerAudio.changeVolume({ volume: this._postMuteVolume, sound: currentSound, forceUpdateUserVolume: false });
         }
         this._isMuted = false;
@@ -832,7 +837,7 @@ var PlayerCore = /** @class */ (function () {
         // if there is a sound currently being played
         if (currentSound !== null) {
             // is the song is being played
-            if (currentSound.isPlaying) {
+            if (currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
                 // stop the track playback
                 this.pause();
                 // start the playback at the given position
@@ -850,16 +855,16 @@ var PlayerCore = /** @class */ (function () {
     PlayerCore.prototype._loadSound = function (sound) {
         var loadSoundPromise;
         var notImplementedError;
-        switch (this._loadSoundMode) {
-            case PlayerCore.SOUND_MODE_AUDIO:
+        switch (this._loadPlayerMode) {
+            case PlayerCore.PLAYER_MODE_AUDIO:
                 loadSoundPromise = this._loadSoundUsingAudioElement(sound);
                 break;
-            case PlayerCore.SOUND_MODE_AJAX:
+            case PlayerCore.PLAYER_MODE_AJAX:
                 loadSoundPromise = this._loadSoundUsingRequest(sound);
                 break;
-            case PlayerCore.SOUND_MODE_FETCH:
+            case PlayerCore.PLAYER_MODE_FETCH:
                 // TODO: implement fetch
-                notImplementedError = new PlayerError(PlayerCore.SOUND_MODE_FETCH + ' is not implemented yet', 1);
+                notImplementedError = new PlayerError(PlayerCore.PLAYER_MODE_FETCH + ' is not implemented yet', 1);
                 loadSoundPromise = Promise.reject(notImplementedError);
                 break;
         }
@@ -1005,7 +1010,7 @@ var PlayerCore = /** @class */ (function () {
             // get the current sound if any
             var currentSound = _this._getSoundFromQueue();
             // if there is a sound currently being played, stop the current sound
-            if (currentSound !== null && currentSound.isPlaying) {
+            if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
                 _this.stop();
             }
             // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
@@ -1050,8 +1055,8 @@ var PlayerCore = /** @class */ (function () {
                         _a.sent();
                         _a.label = 4;
                     case 4:
-                        // status is now playing
-                        sound.isPlaying = true;
+                        // state is now playing
+                        sound.state = PlayerSound.SOUND_STATE_PLAYING;
                         // the audiocontext time right now (since the audiocontext got created)
                         sound.startTime = sound.getCurrentTime();
                         sound = this._setupSoundEvents(sound);
@@ -1180,7 +1185,7 @@ var PlayerCore = /** @class */ (function () {
         // get the current sound if any
         var currentSound = this._getSoundFromQueue();
         // if there is a sound currently being played
-        if (currentSound !== null && currentSound.isPlaying) {
+        if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
             var updateIndex = false;
             var nextSound = this._getSoundFromQueue({ whichSound: 'next', updateIndex: updateIndex });
             if (currentSound.onEnded !== null) {
@@ -1196,7 +1201,7 @@ var PlayerCore = /** @class */ (function () {
             currentSound.firstTimePlayed = true;
             // reset the playTimeOffset
             currentSound.playTimeOffset = 0;
-            this._stop(currentSound);
+            this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
             if (nextSound !== null) {
                 if (this._playNextOnEnded) {
                     this.play({ whichSound: 'next' });
@@ -1396,13 +1401,20 @@ var PlayerCore = /** @class */ (function () {
         if (sound === null) {
             return;
         }
+        if (sound.state === PlayerSound.SOUND_STATE_PAUSED) {
+            // TODO: just return or throw an error
+            return;
+        }
         var timeAtPause = sound.getCurrentTime();
         sound.playTimeOffset += timeAtPause - sound.startTime;
         // trigger paused event
         if (sound.onPaused !== null) {
             sound.onPaused(sound.playTimeOffset);
         }
-        this._stop(sound);
+        // using stop here as even if it is a pause you can't call play again
+        // re-using an audio buffer source node is not allowed, so no matter what
+        // we will have to create a new one
+        this._stop(sound, PlayerSound.SOUND_STATE_PAUSED);
     };
     PlayerCore.prototype.stop = function () {
         // get the current sound
@@ -1410,7 +1422,7 @@ var PlayerCore = /** @class */ (function () {
         if (sound === null) {
             return;
         }
-        if (!sound.isPlaying) {
+        if (sound.state === PlayerSound.SOUND_STATE_STOPPED) {
             // TODO: just return or throw an error
             return;
         }
@@ -1422,9 +1434,9 @@ var PlayerCore = /** @class */ (function () {
         }
         // reset the playTimeOffset
         sound.playTimeOffset = 0;
-        this._stop(sound);
+        this._stop(sound, PlayerSound.SOUND_STATE_STOPPED);
     };
-    PlayerCore.prototype._stop = function (sound) {
+    PlayerCore.prototype._stop = function (sound, soundState) {
         // tell the source node to stop playing
         if (sound.audioBufferSourceNode !== null) {
             // to stop playing if using the AudioBufferSourceNode use the stop method
@@ -1439,8 +1451,8 @@ var PlayerCore = /** @class */ (function () {
         }
         // destroy the audio buffer source node as it can anyway only get used once
         this._playerAudio.destroySourceNode(sound);
-        // tell the sound that playing is over
-        sound.isPlaying = false;
+        // state is now stopped
+        sound.state = soundState;
         if (this._playingTimeoutID !== null) {
             // clear the playing progress setInterval
             clearInterval(this._playingTimeoutID);
@@ -1537,9 +1549,9 @@ var PlayerCore = /** @class */ (function () {
     PlayerCore.PLAY_SOUND_PREVIOUS = 'previous';
     PlayerCore.PLAY_SOUND_FIRST = 'first';
     PlayerCore.PLAY_SOUND_LAST = 'last';
-    PlayerCore.SOUND_MODE_AUDIO = 'sound_mode_audio';
-    PlayerCore.SOUND_MODE_AJAX = 'sound_mode_ajax';
-    PlayerCore.SOUND_MODE_FETCH = 'sound_mode_fetch';
+    PlayerCore.PLAYER_MODE_AUDIO = 'player_mode_audio';
+    PlayerCore.PLAYER_MODE_AJAX = 'player_mode_ajax';
+    PlayerCore.PLAYER_MODE_FETCH = 'player_mode_fetch';
     return PlayerCore;
 }());
 

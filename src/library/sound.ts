@@ -1,3 +1,9 @@
+const SOUND_STATE_STOPPED = 'sound_state_stopped';
+const SOUND_STATE_PAUSED = 'sound_state_paused';
+const SOUND_STATE_PLAYING = 'sound_state_playing';
+
+export type typeSoundStates = typeof SOUND_STATE_STOPPED | typeof SOUND_STATE_PAUSED | typeof SOUND_STATE_PLAYING;
+
 export interface ISoundSource {
     url: string;
     codec?: string;
@@ -50,7 +56,7 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     startTime: number;
     playTime: number;
     playedTimePercentage: number;
-    isPlaying: boolean;
+    state: typeSoundStates;
     source: (ISoundSource)[] | ISoundSource;
     url: string | null;
     codec: string | null;
@@ -63,6 +69,12 @@ export interface ISound extends ISoundAttributes, ISoundSource {
 
 export class PlayerSound implements ISound {
 
+    // static constants
+    static readonly SOUND_STATE_STOPPED = 'sound_state_stopped';
+    static readonly SOUND_STATE_PAUSED = 'sound_state_paused';
+    static readonly SOUND_STATE_PLAYING = 'sound_state_playing';
+
+    // properties
     public source: (ISoundSource)[] | ISoundSource;
     public url: string | null = null;
     public codec: string | null = null;
@@ -81,7 +93,7 @@ export class PlayerSound implements ISound {
     public startTime = 0;
     public playTime = 0;
     public playedTimePercentage = 0;
-    public isPlaying = false;
+    public state: typeSoundStates = SOUND_STATE_STOPPED;
     public loadingProgress = 0;
     public duration: number | null = null;
     public firstTimePlayed = true;

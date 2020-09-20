@@ -10,9 +10,9 @@ import { PlayerUI } from './library/player/ui.js';
 
 // set some options of the player
 // there are two different sound modes:
-// SOUND_MODE_AUDIO: uses an audio element to load the
+// PLAYER_MODE_AUDIO: uses an audio element to load the
 // sound (which allows you to load files but also audio streams)
-// SOUND_MODE_FETCH: uses fetch to get the sound and
+// PLAYER_MODE_FETCH: uses fetch to get the sound and
 // then uses the web audio API to play it (the web audio API
 // does only support loading files, no streams)
 // !!! for some details about the differencies of the two MODES
@@ -20,7 +20,7 @@ import { PlayerUI } from './library/player/ui.js';
 const options: ICoreOptions = {
     soundsBaseUrl: 'https://mp3l.jamendo.com/?trackid=',
     playingProgressIntervalTime: 500,
-    loadSoundMode: PlayerCore.SOUND_MODE_AUDIO
+    loadPlayerMode: PlayerCore.PLAYER_MODE_AUDIO
 };
 
 // create an instance of the player

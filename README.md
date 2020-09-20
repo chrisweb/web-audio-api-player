@@ -27,9 +27,9 @@ web audio API player is published to the [npm registry](https://npm.im/web-audio
 
 ## documentation
 
-This player has two modes, SOUND_MODE_AUDIO which uses the audio element to load sounds via the audio element and SOUND_MODE_FETCH to load sounds via the web audio API. Here are some of the differences between the two:
+This player has two modes, PLAYER_MODE_AUDIO which uses the audio element to load sounds via the audio element and PLAYER_MODE_FETCH to load sounds via the web audio API. Here are some of the differences between the two:
 
-### the web audio API (SOUND_MODE_FETCH)
+### the web audio API (PLAYER_MODE_FETCH)
 
 * No support for streaming
 * Files get loaded using fetch, the loading progress is in percent and it is a single value between 0 and 100 percent loaded
@@ -37,7 +37,7 @@ This player has two modes, SOUND_MODE_AUDIO which uses the audio element to load
 
 For a more complete list of features, check out the w3c [web audio API features list](https://www.w3.org/TR/webaudio/#Features) in their [candidate recommendation document](https://www.w3.org/TR/webaudio/#Features)
 
-### the audio element (SOUND_MODE_AUDIO)
+### the audio element (PLAYER_MODE_AUDIO)
 
 * Support for streaming
 * Files get loaded using the audio element, the loading progress is not just a single value, it can be split into multiple parts (time ranges), so for example the start of a song from 0 to 10 percent got loaded, then there is a blank of not yet loaded data and then also the part from 35 to 60 percent has been loaded
@@ -49,15 +49,15 @@ You might have read (like I did) a lot of outdated web audio articles which stat
 
 TLDR; This is not true anymore and especially not true for this library. Yes the audio element if used as a standalone lacks a lot of features. But this library does combine the web audio element with the web audio API.
 
-If you use this library, the difference is only how the sound (song) gets loaded (see list of differences above). If using fetch the source is a Buffer and if using the "HTML audio element" well the source is a media element. Everything that happens after is the same. This is why you can change in the player options the SOUND_MODE, to either load the sound using [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) or load / stream it using the [audio element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio). But this influences only how the sound get loaded (fetched), if loaded via audio element, we use the web audio API [createMediaElementSource method](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaElementSource) of the audiocontext to pass it to the audiocontext of the web audio API. After feeding the web audio API with the input from the web audio element, the playback and what you do with it is being handled by the web audio API.
+If you use this library, the difference is only how the sound (song) gets loaded (see list of differences above). If using fetch the source is a Buffer and if using the "HTML audio element" well the source is a media element. Everything that happens after is the same. This is why you can change in the player options the PLAYER_MODE, to either load the sound using [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) or load / stream it using the [audio element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio). But this influences only how the sound get loaded (fetched), if loaded via audio element, we use the web audio API [createMediaElementSource method](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaElementSource) of the audiocontext to pass it to the audiocontext of the web audio API. After feeding the web audio API with the input from the web audio element, the playback and what you do with it is being handled by the web audio API.
 
-### so which SOUND_MODE should I use
+### so which PLAYER_MODE should I use
 
 It depends on what you intend to build.
 
-If you build a game where you have a lot (of small sounds) that get (pre-)loaded and maybe cached but played later at some time after they finished loading, use SOUND_MODE_FETCH. It's progress is easier to understand, because when the loading progress of the sound has reached 100% you know it can be played. To display the loading progress a simple [HTML progress element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) is enough.
+If you build a game where you have a lot (of small sounds) that get (pre-)loaded and maybe cached but played later at some time after they finished loading, use PLAYER_MODE_FETCH. It's progress is easier to understand, because when the loading progress of the sound has reached 100% you know it can be played. To display the loading progress a simple [HTML progress element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) is enough.
 
-If you build a music player, use the SOUND_MODE_AUDIO as you might to want to start playing the sound (song) as quickly as possible and don't care if it has fully loaded yet as long as the part that has been loaded is enough to play the song until the end (while the rest of it is being streamed from the server in the background). To display the time range(s) that have been loaded you could for example use a [2D canvas element](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D).
+If you build a music player, use the PLAYER_MODE_AUDIO as you might to want to start playing the sound (song) as quickly as possible and don't care if it has fully loaded yet as long as the part that has been loaded is enough to play the song until the end (while the rest of it is being streamed from the server in the background). To display the time range(s) that have been loaded you could for example use a [2D canvas element](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D).
 
 ### advanced usage
 

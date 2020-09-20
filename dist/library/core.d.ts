@@ -1,10 +1,10 @@
-import { ISound, ISoundAttributes, ISoundSource } from './sound';
+import { ISound, ISoundAttributes, ISoundSource, typeSoundStates } from './sound';
 import { PlayerAudio, IAudioGraph, IAudioOptions } from './audio';
 import { PlayerError } from './error';
-declare const SOUND_MODE_AUDIO = "sound_mode_audio";
-declare const SOUND_MODE_AJAX = "sound_mode_ajax";
-declare const SOUND_MODE_FETCH = "sound_mode_fetch";
-export declare type typeSoundModes = typeof SOUND_MODE_AUDIO | typeof SOUND_MODE_AJAX | typeof SOUND_MODE_FETCH;
+declare const PLAYER_MODE_AUDIO = "player_mode_audio";
+declare const PLAYER_MODE_AJAX = "player_mode_ajax";
+declare const PLAYER_MODE_FETCH = "player_mode_fetch";
+export declare type typePlayerModes = typeof PLAYER_MODE_AUDIO | typeof PLAYER_MODE_AJAX | typeof PLAYER_MODE_FETCH;
 export interface ICoreOptions {
     volume?: number;
     loopQueue?: boolean;
@@ -18,7 +18,7 @@ export interface ICoreOptions {
     visibilityAutoMute?: boolean;
     createAudioContextOnFirstUserInteraction?: boolean;
     persistVolume?: boolean;
-    loadSoundMode?: typeSoundModes;
+    loadPlayerMode?: typePlayerModes;
 }
 interface ISoundsQueueOptions {
     soundAttributes: ISoundAttributes;
@@ -62,7 +62,7 @@ export declare class PlayerCore {
     protected _visibilityAutoMute: boolean;
     protected _createAudioContextOnFirstUserInteraction: boolean;
     protected _persistVolume: boolean;
-    protected _loadSoundMode: typeSoundModes;
+    protected _loadPlayerMode: typePlayerModes;
     static readonly WHERE_IN_QUEUE_AT_END: string;
     static readonly WHERE_IN_QUEUE_AT_START: string;
     static readonly WHERE_IN_QUEUE_AFTER_CURRENT: string;
@@ -70,9 +70,9 @@ export declare class PlayerCore {
     static readonly PLAY_SOUND_PREVIOUS = "previous";
     static readonly PLAY_SOUND_FIRST = "first";
     static readonly PLAY_SOUND_LAST = "last";
-    static readonly SOUND_MODE_AUDIO = "sound_mode_audio";
-    static readonly SOUND_MODE_AJAX = "sound_mode_ajax";
-    static readonly SOUND_MODE_FETCH = "sound_mode_fetch";
+    static readonly PLAYER_MODE_AUDIO = "player_mode_audio";
+    static readonly PLAYER_MODE_AJAX = "player_mode_ajax";
+    static readonly PLAYER_MODE_FETCH = "player_mode_fetch";
     constructor(playerOptions?: ICoreOptions);
     protected _initialize(): void;
     protected _webAudioApiOptions(): IAudioOptions;
@@ -115,7 +115,7 @@ export declare class PlayerCore {
     protected _checkMimeTypesSupport(mediaMimeTypes: string[]): boolean;
     pause(): void;
     stop(): void;
-    protected _stop(sound: ISound): void;
+    protected _stop(sound: ISound, soundState: typeSoundStates): void;
     next(): void;
     previous(): void;
     first(): void;

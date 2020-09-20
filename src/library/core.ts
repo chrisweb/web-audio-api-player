@@ -1,4 +1,4 @@
-import { PlayerSound, ISound, ISoundAttributes, ISoundSource  } from './sound';
+import { PlayerSound, ISound, ISoundAttributes, ISoundSource, typeSoundStates } from './sound';
 import {
     PlayerAudio,
     IAudioGraph,
@@ -10,11 +10,11 @@ import {
 import { PlayerRequest } from './request';
 import { PlayerError, IPlayerError } from './error';
 
-const SOUND_MODE_AUDIO = 'sound_mode_audio';
-const SOUND_MODE_AJAX = 'sound_mode_ajax';
-const SOUND_MODE_FETCH = 'sound_mode_fetch';
+const PLAYER_MODE_AUDIO = 'player_mode_audio';
+const PLAYER_MODE_AJAX = 'player_mode_ajax';
+const PLAYER_MODE_FETCH = 'player_mode_fetch';
 
-export type typeSoundModes = typeof SOUND_MODE_AUDIO | typeof SOUND_MODE_AJAX | typeof SOUND_MODE_FETCH;
+export type typePlayerModes = typeof PLAYER_MODE_AUDIO | typeof PLAYER_MODE_AJAX | typeof PLAYER_MODE_FETCH;
 
 export interface ICoreOptions {
     volume?: number;
@@ -29,7 +29,7 @@ export interface ICoreOptions {
     visibilityAutoMute?: boolean;
     createAudioContextOnFirstUserInteraction?: boolean;
     persistVolume?: boolean;
-    loadSoundMode?: typeSoundModes;
+    loadPlayerMode?: typePlayerModes;
 }
 
 interface ISoundsQueueOptions { 
@@ -105,7 +105,7 @@ export class PlayerCore {
     // save the volume value in localstorage
     protected _persistVolume: boolean;
     // mode used to load songs
-    protected _loadSoundMode: typeSoundModes;
+    protected _loadPlayerMode: typePlayerModes;
 
     // constants
     static readonly WHERE_IN_QUEUE_AT_END: string = 'append';
@@ -117,9 +117,9 @@ export class PlayerCore {
     static readonly PLAY_SOUND_FIRST = 'first';
     static readonly PLAY_SOUND_LAST = 'last';
 
-    static readonly SOUND_MODE_AUDIO = 'sound_mode_audio';
-    static readonly SOUND_MODE_AJAX = 'sound_mode_ajax';
-    static readonly SOUND_MODE_FETCH = 'sound_mode_fetch';
+    static readonly PLAYER_MODE_AUDIO = 'player_mode_audio';
+    static readonly PLAYER_MODE_AJAX = 'player_mode_ajax';
+    static readonly PLAYER_MODE_FETCH = 'player_mode_fetch';
 
     constructor(playerOptions: ICoreOptions = {}) {
 
@@ -136,7 +136,7 @@ export class PlayerCore {
             visibilityAutoMute: false,
             createAudioContextOnFirstUserInteraction: true,
             persistVolume: true,
-            loadSoundMode: SOUND_MODE_AUDIO
+            loadPlayerMode: PLAYER_MODE_AUDIO
         };
 
         const options = Object.assign({}, defaultOptions, playerOptions);
@@ -153,7 +153,7 @@ export class PlayerCore {
         this._visibilityAutoMute = options.visibilityAutoMute;
         this._createAudioContextOnFirstUserInteraction = options.createAudioContextOnFirstUserInteraction;
         this._persistVolume = options.persistVolume;
-        this._loadSoundMode = options.loadSoundMode;
+        this._loadPlayerMode = options.loadPlayerMode;
 
         if (typeof options.audioContext !== 'undefined') {
             this._customAudioContext = options.audioContext;
@@ -171,8 +171,8 @@ export class PlayerCore {
 
         let audioOptions: IAudioOptions;
 
-        switch (this._loadSoundMode) {
-            case PlayerCore.SOUND_MODE_AUDIO:
+        switch (this._loadPlayerMode) {
+            case PlayerCore.PLAYER_MODE_AUDIO:
 
                 if (!this._detectAudioContextSupport()) {
                     throw new PlayerError('audio context is not supported by this device');
@@ -180,7 +180,7 @@ export class PlayerCore {
 
                 audioOptions = this._webAudioApiOptions();
                 break;
-            case PlayerCore.SOUND_MODE_AJAX:
+            case PlayerCore.PLAYER_MODE_AJAX:
 
                 if (!this._detectAudioElementSupport()) {
                     throw new PlayerError('audio context is not supported by this device');
@@ -202,7 +202,7 @@ export class PlayerCore {
             customAudioGraph: this._customAudioGraph,
             createAudioContextOnFirstUserInteraction: this._createAudioContextOnFirstUserInteraction,
             persistVolume: this._persistVolume,
-            loadSoundMode: this._loadSoundMode
+            loadPlayerMode: this._loadPlayerMode
         };
 
         return webAudioApiOptions;
@@ -216,7 +216,7 @@ export class PlayerCore {
             customAudioGraph: null,
             createAudioContextOnFirstUserInteraction: false,
             persistVolume: this._persistVolume,
-            loadSoundMode: this._loadSoundMode
+            loadPlayerMode: this._loadPlayerMode
         };
 
         return webAudioElementOptions;
@@ -337,7 +337,7 @@ export class PlayerCore {
         const currentSound = this._getSoundFromQueue();
 
         // if there is a sound currently being played
-        if (currentSound !== null && currentSound.isPlaying) {
+        if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
             this._playerAudio.changeVolume({ volume: volume, sound: currentSound, forceUpdateUserVolume: true });
         }
 
@@ -359,7 +359,7 @@ export class PlayerCore {
         const currentSound = this._getSoundFromQueue();
 
         // if there is a sound currently being played
-        if (currentSound !== null && currentSound.isPlaying) {
+        if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
             this._playerAudio.changeVolume({ volume: 0, sound: currentSound, forceUpdateUserVolume: false });
         }
 
@@ -373,7 +373,7 @@ export class PlayerCore {
         const currentSound = this._getSoundFromQueue();
 
         // if there is a sound currently being played
-        if (currentSound !== null && currentSound.isPlaying) {
+        if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
             this._playerAudio.changeVolume({ volume: this._postMuteVolume, sound: currentSound, forceUpdateUserVolume: false });
         }
 
@@ -440,7 +440,7 @@ export class PlayerCore {
         if (currentSound !== null) {
 
             // is the song is being played
-            if (currentSound.isPlaying) {
+            if (currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
 
                 // stop the track playback
                 this.pause();
@@ -468,18 +468,18 @@ export class PlayerCore {
         let loadSoundPromise;
         let notImplementedError;
 
-        switch (this._loadSoundMode) {
-            case PlayerCore.SOUND_MODE_AUDIO:
+        switch (this._loadPlayerMode) {
+            case PlayerCore.PLAYER_MODE_AUDIO:
                 loadSoundPromise = this._loadSoundUsingAudioElement(sound);
                 break;
-            case PlayerCore.SOUND_MODE_AJAX:
+            case PlayerCore.PLAYER_MODE_AJAX:
                 loadSoundPromise = this._loadSoundUsingRequest(sound);
                 break;
-            case PlayerCore.SOUND_MODE_FETCH:
+            case PlayerCore.PLAYER_MODE_FETCH:
 
                 // TODO: implement fetch
 
-                notImplementedError = new PlayerError(PlayerCore.SOUND_MODE_FETCH + ' is not implemented yet', 1);
+                notImplementedError = new PlayerError(PlayerCore.PLAYER_MODE_FETCH + ' is not implemented yet', 1);
 
                 loadSoundPromise = Promise.reject(notImplementedError);
 
@@ -691,7 +691,7 @@ export class PlayerCore {
             const currentSound = this._getSoundFromQueue();
 
             // if there is a sound currently being played, stop the current sound
-            if (currentSound !== null && currentSound.isPlaying) {
+            if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
                 this.stop();
             }
 
@@ -745,8 +745,8 @@ export class PlayerCore {
             await this._playMediaElementAudio(sound);
         }
 
-        // status is now playing
-        sound.isPlaying = true;
+        // state is now playing
+        sound.state = PlayerSound.SOUND_STATE_PLAYING;
 
         // the audiocontext time right now (since the audiocontext got created)
         sound.startTime = sound.getCurrentTime();
@@ -882,7 +882,7 @@ export class PlayerCore {
         const currentSound = this._getSoundFromQueue();
 
         // if there is a sound currently being played
-        if (currentSound !== null && currentSound.isPlaying) {
+        if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
 
             const updateIndex = false;
 
@@ -908,7 +908,7 @@ export class PlayerCore {
             // reset the playTimeOffset
             currentSound.playTimeOffset = 0;
 
-            this._stop(currentSound);
+            this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
 
             if (nextSound !== null) {
 
@@ -1170,6 +1170,11 @@ export class PlayerCore {
             return;
         }
 
+        if (sound.state === PlayerSound.SOUND_STATE_PAUSED) {
+            // TODO: just return or throw an error
+            return;
+        }
+
         const timeAtPause = sound.getCurrentTime();
 
         sound.playTimeOffset += timeAtPause - sound.startTime;
@@ -1179,7 +1184,10 @@ export class PlayerCore {
             sound.onPaused(sound.playTimeOffset);
         }
 
-        this._stop(sound);
+        // using stop here as even if it is a pause you can't call play again
+        // re-using an audio buffer source node is not allowed, so no matter what
+        // we will have to create a new one
+        this._stop(sound, PlayerSound.SOUND_STATE_PAUSED);
 
     }
 
@@ -1192,7 +1200,7 @@ export class PlayerCore {
             return;
         }
 
-        if (!sound.isPlaying) {
+        if (sound.state === PlayerSound.SOUND_STATE_STOPPED) {
             // TODO: just return or throw an error
             return;
         }
@@ -1208,11 +1216,11 @@ export class PlayerCore {
         // reset the playTimeOffset
         sound.playTimeOffset = 0;
 
-        this._stop(sound);
+        this._stop(sound, PlayerSound.SOUND_STATE_STOPPED);
 
     }
 
-    protected _stop(sound: ISound): void {
+    protected _stop(sound: ISound, soundState: typeSoundStates): void {
 
         // tell the source node to stop playing
         if (sound.audioBufferSourceNode !== null) {
@@ -1232,8 +1240,8 @@ export class PlayerCore {
         // destroy the audio buffer source node as it can anyway only get used once
         this._playerAudio.destroySourceNode(sound);
 
-        // tell the sound that playing is over
-        sound.isPlaying = false;
+        // state is now stopped
+        sound.state = soundState;
 
         if (this._playingTimeoutID !== null) {
 

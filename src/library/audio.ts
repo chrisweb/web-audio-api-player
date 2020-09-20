@@ -1,4 +1,4 @@
-import { typeSoundModes } from './core';
+import { typePlayerModes } from './core';
 import { ISound } from './sound';
 import { PlayerError } from './error';
 
@@ -43,7 +43,7 @@ interface IAudioOptions {
     customAudioGraph?: IAudioGraph;
     createAudioContextOnFirstUserInteraction?: boolean;
     persistVolume: boolean;
-    loadSoundMode: typeSoundModes;
+    loadPlayerMode: typePlayerModes;
 }
 
 interface IAudioBufferSourceOptions extends AudioBufferSourceOptions {
@@ -84,13 +84,13 @@ class PlayerAudio {
     protected _audioGraph: IAudioGraph | null = null;
     protected _createAudioContextOnFirstUserInteraction: boolean;
     protected _persistVolume: boolean;
-    protected _loadSoundMode: typeSoundModes;
+    protected _loadPlayerMode: typePlayerModes;
 
     constructor(options: IAudioOptions) {
 
         this.setPersistVolume(options.persistVolume);
         this._setAutoCreateContextOnFirstTouch(options.createAudioContextOnFirstUserInteraction);
-        this.setLoadSoundMode(options.loadSoundMode);
+        this.setLoadPlayerMode(options.loadPlayerMode);
 
         this.setAudioContext(options.customAudioContext);
 
@@ -562,15 +562,15 @@ class PlayerAudio {
 
     }
 
-    public setLoadSoundMode(loadSoundMode: typeSoundModes): void {
+    public setLoadPlayerMode(loadPlayerMode: typePlayerModes): void {
 
-        this._loadSoundMode = loadSoundMode;
+        this._loadPlayerMode = loadPlayerMode;
 
     }
 
-    public getLoadSoundMode(): typeSoundModes {
+    public getLoadPlayerMode(): typePlayerModes {
 
-        return this._loadSoundMode;
+        return this._loadPlayerMode;
 
     }
 

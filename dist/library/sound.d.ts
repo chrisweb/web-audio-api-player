@@ -1,3 +1,7 @@
+declare const SOUND_STATE_STOPPED = "sound_state_stopped";
+declare const SOUND_STATE_PAUSED = "sound_state_paused";
+declare const SOUND_STATE_PLAYING = "sound_state_playing";
+export declare type typeSoundStates = typeof SOUND_STATE_STOPPED | typeof SOUND_STATE_PAUSED | typeof SOUND_STATE_PLAYING;
 export interface ISoundSource {
     url: string;
     codec?: string;
@@ -41,7 +45,7 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     startTime: number;
     playTime: number;
     playedTimePercentage: number;
-    isPlaying: boolean;
+    state: typeSoundStates;
     source: (ISoundSource)[] | ISoundSource;
     url: string | null;
     codec: string | null;
@@ -52,6 +56,9 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     getDuration(): number;
 }
 export declare class PlayerSound implements ISound {
+    static readonly SOUND_STATE_STOPPED = "sound_state_stopped";
+    static readonly SOUND_STATE_PAUSED = "sound_state_paused";
+    static readonly SOUND_STATE_PLAYING = "sound_state_playing";
     source: (ISoundSource)[] | ISoundSource;
     url: string | null;
     codec: string | null;
@@ -70,7 +77,7 @@ export declare class PlayerSound implements ISound {
     startTime: number;
     playTime: number;
     playedTimePercentage: number;
-    isPlaying: boolean;
+    state: typeSoundStates;
     loadingProgress: number;
     duration: number | null;
     firstTimePlayed: boolean;
@@ -85,3 +92,4 @@ export declare class PlayerSound implements ISound {
     getCurrentTime(): number;
     getDuration(): number;
 }
+export {};
