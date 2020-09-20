@@ -27,9 +27,9 @@ web audio API player is published to the [npm registry](https://npm.im/web-audio
 
 ## documentation
 
-This player has two modes, PLAYER_MODE_AUDIO which uses the audio element to load sounds via the audio element and PLAYER_MODE_FETCH to load sounds via the web audio API. Here are some of the differences between the two:
+This player has two modes, PLAYER_MODE_AUDIO which uses the audio element to load sounds via the audio element and PLAYER_MODE_AJAX to load sounds via the web audio API. Here are some of the differences between the two:
 
-### the web audio API (PLAYER_MODE_FETCH)
+### the web audio API (PLAYER_MODE_AJAX)
 
 * No support for streaming
 * Files get loaded using fetch, the loading progress is in percent and it is a single value between 0 and 100 percent loaded
@@ -55,7 +55,7 @@ If you use this library, the difference is only how the sound (song) gets loaded
 
 It depends on what you intend to build.
 
-If you build a game where you have a lot (of small sounds) that get (pre-)loaded and maybe cached but played later at some time after they finished loading, use PLAYER_MODE_FETCH. It's progress is easier to understand, because when the loading progress of the sound has reached 100% you know it can be played. To display the loading progress a simple [HTML progress element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) is enough.
+If you build a game where you have a lot (of small sounds) that get (pre-)loaded and maybe cached but played later at some time after they finished loading, use PLAYER_MODE_AJAX. It's progress is easier to understand, because when the loading progress of the sound has reached 100% you know it can be played. To display the loading progress a simple [HTML progress element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) is enough.
 
 If you build a music player, use the PLAYER_MODE_AUDIO as you might to want to start playing the sound (song) as quickly as possible and don't care if it has fully loaded yet as long as the part that has been loaded is enough to play the song until the end (while the rest of it is being streamed from the server in the background). To display the time range(s) that have been loaded you could for example use a [2D canvas element](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D).
 
