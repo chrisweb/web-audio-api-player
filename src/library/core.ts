@@ -396,7 +396,7 @@ export class PlayerCore {
         if (currentSound !== null) {
 
             // check if the duration got set manually
-            if (currentSound.duration === null) {
+            if (currentSound.duration === null || isNaN(currentSound.duration)) {
 
                 // the user can set the sound duration manually but if he didn't the song has to
                 // get preloaded as the duration is a property of the audioBuffer
@@ -826,7 +826,7 @@ export class PlayerCore {
         this._playerAudio.connectSourceNodeToGraphNodes(mediaElementAudioSourceNode);
 
         // if an offset is defined use to play from a defined position
-        if (sound.playTimeOffset !== undefined) {
+        if (sound.playTimeOffset !== undefined && !isNaN(sound.playTimeOffset)) {
 
             // TODO: problem if sound has not loaded until for example 90% but position gets set to 90%
             // the position will jump back
