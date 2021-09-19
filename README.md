@@ -64,10 +64,12 @@ If you build a music player, use the PLAYER_MODE_AUDIO as you might to want to s
 #### You can create and then inject your own AudioContext
 
 You can inject your own, if you want to reuse an existing one your app already created:
-...
+
+TODO: add example
 
 You can also take the one created by the library and alter it the way you want:
-...
+
+TODO: add example
 
 #### You can create and then inject your own AudioGraph (audio routing graph)
 

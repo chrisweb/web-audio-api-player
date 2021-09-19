@@ -2,13 +2,13 @@
 
 ## build
 
-run gulp build in the root of this repository, to build the player itself [check out the player readme for build instructions](../../README.md)    
+use the command `npm run build` in the root of this repository, for more instructions about the player itself check out the [player main README](../../README.md)
 
 now build the example itself  
 
 use your favorite command line and go into the example folder  
 
-```
+```shell
 cd /web-audio-api-player/examples/simple-player
 ```
 
@@ -22,7 +22,7 @@ install the server dependencies
 
 ### install client dependencies
 
-```
+```shell
 cd client
 npm i
 ```
@@ -35,12 +35,18 @@ build the client
 
 ### install server dependencies
 
-```
+```shell
 cd server
 npm i
 ```
 
 ### build the server
+
+go into the server directory:
+
+```shell
+cd /web-audio-api-player/examples/simple-player/server
+```
 
 build the server  
 
@@ -83,7 +89,7 @@ so my command (in package.json) to run start the server in nodejs looks like thi
 
 and in package.json you will notice that I also added:
 
-```
+```json
 {
   "type": "module"
 }
@@ -99,7 +105,7 @@ However as of now (25.05.2019) typescript will tell you that "Property 'url' doe
 
 To fix this, add the following Interface to your code:
 
-```
+```typescript
 declare global  {
     interface ImportMeta {
         url: string;
