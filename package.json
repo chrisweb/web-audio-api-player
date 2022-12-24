@@ -40,12 +40,12 @@
     "watch": "rollup -cw ./scripts/dist.js"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "5.8.1",
-    "@typescript-eslint/parser": "5.8.1",
-    "eslint": "8.6.0",
-    "eslint-plugin-import": "2.25.3",
-    "rollup": "2.62.0",
-    "rollup-plugin-typescript2": "0.31.1",
-    "typescript": "4.5.4"
+    "@typescript-eslint/eslint-plugin": "5.47.0",
+    "@typescript-eslint/parser": "5.47.0",
+    "eslint": "8.30.0",
+    "eslint-plugin-import": "2.26.0",
+    "rollup": "3.8.1",
+    "rollup-plugin-typescript2": "0.34.1",
+    "typescript": "4.9.4"
   }
 }
