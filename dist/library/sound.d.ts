@@ -1,7 +1,7 @@
 declare const SOUND_STATE_STOPPED = "sound_state_stopped";
 declare const SOUND_STATE_PAUSED = "sound_state_paused";
 declare const SOUND_STATE_PLAYING = "sound_state_playing";
-export declare type typeSoundStates = typeof SOUND_STATE_STOPPED | typeof SOUND_STATE_PAUSED | typeof SOUND_STATE_PLAYING;
+export type typeSoundStates = typeof SOUND_STATE_STOPPED | typeof SOUND_STATE_PAUSED | typeof SOUND_STATE_PLAYING;
 export interface ISoundSource {
     url: string;
     codec?: string;

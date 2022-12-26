@@ -4,7 +4,7 @@ import { PlayerError } from './error';
 declare const PLAYER_MODE_AUDIO = "player_mode_audio";
 declare const PLAYER_MODE_AJAX = "player_mode_ajax";
 declare const PLAYER_MODE_FETCH = "player_mode_fetch";
-export declare type typePlayerModes = typeof PLAYER_MODE_AUDIO | typeof PLAYER_MODE_AJAX | typeof PLAYER_MODE_FETCH;
+export type typePlayerModes = typeof PLAYER_MODE_AUDIO | typeof PLAYER_MODE_AJAX | typeof PLAYER_MODE_FETCH;
 export interface ICoreOptions {
     volume?: number;
     loopQueue?: boolean;
