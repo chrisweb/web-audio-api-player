@@ -1,9 +1,6 @@
-[![minified](https://badgen.net/bundlephobia/min/web-audio-api-player)](https://bundlephobia.com/package/web-audio-api-player)
-[![minified-zipped](https://badgen.net/bundlephobia/minzip/web-audio-api-player)](https://bundlephobia.com/package/web-audio-api-player)
-[![dependency-count](https://badgen.net/bundlephobia/dependency-count/web-audio-api-player)](https://bundlephobia.com/package/web-audio-api-player)
-[![tree-shaking](https://badgen.net/bundlephobia/tree-shaking/web-audio-api-player)](https://bundlephobia.com/package/web-audio-api-player)
 [![npm version](https://img.shields.io/npm/v/web-audio-api-player.svg?style=flat)](https://www.npmjs.com/package/web-audio-api-player)
-[![GitHub license](https://img.shields.io/github/license/chrisweb/web-audio-api-player)](https://github.com/chrisweb/web-audio-api-player/blob/master/LICENSE)
+[![minified size](https://img.shields.io/bundlephobia/min/web-audio-api-player?style=flat)](https://www.npmjs.com/package/web-audio-api-player)
+[![GitHub license](https://img.shields.io/github/license/chrisweb/web-audio-api-player?style=flat)](https://github.com/chrisweb/web-audio-api-player/blob/master/LICENSE)
 
 # web audio API player
 
@@ -174,7 +171,11 @@ Unfortunately the defined window does not have AudioContext:
 check out [[open] github ticket (as of 06/2019)](https://github.com/microsoft/TypeScript/issues/31686)  
 the current [dom.d.ts on github](https://github.com/microsoft/TypeScript/blob/master/src/lib/dom.generated.d.ts)  
 
-## TODOs (help wanted 😊)
+## Changelog
+
+* 4.0.0 removed UMD support, this and future versions will be ESM only
+
+## TODOs (help / PRs appreciated 😊)
 
 * create a react example
 * create a vue.js example
