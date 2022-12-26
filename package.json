@@ -1,51 +1,51 @@
 {
-  "name": "web-audio-api-player",
-  "version": "4.0.1",
-  "description": "web audio api player",
-  "keywords": [
-    "web",
-    "audio",
-    "api",
-    "javascript",
-    "typescript",
-    "player",
-    "promises",
-    "event-driven",
-    "play",
-    "sound",
-    "playlist"
-  ],
-  "homepage": "https://github.com/chrisweb/web-audio-api-player#readme",
-  "bugs": {
-    "url": "https://github.com/chrisweb/web-audio-api-player/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "ssh://git@github.com/chrisweb/web-audio-api-player.git"
-  },
-  "license": "MIT",
-  "author": "chrisweb <chris963@gmail.com> (https://chris.lu)",
-  "files": [
-    "dist"
-  ],
-  "main": "dist/index.umd.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "directories": {
-    "example": "examples"
-  },
-  "scripts": {
-    "build": "rollup -c ./scripts/dist.js",
-    "lint": "npx eslint src/**/* examples/simple-player/client/**/* examples/simple-player/server/**/*",
-    "watch": "rollup -cw ./scripts/dist.js"
-  },
-  "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "5.47.0",
-    "@typescript-eslint/parser": "5.47.0",
-    "eslint": "8.30.0",
-    "eslint-plugin-import": "2.26.0",
-    "rollup": "3.8.1",
-    "rollup-plugin-typescript2": "0.34.1",
-    "typescript": "4.9.4"
-  }
+    "name": "web-audio-api-player",
+    "version": "4.0.1",
+    "description": "web audio api player",
+    "keywords": [
+        "web",
+        "audio",
+        "api",
+        "javascript",
+        "typescript",
+        "player",
+        "promises",
+        "event-driven",
+        "play",
+        "sound",
+        "playlist"
+    ],
+    "homepage": "https://github.com/chrisweb/web-audio-api-player#readme",
+    "bugs": {
+        "url": "https://github.com/chrisweb/web-audio-api-player/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "ssh://git@github.com/chrisweb/web-audio-api-player.git"
+    },
+    "license": "MIT",
+    "author": "chrisweb <chris963@gmail.com> (https://chris.lu)",
+    "files": [
+        "dist"
+    ],
+    "main": "dist/index.umd.js",
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "directories": {
+        "example": "examples"
+    },
+    "scripts": {
+        "build": "rollup -c ./scripts/dist.js",
+        "lint": "npx eslint src/**/* examples/simple-player/client/**/* examples/simple-player/server/**/*",
+        "watch": "rollup -cw ./scripts/dist.js"
+    },
+    "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "5.47.0",
+        "@typescript-eslint/parser": "5.47.0",
+        "eslint": "8.30.0",
+        "eslint-plugin-import": "2.26.0",
+        "rollup": "3.8.1",
+        "rollup-plugin-typescript2": "0.34.1",
+        "typescript": "4.9.4"
+    }
 }

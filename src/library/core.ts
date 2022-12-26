@@ -32,7 +32,7 @@ export interface ICoreOptions {
     loadPlayerMode?: typePlayerModes;
 }
 
-interface ISoundsQueueOptions { 
+interface ISoundsQueueOptions {
     soundAttributes: ISoundAttributes;
     whereInQueue?: string;
 }
@@ -1064,23 +1064,23 @@ export class PlayerCore {
             // only if the codec of the source is supported
             if (isCodecSupported)
 
-            if (bestSource.url !== null && source.isPreferred) {
+                if (bestSource.url !== null && source.isPreferred) {
 
-                // if multiple sources but this one if preferred and if previous
-                // sources also had a supported codec we still overwrite the
-                // previous match
-                bestSource.url = soundUrl;
-                bestSource.codec = source.codec;
+                    // if multiple sources but this one if preferred and if previous
+                    // sources also had a supported codec we still overwrite the
+                    // previous match
+                    bestSource.url = soundUrl;
+                    bestSource.codec = source.codec;
 
-            } else {
+                } else {
 
-                // if no best source has been found so far, we don't
-                // care if it's preferred it's automatically chosen
-                // as best
-                bestSource.url = soundUrl;
-                bestSource.codec = source.codec;
+                    // if no best source has been found so far, we don't
+                    // care if it's preferred it's automatically chosen
+                    // as best
+                    bestSource.url = soundUrl;
+                    bestSource.codec = source.codec;
 
-            }
+                }
 
         });
 
@@ -1365,12 +1365,12 @@ export class PlayerCore {
 
         if (typeof document.hidden !== 'undefined') { // Opera 12.10 and Firefox 18 and later support
             hiddenKeyword = 'hidden';
-        
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } else if (typeof (document as any).msHidden !== 'undefined') {
             hiddenKeyword = 'msHidden';
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } else if (typeof (document as any).webkitHidden !== 'undefined') {
             hiddenKeyword = 'webkitHidden';
         }

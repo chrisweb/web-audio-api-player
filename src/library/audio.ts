@@ -63,7 +63,7 @@ interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions
     /* MediaElementAudioSourceOptions:
     required HTMLMediaElement mediaElement;
     */
-   loop: boolean;
+    loop: boolean;
 }
 
 interface IMediaElementAudioSourceNode extends MediaElementAudioSourceNode {
@@ -71,7 +71,7 @@ interface IMediaElementAudioSourceNode extends MediaElementAudioSourceNode {
     loop: boolean;
 }
 
-export interface IChangeVolumeOptions { 
+export interface IChangeVolumeOptions {
     volume: number;
     sound?: ISound;
     forceUpdateUserVolume?: boolean;
