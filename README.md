@@ -123,7 +123,7 @@ to lint the typescript files
 
 `npm run lint`
 
-## contributing (PRs welcome )
+## contributing (PRs welcome)
 
 you should first open a ticket and explain what fix or improvement you want to provide on the [github issues page](https://github.com/chrisweb/web-audio-api-player/issues) of this project (remember the github ticket number you will need it for the commit message later on)
 
@@ -175,7 +175,7 @@ the current [dom.d.ts on github](https://github.com/microsoft/TypeScript/blob/ma
 
 * 4.0.0 removed UMD support, this and future versions will be ESM only
 
-## TODOs (help / PRs appreciated 😊, see the ["contributing"](#contributing) section above)
+## TODOs (help / PRs appreciated 😊, see the ["contributing"](#contributing-prs-welcome) section above)
 
 * create a react example
 * create a vue.js example
