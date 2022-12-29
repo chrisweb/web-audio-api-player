@@ -106,9 +106,6 @@ install the dependencies
 
 to build the distributions  
 
-* es6 module = /dist/index.js  
-* UMD version = /dist/index.umd.js  
-
 `npm run build`
 
 in development you can use watch to rebuild every time you edit a typescript file  
