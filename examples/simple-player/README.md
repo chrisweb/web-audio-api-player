@@ -2,11 +2,21 @@
 
 ## build
 
-use the command `npm run build` in the root of this repository, for more instructions about the player itself check out the [player main README](../../README.md)
+first, use your favorite command line tool and go into the root of this project:
 
-now build the example itself  
+```shell
+cd /web-audio-api-player
+```
 
-use your favorite command line and go into the example folder  
+then use the follwing command in the root of this repository to build the "web-audio-api-player" itself:  
+
+`npm run build`
+
+Note: for more instructions about the web-audio-api-player itself check out the [web-audio-api-player README](../../README.md)  
+
+then, build the example (server & client) itself:  
+
+go into the example folder:  
 
 ```shell
 cd /web-audio-api-player/examples/simple-player
@@ -20,39 +30,47 @@ update npm to latest version
 
 install the server dependencies  
 
-### install client dependencies
+### client
+
+#### go into the client folder
 
 ```shell
 cd client
+```
+
+#### install the client dependencies
+
+```shell
 npm i
 ```
 
 ### build the client
 
-build the client  
+```shell
+npm run build
+```
 
-`npm run build`
+### server
 
-### install server dependencies
+#### go into the server folder
 
 ```shell
 cd server
+```
+
+#### install the server dependencies
+
+```shell
 npm i
 ```
 
-### build the server
-
-go into the server directory:
+#### build the server
 
 ```shell
-cd /web-audio-api-player/examples/simple-player/server
+npm run build
 ```
 
-build the server  
-
-`npm run build`
-
-## start the server
+#### start the server
 
 start the server
 
