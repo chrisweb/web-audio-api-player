@@ -1,6 +1,6 @@
 {
   "name": "web-audio-api-player_simple-player_example_client",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "web audio api player simple player example server client",
   "keywords": [
     "web",
@@ -31,7 +31,8 @@
     "build:debug": "tsc -p ./ --listFiles --traceResolution",
     "watch": "tsc -w"
   },
-  "dependencies": {},
+  "dependencies": {
+  },
   "devDependencies": {
     "typescript": "4.9.4"
   }

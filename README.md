@@ -22,7 +22,13 @@ Want to help improve the documentation or contribute to this project by improvin
 
 web audio API player is published to the [npm registry](https://npm.im/web-audio-api-player) so you can install it with either [npm](https://www.npmjs.com/get-npm) or [yarn](https://yarnpkg.com)  
 
-`npm install web-audio-api-player`  
+with npm:
+
+`npm i web-audio-api-player`  
+
+or with yarn:
+
+`yarn add web-audio-api-player`  
 
 ## documentation
 
