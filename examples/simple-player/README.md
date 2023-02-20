@@ -2,25 +2,7 @@
 
 ## build
 
-first, use your favorite command line tool and go into the root of this project:
-
-```shell
-cd /web-audio-api-player
-```
-
-then use the follwing command in the root of this repository to build the "web-audio-api-player" itself:  
-
-`npm run build`
-
-Note: for more instructions about the web-audio-api-player itself check out the [web-audio-api-player README](../../README.md)  
-
-then, build the example (server & client) itself:  
-
-go into the example folder:  
-
-```shell
-cd /web-audio-api-player/examples/simple-player
-```
+### tools
 
 install the latest nodejs (if you haven't already) [nodejs](https://nodejs.org)  
 
@@ -28,14 +10,28 @@ update npm to latest version
 
 `npm install npm@latest -g`
 
-install the server dependencies  
+### build the player
 
-### client
+first, use the VSCode terminal (or your favorite command line tool) and go into the root of this project:
+
+```shell
+cd /YOUR_REPOSITORIES_PATH/web-audio-api-player
+```
+
+then use the follwing command (in the root of this repository) to build the "web-audio-api-player" itself:  
+
+`npm run build`
+
+Note: for more instructions about the web-audio-api-player itself check out the [web-audio-api-player README](../../README.md)  
+
+then, build the example (server & client) itself...
+
+### example client
 
 #### go into the client folder
 
 ```shell
-cd client
+cd /examples/simple-player/client
 ```
 
 #### install the client dependencies
@@ -50,12 +46,12 @@ npm i
 npm run build
 ```
 
-### server
+### example server
 
 #### go into the server folder
 
 ```shell
-cd server
+cd /examples/simple-player/server
 ```
 
 #### install the server dependencies

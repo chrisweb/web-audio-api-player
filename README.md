@@ -16,7 +16,7 @@ TODO: add screenshot here showing the "simple example" UI, explain that this is 
 
 😔 there is almost no documentation yet (there is some, see next section below), to learn how to use this library I recommend you check out the source code of the [simple player example](examples/simple-player) to get started  
 
-Want to help improve the documentation or contribute to this project by improving and fixing it, then first check out the [TODOs section](#todos-help-wanted-) below, maybe there is something in the list you want to help with. Any contribution, even things not listed on the TODO list are of course welcome. To get started check out the section ["contributing" section](#contributing) below.  
+Want to help improve the documentation or contribute to this project by improving and fixing it, then first check out the [TODOs section](#todos-help--prs-appreciated) below, maybe there is something in the list you want to help with. Any contribution, even things not listed on the TODO list are of course welcome. To get started check out the section ["contributing" section](#contributing-prs-welcome) below.  
 
 ## installation
 
@@ -178,7 +178,9 @@ the current [dom.d.ts on github](https://github.com/microsoft/TypeScript/blob/ma
 
 * 4.0.0 removed UMD support, this and future versions will be ESM only
 
-## TODOs (help / PRs appreciated 😊, see the ["contributing"](#contributing-prs-welcome) section above)
+## TODOs (help / PRs appreciated)
+
+If you are interested in helping out 😊 by working on one of the following TODOs, please start by reading the ["contributing"](#contributing-prs-welcome) chapter above
 
 * create a react example
 * create a vue.js example
