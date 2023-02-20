@@ -162,7 +162,7 @@ publish a new version on npmjs
 
 ### web audio api typings notes
 
-As of now (25.05.2019) the web audio api typings seems to be included in lib.d.ts, so removing them from package.json:  
+As of the 25.05.2019 the web audio api typings seem to be included in lib.d.ts, so removing them from package.json:  
 
 ```json
   "dependencies": {
@@ -170,9 +170,12 @@ As of now (25.05.2019) the web audio api typings seems to be included in lib.d.t
   },
 ```
 
-Unfortunately the defined window does not have AudioContext:  
-check out [[open] github ticket (as of 06/2019)](https://github.com/microsoft/TypeScript/issues/31686)  
-the current [dom.d.ts on github](https://github.com/microsoft/TypeScript/blob/master/src/lib/dom.generated.d.ts)  
+Unfortunately (as of 06/2019) the defined window does not have AudioContext:  
+
+* check out [github ticket](https://github.com/microsoft/TypeScript/issues/31686)  
+* the current [dom.d.ts on github](https://github.com/microsoft/TypeScript/blob/master/src/lib/dom.generated.d.ts)  
+
+This is fixed, as of now (20.02.2023) the AudioContext is now defined properly
 
 ## Changelog
 
