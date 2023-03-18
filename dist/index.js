@@ -875,8 +875,9 @@ var PlayerCore = /** @class */ (function () {
     PlayerCore.prototype._loadSoundUsingAudioElement = function (sound) {
         var _this = this;
         return new Promise(function (resolve, reject) {
+            var _a, _b;
             // extract the url and codec from sources
-            var _a = _this._findBestSource(sound.source), url = _a.url, _b = _a.codec, codec = _b === void 0 ? null : _b;
+            var url = (_a = _this._findBestSource(sound.source), _a.url), codec = (_b = _a.codec, _b === void 0 ? null : _b);
             sound.url = url;
             sound.codec = codec;
             sound.arrayBuffer = null;
@@ -919,6 +920,7 @@ var PlayerCore = /** @class */ (function () {
         // or even better add a played counter to cache by least played and date
         var _this = this;
         return new Promise(function (resolve, reject) {
+            var _a, _b;
             // if the sound already has an AudioBuffer
             if (sound.audioBuffer !== null) {
                 resolve(sound);
@@ -932,7 +934,7 @@ var PlayerCore = /** @class */ (function () {
             // if the sound has no ArrayBuffer and also no AudioBuffer yet
             if (sound.arrayBuffer === null && sound.audioBuffer === null) {
                 // extract the url and codec from sources
-                var _a = _this._findBestSource(sound.source), url = _a.url, _b = _a.codec, codec = _b === void 0 ? null : _b;
+                var url = (_a = _this._findBestSource(sound.source), _a.url), codec = (_b = _a.codec, _b === void 0 ? null : _b);
                 sound.url = url;
                 sound.codec = codec;
                 if (sound.url !== null) {
