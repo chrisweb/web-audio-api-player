@@ -176,6 +176,8 @@ the current [dom.d.ts on github](https://github.com/microsoft/TypeScript/blob/ma
 
 ## Changelog
 
+* 4.0.2 eslint-plugin-import dependency update, to fix JSON5 related [CVE-2022-46175](https://github.com/advisories/GHSA-9c47-m6qq-7p4h)
+* 4.0.1 merged pull request #19 to fix audiocontext types
 * 4.0.0 removed UMD support, this and future versions will be ESM only
 
 ## TODOs (help / PRs appreciated)
