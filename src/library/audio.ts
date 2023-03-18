@@ -132,7 +132,7 @@ class PlayerAudio {
         return new Promise((resolve, reject) => {
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const MyAudioContext: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+            const MyAudioContext: typeof AudioContext = window.AudioContext || (window as any).webkitAudioContext;
 
             // initialize the audio context
             try {
