@@ -132,15 +132,15 @@ if you wish to contribute to this project, please first open a [ticket in the gi
 
 go the [github page of this project](https://github.com/chrisweb/web-audio-api-player) and hit the fork button  
 
-follow the instructions in the previous section ["development: build"](#development-build), but instead of cloning this projects repository, clone your own fork of the project  
+follow the instructions in the previous section ["development: build"](#development-build), but instead of cloning this projects repository, clone **your own fork** of the project to get a local copy that you can edit in your IDE (VSCode)  
 
-`git clone https://github.com/chrisweb/web-audio-api-player.git`
+`git clone https://github.com/YOUR_GITHUB_USER/web-audio-api-player.git`
 
 when you are done coding, commit your local changes (if your commit is related to a ticket start your commit message with the "#TICKER_NUMBER", this will "link" the commit to the ticket)  
 
 `git commit -m "#TICKER_NUMBER commit message"`
 
-no go to the github page of your fork and hit the pull request button  
+now go to the github page of your fork and hit the pull request button  
 
 ## examples
 
