@@ -128,19 +128,19 @@ to lint the typescript files
 
 ## contributing (PRs welcome)
 
-you should first open a ticket and explain what fix or improvement you want to provide on the [github issues page](https://github.com/chrisweb/web-audio-api-player/issues) of this project (remember the github ticket number you will need it for the commit message later on)
+if you wish to contribute to this project, please first open a [ticket in the github issues page of this project](https://github.com/chrisweb/web-audio-api-player/issues) and explain briefly what fix or improvement you want to provide (remember the github ticket number you will need it for the commit message later on)
 
 go the [github page of this project](https://github.com/chrisweb/web-audio-api-player) and hit the fork button  
 
 follow the instructions in the previous section ["development: build"](#development-build), but instead of cloning this projects repository, clone your own fork of the project  
 
-`git clone git@github.com:YOUR_USERNAME/web-audio-api-player.git`
+`git clone https://github.com/chrisweb/web-audio-api-player.git`
 
 when you are done coding, commit your local changes (if your commit is related to a ticket start your commit message with the "#TICKER_NUMBER", this will "link" the commit to the ticket)  
 
 `git commit -m "#TICKER_NUMBER commit message"`
 
-now open your forks github URL in your browser and hit the pull request button  
+no go to the github page of your fork and hit the pull request button  
 
 ## examples
 
