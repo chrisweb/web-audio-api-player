@@ -32,10 +32,6 @@ interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions
     onEnded: IOnEnded;
     loop: boolean;
 }
-interface IMediaElementAudioSourceNode extends MediaElementAudioSourceNode {
-    onended: IOnEnded;
-    loop: boolean;
-}
 export interface IChangeVolumeOptions {
     volume: number;
     sound?: ISound;
@@ -65,7 +61,7 @@ declare class PlayerAudio {
     protected _destroyAudioGraph(): void;
     createAudioBufferSourceNode(audioBufferSourceOptions: IAudioBufferSourceOptions, sound: ISound): Promise<void>;
     createMediaElementSourceNode(sourceNodeOptions: IMediaElementAudioSourceOptions, sound: ISound): Promise<void>;
-    connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode | IMediaElementAudioSourceNode): void;
+    connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode | MediaElementAudioSourceNode): void;
     destroySourceNode(sound: ISound): void;
     changeVolume({ volume, sound, forceUpdateUserVolume }: IChangeVolumeOptions): number;
     protected _changeGainValue(gainValue: number): void;
@@ -75,4 +71,4 @@ declare class PlayerAudio {
     setLoadPlayerMode(loadPlayerMode: typePlayerModes): void;
     getLoadPlayerMode(): typePlayerModes;
 }
-export { PlayerAudio, IAudioGraph, IAudioOptions, IAudioBufferSourceOptions, IMediaElementAudioSourceOptions, IMediaElementAudioSourceNode };
+export { PlayerAudio, IAudioGraph, IAudioOptions, IAudioBufferSourceOptions, IMediaElementAudioSourceOptions };

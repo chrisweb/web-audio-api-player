@@ -442,14 +442,15 @@ var PlayerAudio = /** @class */ (function () {
                         }
                         sound.mediaElementAudioSourceNode = mediaElementAudioSourceNode;
                         // do we loop this song
-                        mediaElementAudioSourceNode.loop = sourceNodeOptions.loop;
+                        //mediaElementAudioSourceNode.loop = sourceNodeOptions.loop;
                         // ??? no onEnded on MediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/onended
                         // ??? mediaElementAudioSourceNode.mediaElement.ended
                         // if the song ends destroy it's audioGraph as the source can't be reused anyway
                         // NOTE: the onEnded handler won't have any effect if the loop property is set to
                         // true, as the audio won't stop playing. To see the effect in this case you'd
                         // have to use AudioBufferSourceNode.stop()
-                        mediaElementAudioSourceNode.onended = function () {
+                        mediaElementAudioSourceNode.mediaElement.onended = function () {
+                            sourceNodeOptions.onEnded();
                             _this.destroySourceNode(sound);
                             // TODO on end destroy the audio element, probably not if loop enabled, but if loop
                             // is disabled, maybe still a good idea to keep it (cache?), but not all audio elements
@@ -1018,6 +1019,7 @@ var PlayerCore = /** @class */ (function () {
                 _this.stop();
             }
             // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
+            // TODO: next / previous ... should be constants, more accurate to compare and would also allow id to be string or number
             var sound = _this._getSoundFromQueue({ whichSound: whichSound });
             // if there is no sound we could play, do nothing
             if (sound === null) {
@@ -1072,6 +1074,7 @@ var PlayerCore = /** @class */ (function () {
     PlayerCore.prototype._playAudioBuffer = function (sound) {
         return __awaiter(this, void 0, void 0, function () {
             var sourceOptions, error_1, audioBufferSourceNode;
+            var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -1079,6 +1082,7 @@ var PlayerCore = /** @class */ (function () {
                         sourceOptions = {
                             loop: sound.loop,
                             onEnded: function (event) {
+                                _this._onEnded();
                                 console.log('AudioBufferSourceNode ended', event);
                             }
                         };
@@ -1119,6 +1123,7 @@ var PlayerCore = /** @class */ (function () {
     PlayerCore.prototype._playMediaElementAudio = function (sound) {
         return __awaiter(this, void 0, void 0, function () {
             var sourceOptions, error_2, mediaElementAudioSourceNode;
+            var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -1126,6 +1131,7 @@ var PlayerCore = /** @class */ (function () {
                         sourceOptions = {
                             loop: sound.loop,
                             onEnded: function (event) {
+                                _this._onEnded();
                                 console.log('MediaElementSourceNode ended', event);
                             },
                             mediaElement: sound.audioElement
