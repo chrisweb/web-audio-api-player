@@ -442,7 +442,7 @@ var PlayerAudio = /** @class */ (function () {
                         }
                         sound.mediaElementAudioSourceNode = mediaElementAudioSourceNode;
                         // do we loop this song
-                        //mediaElementAudioSourceNode.loop = sourceNodeOptions.loop;
+                        mediaElementAudioSourceNode.mediaElement.loop = sourceNodeOptions.loop;
                         // ??? no onEnded on MediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/onended
                         // ??? mediaElementAudioSourceNode.mediaElement.ended
                         // if the song ends destroy it's audioGraph as the source can't be reused anyway
