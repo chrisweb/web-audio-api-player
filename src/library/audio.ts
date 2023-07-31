@@ -66,11 +66,6 @@ interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions
     loop: boolean;
 }
 
-interface IMediaElementAudioSourceNode extends MediaElementAudioSourceNode {
-    onended: IOnEnded;
-    loop: boolean;
-}
-
 export interface IChangeVolumeOptions {
     volume: number;
     sound?: ISound;
@@ -388,10 +383,10 @@ class PlayerAudio {
     public async createMediaElementSourceNode(sourceNodeOptions: IMediaElementAudioSourceOptions, sound: ISound): Promise<void> {
 
         const audioContext = await this.getAudioContext();
-        let mediaElementAudioSourceNode: IMediaElementAudioSourceNode;
+        let mediaElementAudioSourceNode: MediaElementAudioSourceNode;
 
         try {
-            mediaElementAudioSourceNode = audioContext.createMediaElementSource(sourceNodeOptions.mediaElement) as IMediaElementAudioSourceNode;
+            mediaElementAudioSourceNode = audioContext.createMediaElementSource(sourceNodeOptions.mediaElement) as MediaElementAudioSourceNode;
         } catch (error) {
             throw new PlayerError(error);
         }
@@ -399,7 +394,7 @@ class PlayerAudio {
         sound.mediaElementAudioSourceNode = mediaElementAudioSourceNode;
 
         // do we loop this song
-        mediaElementAudioSourceNode.loop = sourceNodeOptions.loop;
+        mediaElementAudioSourceNode.mediaElement.loop = sourceNodeOptions.loop;
 
         // ??? no onEnded on MediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/onended
         // ??? mediaElementAudioSourceNode.mediaElement.ended
@@ -408,7 +403,8 @@ class PlayerAudio {
         // NOTE: the onEnded handler won't have any effect if the loop property is set to
         // true, as the audio won't stop playing. To see the effect in this case you'd
         // have to use AudioBufferSourceNode.stop()
-        mediaElementAudioSourceNode.onended = (): void => {
+        mediaElementAudioSourceNode.mediaElement.onended = (): void => {
+            sourceNodeOptions.onEnded();
             this.destroySourceNode(sound);
             // TODO on end destroy the audio element, probably not if loop enabled, but if loop
             // is disabled, maybe still a good idea to keep it (cache?), but not all audio elements
@@ -417,7 +413,7 @@ class PlayerAudio {
 
     }
 
-    public connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode | IMediaElementAudioSourceNode): void {
+    public connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode | MediaElementAudioSourceNode): void {
 
         // audio routing graph
         this.getAudioGraph().then((audioGraph: IAudioGraph) => {
@@ -576,4 +572,4 @@ class PlayerAudio {
 
 }
 
-export { PlayerAudio, IAudioGraph, IAudioOptions, IAudioBufferSourceOptions, IMediaElementAudioSourceOptions, IMediaElementAudioSourceNode };
+export { PlayerAudio, IAudioGraph, IAudioOptions, IAudioBufferSourceOptions, IMediaElementAudioSourceOptions };

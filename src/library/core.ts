@@ -5,7 +5,6 @@ import {
     IAudioOptions,
     IAudioBufferSourceOptions,
     IMediaElementAudioSourceOptions,
-    IMediaElementAudioSourceNode
 } from './audio';
 import { PlayerRequest } from './request';
 import { PlayerError, IPlayerError } from './error';
@@ -696,6 +695,7 @@ export class PlayerCore {
             }
 
             // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
+            // TODO: next / previous ... should be constants, more accurate to compare and would also allow id to be string or number
             const sound = this._getSoundFromQueue({ whichSound });
 
             // if there is no sound we could play, do nothing
@@ -763,6 +763,7 @@ export class PlayerCore {
             const sourceOptions: IAudioBufferSourceOptions = {
                 loop: sound.loop,
                 onEnded: (event: Event) => {
+                    this._onEnded()
                     console.log('AudioBufferSourceNode ended', event);
                 }
             };
@@ -806,6 +807,7 @@ export class PlayerCore {
             const sourceOptions: IMediaElementAudioSourceOptions = {
                 loop: sound.loop,
                 onEnded: (event: Event) => {
+                    this._onEnded()
                     console.log('MediaElementSourceNode ended', event);
                 },
                 mediaElement: sound.audioElement
@@ -820,7 +822,7 @@ export class PlayerCore {
 
         }
 
-        const mediaElementAudioSourceNode: IMediaElementAudioSourceNode = sound.mediaElementAudioSourceNode as IMediaElementAudioSourceNode;
+        const mediaElementAudioSourceNode: MediaElementAudioSourceNode = sound.mediaElementAudioSourceNode as MediaElementAudioSourceNode;
 
         // connect the source to the graph node(s)
         this._playerAudio.connectSourceNodeToGraphNodes(mediaElementAudioSourceNode);
@@ -1292,6 +1294,8 @@ export class PlayerCore {
         sound.playedTimePercentage = playingPercentage;
 
         sound.onPlaying(playingPercentage, duration, sound.playTime);
+
+
 
     }
 
