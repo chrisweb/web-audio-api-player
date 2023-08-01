@@ -79,8 +79,8 @@ export class PlayerCore {
     protected _playerAudio: PlayerAudio;
     // playing progress time interval
     protected _playingProgressIntervalTime: number;
-    // playing progress timeoutID
-    protected _playingTimeoutID: number | null = null;
+    // playing progress inter
+    protected _playingProgressIntervalId: number | null = null;
     // when a song finishes, automatically play the next one
     protected _playNextOnEnded: boolean;
     // do we start over again at the end of the queue
@@ -864,13 +864,13 @@ export class PlayerCore {
         if (sound.onPlaying !== null) {
 
             // at interval set playing progress
-            this._playingTimeoutID = window.setInterval(() => {
+            this._playingProgressIntervalId = window.setInterval(() => {
                 this._playingProgress(sound);
             }, this._playingProgressIntervalTime);
 
         } else {
 
-            this._playingTimeoutID = null;
+            this._playingProgressIntervalId = null;
 
         }
 
@@ -1245,10 +1245,10 @@ export class PlayerCore {
         // state is now stopped
         sound.state = soundState;
 
-        if (this._playingTimeoutID !== null) {
+        if (this._playingProgressIntervalId !== null) {
 
             // clear the playing progress setInterval
-            clearInterval(this._playingTimeoutID);
+            clearInterval(this._playingProgressIntervalId);
 
         }
 
