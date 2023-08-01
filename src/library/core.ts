@@ -79,8 +79,10 @@ export class PlayerCore {
     protected _playerAudio: PlayerAudio;
     // playing progress time interval
     protected _playingProgressIntervalTime: number;
-    // playing progress inter
+    // playing progress interval id
     protected _playingProgressIntervalId: number | null = null;
+    // playing progress animation frame request id
+    protected _playingProgressRequestId: number | null = null;
     // when a song finishes, automatically play the next one
     protected _playNextOnEnded: boolean;
     // do we start over again at the end of the queue
@@ -127,7 +129,7 @@ export class PlayerCore {
             loopQueue: false,
             loopSong: false,
             soundsBaseUrl: '',
-            playingProgressIntervalTime: 1000,
+            playingProgressIntervalTime: -1,
             playNextOnEnded: true,
             audioGraph: null,
             audioContext: null,
@@ -863,14 +865,22 @@ export class PlayerCore {
         // trigger playing event
         if (sound.onPlaying !== null) {
 
-            // at interval set playing progress
-            this._playingProgressIntervalId = window.setInterval(() => {
-                this._playingProgress(sound);
-            }, this._playingProgressIntervalTime);
+            if (this._playingProgressIntervalTime < 0) {
+                // on request animation frame callback set playing progress
+                this._playingProgressRequestId = window.requestAnimationFrame(() => {
+                    this._playingProgress(sound);
+                });
+            } else {
+                // at interval set playing progress
+                this._playingProgressIntervalId = window.setInterval(() => {
+                    this._playingProgress(sound);
+                }, this._playingProgressIntervalTime);
+            }
 
         } else {
 
             this._playingProgressIntervalId = null;
+            this._playingProgressRequestId = null;
 
         }
 
@@ -1246,10 +1256,11 @@ export class PlayerCore {
         sound.state = soundState;
 
         if (this._playingProgressIntervalId !== null) {
-
-            // clear the playing progress setInterval
             clearInterval(this._playingProgressIntervalId);
+        }
 
+        if (this._playingProgressRequestId !== null) {
+            cancelAnimationFrame(this._playingProgressRequestId);
         }
 
     }
