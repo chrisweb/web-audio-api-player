@@ -43,8 +43,8 @@ const firstSoundAttributes: ISoundAttributes = {
     onPlaying: (playingProgress, maximumValue, currentValue) => {
         console.log('playing: ', playingProgress, maximumValue, currentValue)
         playerUI.changePlayingProgress(playingProgress)
-        console.log(firstSound)
-        console.log('firstSound.duration: ', firstSound.duration)
+        //console.log(firstSound)
+        //console.log('firstSound.duration: ', firstSound.duration)
     },
     onStarted: (playTimeOffset) => {
         console.log('started', playTimeOffset)
