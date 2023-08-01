@@ -79,10 +79,10 @@ export class PlayerCore {
     protected _playerAudio: PlayerAudio;
     // playing progress time interval
     protected _playingProgressIntervalTime: number;
-    // playing progress interval id
-    protected _playingProgressIntervalId: number | null = null;
     // playing progress animation frame request id
     protected _playingProgressRequestId: number | null = null;
+    // playing progress animation frame previous timestamp
+    protected _playingProgressPreviousTimestamp: DOMHighResTimeStamp = 0;
     // when a song finishes, automatically play the next one
     protected _playNextOnEnded: boolean;
     // do we start over again at the end of the queue
@@ -129,7 +129,7 @@ export class PlayerCore {
             loopQueue: false,
             loopSong: false,
             soundsBaseUrl: '',
-            playingProgressIntervalTime: -1,
+            playingProgressIntervalTime: 200,
             playNextOnEnded: true,
             audioGraph: null,
             audioContext: null,
@@ -526,12 +526,10 @@ export class PlayerCore {
                 this._initializeAudioElementListeners(sound);
 
                 sound.audioElement.addEventListener('canplaythrough', () => {
-                    //console.log('BBBBBBBBBBBB', event, sound);
                     resolve(sound);
                 });
 
                 sound.audioElement.addEventListener('error', () => {
-                    //console.log('CCCCCCCCCCCC', event, sound);
                     const soundLoadingError = new PlayerError('loading sound failed');
                     reject(soundLoadingError);
                 });
@@ -764,9 +762,8 @@ export class PlayerCore {
             // source node options
             const sourceOptions: IAudioBufferSourceOptions = {
                 loop: sound.loop,
-                onEnded: (event: Event) => {
+                onEnded: (/*event: Event*/) => {
                     this._onEnded()
-                    console.log('AudioBufferSourceNode ended', event);
                 }
             };
 
@@ -808,9 +805,8 @@ export class PlayerCore {
             // source node options
             const sourceOptions: IMediaElementAudioSourceOptions = {
                 loop: sound.loop,
-                onEnded: (event: Event) => {
+                onEnded: (/**event: Event*/) => {
                     this._onEnded()
-                    console.log('MediaElementSourceNode ended', event);
                 },
                 mediaElement: sound.audioElement
             };
@@ -849,12 +845,12 @@ export class PlayerCore {
 
     protected _setupSoundEvents(sound: ISound): ISound {
 
-        // trigger resumed event
+        // if there is an onResumed callback for the sound trigger it
         if (sound.onResumed !== null && !sound.firstTimePlayed) {
             sound.onResumed(sound.playTimeOffset);
         }
 
-        // trigger started event
+        // if there is an onStarted callback for the sound trigger it
         if (sound.onStarted !== null && sound.firstTimePlayed) {
 
             sound.onStarted(sound.playTimeOffset);
@@ -862,24 +858,18 @@ export class PlayerCore {
 
         }
 
-        // trigger playing event
+        // if there is an onPlaying callback for the sound trigger it
         if (sound.onPlaying !== null) {
 
-            if (this._playingProgressIntervalTime < 0) {
-                // on request animation frame callback set playing progress
-                this._playingProgressRequestId = window.requestAnimationFrame(() => {
-                    this._playingProgress(sound);
-                });
-            } else {
-                // at interval set playing progress
-                this._playingProgressIntervalId = window.setInterval(() => {
-                    this._playingProgress(sound);
-                }, this._playingProgressIntervalTime);
-            }
+            // on request animation frame callback set playing progress
+            // request animation frame callback has a argument, which
+            // is the timestamp when the callback gets called
+            this._playingProgressRequestId = window.requestAnimationFrame((timestamp) => {
+                this._progressTrigger(sound, timestamp)
+            });
 
         } else {
 
-            this._playingProgressIntervalId = null;
             this._playingProgressRequestId = null;
 
         }
@@ -887,6 +877,19 @@ export class PlayerCore {
         return sound;
 
     }
+
+    protected _progressTrigger = (sound: ISound, timestamp: DOMHighResTimeStamp) => {
+        // throttle requests to not more than once every 200ms 
+        if ((timestamp - this._playingProgressPreviousTimestamp) >= this._playingProgressIntervalTime) {
+            // execute playing progress callback
+            this._playingProgress(sound);
+            this._playingProgressPreviousTimestamp = timestamp;
+        }
+        // request animation frame loop
+        this._playingProgressRequestId = window.requestAnimationFrame((timestamp) => {
+            this._progressTrigger(sound, timestamp);
+        });
+    };
 
     protected _onEnded(): void {
 
@@ -1255,12 +1258,9 @@ export class PlayerCore {
         // state is now stopped
         sound.state = soundState;
 
-        if (this._playingProgressIntervalId !== null) {
-            clearInterval(this._playingProgressIntervalId);
-        }
-
         if (this._playingProgressRequestId !== null) {
             cancelAnimationFrame(this._playingProgressRequestId);
+            this._playingProgressPreviousTimestamp = 0;
         }
 
     }
@@ -1305,8 +1305,6 @@ export class PlayerCore {
         sound.playedTimePercentage = playingPercentage;
 
         sound.onPlaying(playingPercentage, duration, sound.playTime);
-
-
 
     }
 

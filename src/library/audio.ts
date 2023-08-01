@@ -48,21 +48,10 @@ interface IAudioOptions {
 
 interface IAudioBufferSourceOptions extends AudioBufferSourceOptions {
     onEnded: IOnEnded;
-    /* AudioBufferSourceOptions:
-    AudioBuffer? buffer;
-    float detune = 0;
-    boolean loop = false;
-    double loopEnd = 0;
-    double loopStart = 0;
-    float playbackRate = 1;
-    */
 }
 
 interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions {
     onEnded: IOnEnded;
-    /* MediaElementAudioSourceOptions:
-    required HTMLMediaElement mediaElement;
-    */
     loop: boolean;
 }
 
@@ -185,7 +174,7 @@ class PlayerAudio {
 
             } else {
                 // TODO: are other states possible?
-                console.log('audioContext.state: ', this._audioContext.state);
+                //console.log('audioContext.state: ', this._audioContext.state);
             }
 
         });

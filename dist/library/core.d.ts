@@ -50,7 +50,8 @@ export declare class PlayerCore {
     protected _currentIndex: number;
     protected _playerAudio: PlayerAudio;
     protected _playingProgressIntervalTime: number;
-    protected _playingTimeoutID: number | null;
+    protected _playingProgressRequestId: number | null;
+    protected _playingProgressPreviousTimestamp: DOMHighResTimeStamp;
     protected _playNextOnEnded: boolean;
     protected _loopQueue: boolean;
     protected _loopSong: boolean;
@@ -103,6 +104,7 @@ export declare class PlayerCore {
     protected _playAudioBuffer(sound: ISound): Promise<void>;
     protected _playMediaElementAudio(sound: ISound): Promise<void>;
     protected _setupSoundEvents(sound: ISound): ISound;
+    protected _progressTrigger: (sound: ISound, timestamp: DOMHighResTimeStamp) => void;
     protected _onEnded(): void;
     /**
      * whichSound is optional, if set it can be the sound id or if it's
