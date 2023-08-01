@@ -190,7 +190,7 @@ fileInput.addEventListener('change', function(event) {
 * completely rewrite the sources system, where you can define multiple variants of a sound but with different codecs, app needs to check which codecs are supported by the device and choose one, use should be able to define which codec is preferred if playback support for multiple codecs is available
 * destroy the audiocontext at some point, to release memory?
 * feature to use the browser notification system to alert which song is being played
-* preload AudioBuffers into indexeddb (first song, next song, current song if loop or previous is triggered ...), let the developer set the amount of preloaded AudioBuffers, remove from "cache" by least used and by date when "cache" is full
+* preload AudioBuffers into indexeddb (first song, next song, current song if loop or previous is triggered ...), let the developer set the amount of preloaded AudioBuffers, remove from "cache" by least used and by date when "cache" is full, maybe do such work using this browser feature [requestidlecallback](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback) (when available)
 * cache songs for offline mode? indexeddb is not very big (filesystem?), check if doable because saving a playlist of songs might exhaust the free space (depending on the playlist size)
 * some methods return a promise others don't, use promises for all to make it more consistent
 * write more documentation
@@ -200,10 +200,9 @@ fileInput.addEventListener('change', function(event) {
 * add feature to crossfade two songs "on end" (if there is a the next song in a playlist) or just fade out (current song) / fade in (next song)
 * currently the "find song in queue" can't retrieve songs by queue index, is this useful anyway?
 * use suspend and resume if for some time no sound was played? ... to free device resources. As suspend returns a promise, does this mean suspending and resuming takes time? if so how much time does it take, based on that information we can decide after how much time it makes sense to suspend the ctx to save device resources
-* use the [requestAnimation](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) frame or the [requestidlecallback](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback) instead of setInterval for playing progress callback?
 * use web workers, especially for the decoding of the ArrayBuffer into an AudioBuffer, to not block the main thread while decoding?
 * add a shuffle songs mode
-* add a loop song (<https://webaudio.github.io/web-audio-api/#looping-AudioBufferSourceNode>) (actually maybe this works today, did not verify, loop playlist should work)
+* add a loop song (<https://webaudio.github.io/web-audio-api/#looping-AudioBufferSourceNode>) feature (actually maybe this already works today, need to verify)
 * add support for more codecs (flac, wav, ogg vorbis, opus, aac): also check the available codecs and defined sources, play the first one that has matches and available codec, let user define order of preferred codecs for playback
 * write code tests!!! (goal ofc 100% coverage), add [tests coverage badge](https://coveralls.io)
 * add saucelabs (or similar) browser testing (and their badge [browser compatibility table badge](https://saucelabs.com/blog/new-open-sauce-ui-and-refreshed-build-status-badges) in readme) to add a test suite for all player features
