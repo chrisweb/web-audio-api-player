@@ -281,10 +281,7 @@ var PlayerAudio = /** @class */ (function () {
             else if (_this._audioContext.state === 'running') {
                 resolve(_this._audioContext);
             }
-            else {
-                // TODO: are other states possible?
-                console.log('audioContext.state: ', _this._audioContext.state);
-            }
+            else ;
         });
     };
     PlayerAudio.prototype.setAudioContext = function (audioContext) {
@@ -617,8 +614,11 @@ var PLAYER_MODE_AUDIO = 'player_mode_audio';
 var PlayerCore = /** @class */ (function () {
     function PlayerCore(playerOptions) {
         if (playerOptions === void 0) { playerOptions = {}; }
-        // playing progress timeoutID
-        this._playingTimeoutID = null;
+        var _this = this;
+        // playing progress animation frame request id
+        this._playingProgressRequestId = null;
+        // playing progress animation frame previous timestamp
+        this._playingProgressPreviousTimestamp = 0;
         // a custon audioGraph created by the user
         this._customAudioGraph = null;
         // a custom audio context created by the user
@@ -627,12 +627,24 @@ var PlayerCore = /** @class */ (function () {
         this._postMuteVolume = null;
         // is muted?
         this._isMuted = false;
+        this._progressTrigger = function (sound, timestamp) {
+            // throttle requests to not more than once every 200ms 
+            if ((timestamp - _this._playingProgressPreviousTimestamp) >= _this._playingProgressIntervalTime) {
+                // execute playing progress callback
+                _this._playingProgress(sound);
+                _this._playingProgressPreviousTimestamp = timestamp;
+            }
+            // request animation frame loop
+            _this._playingProgressRequestId = window.requestAnimationFrame(function (timestamp) {
+                _this._progressTrigger(sound, timestamp);
+            });
+        };
         var defaultOptions = {
             volume: 80,
             loopQueue: false,
             loopSong: false,
             soundsBaseUrl: '',
-            playingProgressIntervalTime: 1000,
+            playingProgressIntervalTime: 200,
             playNextOnEnded: true,
             audioGraph: null,
             audioContext: null,
@@ -899,11 +911,9 @@ var PlayerCore = /** @class */ (function () {
                 sound.isReadyToPLay = true;
                 _this._initializeAudioElementListeners(sound);
                 sound.audioElement.addEventListener('canplaythrough', function () {
-                    //console.log('BBBBBBBBBBBB', event, sound);
                     resolve(sound);
                 });
                 sound.audioElement.addEventListener('error', function () {
-                    //console.log('CCCCCCCCCCCC', event, sound);
                     var soundLoadingError = new PlayerError('loading sound failed');
                     reject(soundLoadingError);
                 });
@@ -1081,9 +1091,8 @@ var PlayerCore = /** @class */ (function () {
                         if (!(sound.audioBufferSourceNode === null)) return [3 /*break*/, 4];
                         sourceOptions = {
                             loop: sound.loop,
-                            onEnded: function (event) {
+                            onEnded: function ( /*event: Event*/) {
                                 _this._onEnded();
-                                console.log('AudioBufferSourceNode ended', event);
                             }
                         };
                         _a.label = 1;
@@ -1130,9 +1139,8 @@ var PlayerCore = /** @class */ (function () {
                         if (!(sound.mediaElementAudioSourceNode === null)) return [3 /*break*/, 4];
                         sourceOptions = {
                             loop: sound.loop,
-                            onEnded: function (event) {
+                            onEnded: function ( /**event: Event*/) {
                                 _this._onEnded();
-                                console.log('MediaElementSourceNode ended', event);
                             },
                             mediaElement: sound.audioElement
                         };
@@ -1170,24 +1178,26 @@ var PlayerCore = /** @class */ (function () {
     };
     PlayerCore.prototype._setupSoundEvents = function (sound) {
         var _this = this;
-        // trigger resumed event
+        // if there is an onResumed callback for the sound trigger it
         if (sound.onResumed !== null && !sound.firstTimePlayed) {
             sound.onResumed(sound.playTimeOffset);
         }
-        // trigger started event
+        // if there is an onStarted callback for the sound trigger it
         if (sound.onStarted !== null && sound.firstTimePlayed) {
             sound.onStarted(sound.playTimeOffset);
             sound.firstTimePlayed = false;
         }
-        // trigger playing event
+        // if there is an onPlaying callback for the sound trigger it
         if (sound.onPlaying !== null) {
-            // at interval set playing progress
-            this._playingTimeoutID = window.setInterval(function () {
-                _this._playingProgress(sound);
-            }, this._playingProgressIntervalTime);
+            // on request animation frame callback set playing progress
+            // request animation frame callback has a argument, which
+            // is the timestamp when the callback gets called
+            this._playingProgressRequestId = window.requestAnimationFrame(function (timestamp) {
+                _this._progressTrigger(sound, timestamp);
+            });
         }
         else {
-            this._playingTimeoutID = null;
+            this._playingProgressRequestId = null;
         }
         return sound;
     };
@@ -1463,9 +1473,9 @@ var PlayerCore = /** @class */ (function () {
         this._playerAudio.destroySourceNode(sound);
         // state is now stopped
         sound.state = soundState;
-        if (this._playingTimeoutID !== null) {
-            // clear the playing progress setInterval
-            clearInterval(this._playingTimeoutID);
+        if (this._playingProgressRequestId !== null) {
+            cancelAnimationFrame(this._playingProgressRequestId);
+            this._playingProgressPreviousTimestamp = 0;
         }
     };
     PlayerCore.prototype.next = function () {
