@@ -913,6 +913,11 @@ export class PlayerCore {
                     willPlayNext = true;
                 }
 
+                // if loopQueue is enabled then willPlayNext is always true
+                if (this._loopQueue) {
+                    willPlayNext = true;
+                }
+
                 currentSound.onEnded(willPlayNext);
 
             }

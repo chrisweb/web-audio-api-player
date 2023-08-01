@@ -19,6 +19,7 @@ import { PlayerUI } from './library/player/ui.js'
 const options: ICoreOptions = {
     soundsBaseUrl: 'https://mp3l.jamendo.com/?trackid=',
     loadPlayerMode: PlayerCore.PLAYER_MODE_AUDIO,
+    loopQueue: true,
 }
 
 // create an instance of the player
@@ -36,29 +37,29 @@ const firstSoundAttributes: ISoundAttributes = {
     source: [{ url: '1314412&format=mp31', codec: 'mp3' }, { url: '1314412&format=ogg1', codec: 'ogg', isPreferred: true }],
     id: 1314412,
     onLoading: (loadingProgress, maximumValue, currentValue) => {
-        console.log('loading: ', loadingProgress, maximumValue, currentValue)
+        console.log('onLoading (loadingProgress, maximumValue, currentValue): ', loadingProgress, maximumValue, currentValue)
         playerUI.changeLoadingProgress(loadingProgress)
     },
     onPlaying: (playingProgress, maximumValue, currentValue) => {
-        console.log('playing: ', playingProgress, maximumValue, currentValue)
+        console.log('onPlaying (playingProgress, maximumValue, currentValue): ', playingProgress, maximumValue, currentValue)
         playerUI.changePlayingProgress(playingProgress)
         //console.log(firstSound)
         //console.log('firstSound.duration: ', firstSound.duration)
     },
     onStarted: (playTimeOffset) => {
-        console.log('started', playTimeOffset)
+        console.log('onStarted (playTimeOffset): ', playTimeOffset)
     },
     onPaused: (playTimeOffset) => {
-        console.log('paused', playTimeOffset)
+        console.log('onPaused (playTimeOffset): ', playTimeOffset)
     },
     onStopped: (playTimeOffset) => {
-        console.log('stopped', playTimeOffset)
+        console.log('onStopped (playTimeOffset): ', playTimeOffset)
     },
     onResumed: (playTimeOffset) => {
-        console.log('resumed', playTimeOffset)
+        console.log('onResumed (playTimeOffset): ', playTimeOffset)
     },
     onEnded: (willPlayNext) => {
-        console.log('ended', willPlayNext)
+        console.log('onEnded (willPlayNext): ', willPlayNext)
         if (!willPlayNext) {
             playerUI.resetUI()
         }
@@ -75,27 +76,29 @@ const secondSoundAttributes: ISoundAttributes = {
     source: [{ url: '1214935&format=mp31', codec: 'mp3' }, { url: '1214935&format=ogg1', codec: 'ogg', isPreferred: true }],
     id: 1214935,
     onLoading: (loadingProgress, maximumValue, currentValue) => {
-        console.log('loading: ', loadingProgress, maximumValue, currentValue)
+        console.log('onLoading (loadingProgress, maximumValue, currentValue): ', loadingProgress, maximumValue, currentValue)
         playerUI.changeLoadingProgress(loadingProgress)
     },
     onPlaying: (playingProgress, maximumValue, currentValue) => {
-        console.log('playing: ', playingProgress, maximumValue, currentValue)
+        console.log('onPlaying (playingProgress, maximumValue, currentValue): ', playingProgress, maximumValue, currentValue)
         playerUI.changePlayingProgress(playingProgress)
+        //console.log(firstSound)
+        //console.log('firstSound.duration: ', firstSound.duration)
     },
     onStarted: (playTimeOffset) => {
-        console.log('started', playTimeOffset)
+        console.log('onStarted (playTimeOffset): ', playTimeOffset)
     },
     onPaused: (playTimeOffset) => {
-        console.log('paused', playTimeOffset)
+        console.log('onPaused (playTimeOffset): ', playTimeOffset)
     },
     onStopped: (playTimeOffset) => {
-        console.log('stopped', playTimeOffset)
+        console.log('onStopped (playTimeOffset): ', playTimeOffset)
     },
     onResumed: (playTimeOffset) => {
-        console.log('resumed', playTimeOffset)
+        console.log('onResumed (playTimeOffset): ', playTimeOffset)
     },
     onEnded: (willPlayNext) => {
-        console.log('ended', willPlayNext)
+        console.log('onEnded (willPlayNext): ', willPlayNext)
         if (!willPlayNext) {
             playerUI.resetUI()
         }
