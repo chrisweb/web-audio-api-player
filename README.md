@@ -12,7 +12,7 @@
 
 this player can be added to any javascript project and extended in many ways, it is not bound to a specific UI, this player is just a core that can be used to create any kind of player you can imagine and even be used to play sound in video games or for any other sound / song playing needs you may have  
 
-TODO: add screenshot here showing the "simple example" UI, explain that this is just an example of an UI, you can bind your own custom UI to this player and use all or just some of it's features
+TODO: add screenshot here showing the "simple example" UI, explain that this is just an example of an UI, you can bind your own custom UI to this player and use all or just some of its features
 
 😔 there is almost no documentation yet (there is some, see next section below), to learn how to use this library I recommend you check out the source code of the [simple player example](examples/simple-player) to get started  
 
@@ -30,9 +30,13 @@ or with yarn:
 
 `yarn add web-audio-api-player`  
 
+## examples
+
+the best way to get started is to check out the examples folder, start with [simple player example](examples/simple-player)
+
 ## documentation
 
-This player has two modes, PLAYER_MODE_AUDIO which uses the audio element to load sounds via the audio element and PLAYER_MODE_AJAX to load sounds via the web audio API. Here are some of the differences between the two:
+This player has two modes, [PLAYER_MODE_AUDIO](#the-audio-element-player_mode_audio) which uses the audio element to load sounds via the audio element and [PLAYER_MODE_AJAX](#the-web-audio-api-player_mode_ajax) to load sounds via the web audio API. Here are some of the differences between the two:
 
 ### the web audio API (PLAYER_MODE_AJAX)
 
@@ -60,7 +64,7 @@ If you use this library, the difference is only how the sound (song) gets loaded
 
 It depends on what you intend to build.
 
-If you build a game where you have a lot (of small sounds) that get (pre-)loaded and maybe cached but played later at some time after they finished loading, use PLAYER_MODE_AJAX. It's progress is easier to understand, because when the loading progress of the sound has reached 100% you know it can be played. To display the loading progress a simple [HTML progress element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) is enough.
+If you build a game where you have a lot (of small sounds) that get (pre-)loaded and maybe cached but played later at some time after they finished loading, use PLAYER_MODE_AJAX. Its progress is easier to understand, because when the loading progress of the sound has reached 100% you know it can be played. To display the loading progress a simple [HTML progress element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) is enough.
 
 If you build a music player, use the PLAYER_MODE_AUDIO as you might to want to start playing the sound (song) as quickly as possible and don't care if it has fully loaded yet as long as the part that has been loaded is enough to play the song until the end (while the rest of it is being streamed from the server in the background). To display the time range(s) that have been loaded you could for example use a [2D canvas element](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D).
 
@@ -80,15 +84,13 @@ TODO: add example
 
 This is especially useful if you want to add your own nodes to the AudioGraph (audio routing graph). For example you may want to add an [AnalyserNode](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode) or a pannerNode, delayNode or any other node that is available in the web audio API.
 
-## W3C web audio API
+## read more: W3C sources and MDN documetation
 
-[W3C Candidate Recommendation, 18 September 2018](https://www.w3.org/TR/webaudio/)  
-
-[Editor’s Draft, 8 August 2019](https://webaudio.github.io/web-audio-api/)  
-
-[MDN Web Audio API section](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)  
-
-Support tables for audio features, [caniuse: web audio API / audio element / formats ...](https://caniuse.com/#search=audio)  
+* [W3C Recommendation, 17 June 2021](https://www.w3.org/TR/webaudio/)  
+* [Web Audio API: Editor’s Draft, 18 July 2023](https://webaudio.github.io/web-audio-api/)  
+* [MDN "Web Audio API" page](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)  
+* [MDN "The Embed Audio element" page](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio)
+* Support tables for audio features, [caniuse: web audio API / audio element / formats ...](https://caniuse.com/#search=audio)  
 
 ## development: build
 
@@ -142,22 +144,6 @@ when you are done coding, commit your local changes (if your commit is related t
 
 now go to the github page of your fork and hit the pull request button  
 
-## examples
-
-the best way to get started is to check out the examples folder, start with [simple player example](examples/simple-player)
-
-## note to self: publish package on npmjs.com
-
-login to npmjs.com  
-
-`npm login`
-
-!!! before using the next the command ensure the version of your package in the package.json has been updated  
-
-publish a new version on npmjs  
-
-`npm publish`
-
 ## notes about problems I encountered during development
 
 ### web audio api typings notes
@@ -179,9 +165,7 @@ This is fixed, as of now (20.02.2023) the AudioContext is now defined properly
 
 ## Changelog
 
-* 4.0.2 eslint-plugin-import dependency update, to fix JSON5 related [CVE-2022-46175](https://github.com/advisories/GHSA-9c47-m6qq-7p4h)
-* 4.0.1 merged pull request #19 to fix audiocontext types
-* 4.0.0 removed UMD support, this and future versions will be ESM only
+check out the [releases page](https://github.com/chrisweb/web-audio-api-player/releases) on github
 
 ## TODOs (help / PRs appreciated)
 
@@ -189,7 +173,7 @@ If you are interested in helping out 😊 by working on one of the following TOD
 
 * create a react example
 * create a vue.js example
-* create an example using the fileReader
+* create an example using the (browser) fileReader, something like:
 
 ```javascript
 var fileInput = document.querySelector('input[type="file"]');
@@ -202,66 +186,49 @@ fileInput.addEventListener('change', function(event) {
 }, false);
 ```
 
+* add improve UI style of the "simple" example(s) (or any new example) and then add a screenshot of it to the readme to show what can be achieved
 * completely rewrite the sources system, where you can define multiple variants of a sound but with different codecs, app needs to check which codecs are supported by the device and choose one, use should be able to define which codec is preferred if playback support for multiple codecs is available
-* implement audiocontext to close to release memory?
+* destroy the audiocontext at some point, to release memory?
 * feature to use the browser notification system to alert which song is being played
-* instead of the ArrayBuffer use the MediaElementAudioSourceNode, make it optional to still use the ArrayBuffer
-* preload AudioBuffers in indexeddb (first song, next song, current song if loop or previous is triggered ...), let the developer set the amount of preloaded AudioBuffers, remove from "cache" by least used and by date when "cache" is full
-* cache songs for offline mode? indexeddb is not very big (filesystem?), check if doable because saving a playlist of songs might exhaust the free space
-* some methods return a promise others don't, use promises for all to make it more consistent?
-* write a documentation
-* make a list of all possible errors (set a distinct code for each error)
-* add a contribution guide
-* write tests!!! (goal 100% coverage), add [tests coverage badge](https://coveralls.io)
+* preload AudioBuffers into indexeddb (first song, next song, current song if loop or previous is triggered ...), let the developer set the amount of preloaded AudioBuffers, remove from "cache" by least used and by date when "cache" is full
+* cache songs for offline mode? indexeddb is not very big (filesystem?), check if doable because saving a playlist of songs might exhaust the free space (depending on the playlist size)
+* some methods return a promise others don't, use promises for all to make it more consistent
+* write more documentation
+* make a list of all possible errors (set a distinct code for each error), handle all error cases that are still unhandled
 * [abort](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort) the loading of the sound if the user clicks play and then pause (or stop / next / previous) before the end of the buffering process
 * replace XMLHttpRequest with fetch?
-* allow cross fading songs "on end" if it's the next song in a playlist (or just fade out / fade in)
+* add feature to crossfade two songs "on end" (if there is a the next song in a playlist) or just fade out (current song) / fade in (next song)
 * currently the "find song in queue" can't retrieve songs by queue index, is this useful anyway?
 * use suspend and resume if for some time no sound was played? ... to free device resources. As suspend returns a promise, does this mean suspending and resuming takes time? if so how much time does it take, based on that information we can decide after how much time it makes sense to suspend the ctx to save device resources
 * use the [requestAnimation](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) frame or the [requestidlecallback](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback) instead of setInterval for playing progress callback?
 * use web workers, especially for the decoding of the ArrayBuffer into an AudioBuffer, to not block the main thread while decoding?
-* add shuffle mode
-* add a loop song and loop queue mode (<https://webaudio.github.io/web-audio-api/#looping-AudioBufferSourceNode>)
-* handle all error cases that are still unhandled
+* add a shuffle songs mode
+* add a loop song (<https://webaudio.github.io/web-audio-api/#looping-AudioBufferSourceNode>) (actually maybe this works today, did not verify, loop playlist should work)
 * add support for more codecs (flac, wav, ogg vorbis, opus, aac): also check the available codecs and defined sources, play the first one that has matches and available codec, let user define order of preferred codecs for playback
-* add saucelabs browser testing and their badge [browser compatibility table badge](https://saucelabs.com/blog/new-open-sauce-ui-and-refreshed-build-status-badges) in readme
+* write code tests!!! (goal ofc 100% coverage), add [tests coverage badge](https://coveralls.io)
+* add saucelabs (or similar) browser testing (and their badge [browser compatibility table badge](https://saucelabs.com/blog/new-open-sauce-ui-and-refreshed-build-status-badges) in readme) to add a test suite for all player features
 * add [travis](https://travis-ci.org) continuous integration and badge
-* add improve UI style and then add a screenshot to readme of example
-* add live demo (via github pages)
+* add live demo (via github pages?) for people to see how the player works
 * for position and volume, allow to use a percentage or a value
+* feature that let's the dev set a volume (via a modifier value / coefficient) per song, useful if some songs are louder than others and you want to normalize the volume of all songs in a playlist to be similar
 * add hooks to the sound object for all the native source node events [AudioBufferSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode)
 * add (stereo) panning
 
-## DONE
+## note to self: publish package on npmjs.com
 
-* use gulp [gulp](https://gulpjs.com/) and some gulp plugins to create a clean build
-* create an XMLHttpRequest library class to fetch the ArrayBuffer
-* create an audio library class to create the context and decode the ArrayBuffer
-* create a custom error class with message but also a numeric code
-* let the user add a sound with an already fetched ArrayBuffer or even with an already decoded AudioBuffer
-* create a simple example with a vanilla JS UI
-* add a sounds queue manager
-* add "play" sound
-* add "pause" and "stop"
-* add "next" and "previous"
-* add set / get volume and mute
-* add a loading progress callback
-* add a playing progress callback
-* add an onEnded callback
-* play next song onEnded, add option to enable or disable automatic play next onEnded
-* add change position method
-* add loop queue option
-* make the core player options object optional when initializing a new player
-* let the user modify the audio graph, for example by adding / removíng nodes like a filter node, a panner node ...
-* replace [gulp](https://gulpjs.com/) with [rollup](https://github.com/rollup/rollup) as new module bundler
-* use [pkg.module](https://github.com/rollup/rollup/wiki/pkg.module) to distribute a UMD as well as an "ES6 modules" version
-* rewrite the simple example with vanilla js instead of jquery
-* put the web audio API player on npm and add npm version badge / license badge / ... [shields.io](http://shields.io/)
-* implement suspend and resume: ctx.suspend() and resume
-* add an option that uses the visibility API to automatically mute and unmute a sound when the visibility changes
-* rewrite how the audiocontext is created, for browser that enforce that a user interaction has taken place before a context can be running
-* add option to persist the user volume choice using the localstorage
-* switch from tslint to eslint with typescript-eslint plugin / parser: TSlint will be deprecated [github ticket](https://github.com/palantir/tslint/issues/4534), read their [blog post](https://medium.com/palantir/tslint-in-2019-1a144c2317a9) and then switch to [ESLint](https://github.com/eslint/eslint)
+login to npmjs.com  
+
+`npm login`
+
+to make a publishing test (without actually publishing) use:
+
+`npm publish --dry-run`
+
+!!! before using the next the command ensure the version of your package in the package.json has been updated  
+
+publish a new version on npmjs  
+
+`npm publish`
 
 ## License
 
