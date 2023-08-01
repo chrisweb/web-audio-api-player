@@ -84,7 +84,17 @@ the linting is now done via the npm run lint command of the main project
 
 ## notes about problems I encountered during development
 
-### using es6 modules with nodejs
+### client problems
+
+#### input type range not triggering change event
+
+Because the value of the input type range element gets constantly updated by the player itself, when using an event listener on **change** will result in the event not firing at all (chrome only?) or it will fire but then at the moment when you read the value it will already have been updated by the player
+
+this is why I recommend using the **input** event instead (which is what is used in this example), so far I had none of the problems I just mentioned using the "input" event instead of the "change" event
+
+### server problems
+
+#### using es6 modules with nodejs
 
 Full nodejs support for es6 modules import/export syntax enabled
 
@@ -109,7 +119,7 @@ and in package.json you will notice that I also added:
 }
 ```
 
-### replacing cjs dirname with esm import.meta.url
+#### replacing cjs dirname with esm import.meta.url
 
 When using es modules (esm), the __dirname environment variable is not available anymore, as it is for commonjs (cjs) only, however a replacement is available: meta.import.url
 

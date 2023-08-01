@@ -44,8 +44,8 @@ class PlayerUI {
     protected _createListeners(): void {
 
         this._buttonsBox.addEventListener('click', this._onClickButtonsBox.bind(this))
-        this._volumeSlider.addEventListener('change', this._onChangeVolume.bind(this))
-        this._playingProgressBar.addEventListener('change', this._onChangePlayingProgress.bind(this))
+        this._volumeSlider.addEventListener('input', this._onInputVolume.bind(this))
+        this._playingProgressBar.addEventListener('input', this._onInputPlayingProgress.bind(this))
 
     }
 
@@ -132,7 +132,12 @@ class PlayerUI {
 
     }
 
-    protected _onChangeVolume(event: Event): void {
+    protected _onInputVolume(event: Event): void {
+
+        // Note: for input type=range elements listen for input events
+        // instead of change events, the change event will sometimes
+        // not fire if the click on the element happens at the same
+        // exact moment at which the user clicks on the input element
 
         // styling the html5 range:
         // http://brennaobrien.com/blog/2014/05/style-input-type-range-in-every-browser.html
@@ -144,11 +149,9 @@ class PlayerUI {
 
     }
 
-    protected _onChangePlayingProgress(event: Event): void {
-
+    protected _onInputPlayingProgress(event: Event): void {
         const rangeElement = event.target as HTMLInputElement
         const value = parseInt(rangeElement.value)
-
         this.player.setPosition(value)
 
     }
@@ -211,8 +214,8 @@ class PlayerUI {
     protected _destroyListeners(): void {
 
         this._buttonsBox.removeEventListener('click', this._onClickButtonsBox.bind(this))
-        this._volumeSlider.removeEventListener('change', this._onChangeVolume.bind(this))
-        this._playingProgressBar.removeEventListener('click', this._onChangePlayingProgress.bind(this))
+        this._volumeSlider.removeEventListener('change', this._onInputVolume.bind(this))
+        this._playingProgressBar.removeEventListener('click', this._onInputPlayingProgress.bind(this))
 
         this._buttonsBox = null
         this._volumeSlider = null

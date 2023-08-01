@@ -18,7 +18,6 @@ import { PlayerUI } from './library/player/ui.js'
 // check out the documentation part of the readme
 const options: ICoreOptions = {
     soundsBaseUrl: 'https://mp3l.jamendo.com/?trackid=',
-    playingProgressIntervalTime: 500,
     loadPlayerMode: PlayerCore.PLAYER_MODE_AUDIO,
 }
 
