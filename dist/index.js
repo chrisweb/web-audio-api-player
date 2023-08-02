@@ -1276,6 +1276,10 @@ var PlayerCore = /** @class */ (function () {
                         soundIndex = this._currentIndex + 1;
                         sound = this._queue[soundIndex];
                     }
+                    else if (this._loopQueue) {
+                        soundIndex = 0;
+                        sound = this._queue[soundIndex];
+                    }
                     break;
                 case PlayerCore.PLAY_SOUND_PREVIOUS:
                     if (this._queue[this._currentIndex - 1] !== undefined) {
