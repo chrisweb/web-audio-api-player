@@ -200,7 +200,7 @@ player.setLoopQueue(true)
 Note: all of these setters have a corresponding getter, so if you want to now what the current value is, for example if you want to know what the current volume is set to:
 
 ```ts
-player.getVolume(volume)
+const volume = player.getVolume(volume)
 ```
 
 now it is time to build your player UI, if you want a good example of such an UI check out the [simple player example](examples/simple-player)
