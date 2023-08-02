@@ -8,12 +8,7 @@ import { PlayerCore, ISoundAttributes, ICoreOptions } from '../../../../dist/ind
 import { PlayerUI } from './library/player/ui.js'
 
 // set some options of the player
-// there are two different sound modes:
-// PLAYER_MODE_AUDIO: uses an audio element to load the
-// sound (which allows you to load files but also audio streams)
-// PLAYER_MODE_FETCH: uses fetch to get the sound and
-// then uses the web audio API to play it (the web audio API
-// does only support loading files, no streams)
+// there are two different sound modes
 // !!! for some details about the differencies of the two MODES
 // check out the documentation part of the readme
 const options: ICoreOptions = {
