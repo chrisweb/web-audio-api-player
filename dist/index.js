@@ -794,6 +794,12 @@ var PlayerCore = /** @class */ (function () {
     PlayerCore.prototype.getVolume = function () {
         return this._volume;
     };
+    PlayerCore.prototype.setLoopQueue = function (loppQueue) {
+        this._loopQueue = loppQueue;
+    };
+    PlayerCore.prototype.getLoopQueue = function () {
+        return this._loopQueue;
+    };
     PlayerCore.prototype.mute = function () {
         var currentVolume = this.getVolume();
         this._postMuteVolume = currentVolume;
