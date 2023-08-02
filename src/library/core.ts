@@ -350,6 +350,18 @@ export class PlayerCore {
 
     }
 
+    public setLoopQueue(loppQueue: boolean): void {
+
+        this._loopQueue = loppQueue;
+
+    }
+
+    public getLoopQueue(): boolean {
+
+        return this._loopQueue;
+
+    }
+
     public mute(): void {
 
         const currentVolume = this.getVolume();

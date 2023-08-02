@@ -89,6 +89,8 @@ export declare class PlayerCore {
     getQueue(): ISound[];
     setVolume(volume: number): void;
     getVolume(): number;
+    setLoopQueue(loppQueue: boolean): void;
+    getLoopQueue(): boolean;
     mute(): void;
     unMute(): void;
     isMuted(): boolean;
