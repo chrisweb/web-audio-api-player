@@ -665,7 +665,7 @@ var PlayerCore = /** @class */ (function () {
         this._volume = options.volume;
         this._soundsBaseUrl = options.soundsBaseUrl;
         this._queue = [];
-        this._currentIndex = 0;
+        this._currentIndex = null;
         this._playingProgressIntervalTime = options.playingProgressIntervalTime;
         this._playNextOnEnded = options.playNextOnEnded;
         this._loopQueue = options.loopQueue;
@@ -741,16 +741,11 @@ var PlayerCore = /** @class */ (function () {
     PlayerCore.prototype.addSoundToQueue = function (_a) {
         var soundAttributes = _a.soundAttributes, _b = _a.whereInQueue, whereInQueue = _b === void 0 ? PlayerCore.WHERE_IN_QUEUE_AT_END : _b;
         var sound = new PlayerSound(soundAttributes);
-        // TODO: is queue just an array of sounds, or do we need something more complex with a position tracker?
-        // TODO: allow array of soundAttributes to be injected, to create several at once, if input is an array output should be too
         switch (whereInQueue) {
             case PlayerCore.WHERE_IN_QUEUE_AT_END:
                 this._appendSoundToQueue(sound);
                 break;
             case PlayerCore.WHERE_IN_QUEUE_AT_START:
-                this._prependSoundToQueue(sound);
-                break;
-            case PlayerCore.WHERE_IN_QUEUE_AFTER_CURRENT:
                 this._prependSoundToQueue(sound);
                 break;
         }
@@ -762,19 +757,8 @@ var PlayerCore = /** @class */ (function () {
     PlayerCore.prototype._prependSoundToQueue = function (sound) {
         this._queue.unshift(sound);
     };
-    PlayerCore.prototype._addSoundToQueueAfterCurrent = function (sound) {
-        // TODO: add option to play after being added or user uses play method?
-        // if there is no current song yet, append the song to the queue
-        if (this._currentIndex === null) {
-            this._appendSoundToQueue(sound);
-        }
-        else {
-            var afterCurrentIndex = this._currentIndex + 1;
-            this._queue.splice(afterCurrentIndex, 0, sound);
-        }
-    };
     PlayerCore.prototype.resetQueue = function () {
-        // check if a song is getting played and stop it
+        // check if a sound is getting played and stop it
         if (this._stopOnReset) {
             this.stop();
         }
@@ -792,7 +776,7 @@ var PlayerCore = /** @class */ (function () {
         this._volume = volume;
         this._isMuted = false;
         // get the current sound if any
-        var currentSound = this._getSoundFromQueue();
+        var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
         // if there is a sound currently being played
         if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
             this._playerAudio.changeVolume({ volume: volume, sound: currentSound, forceUpdateUserVolume: true });
@@ -811,7 +795,7 @@ var PlayerCore = /** @class */ (function () {
         var currentVolume = this.getVolume();
         this._postMuteVolume = currentVolume;
         // get the current sound if any
-        var currentSound = this._getSoundFromQueue();
+        var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
         // if there is a sound currently being played
         if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
             this._playerAudio.changeVolume({ volume: 0, sound: currentSound, forceUpdateUserVolume: false });
@@ -820,7 +804,7 @@ var PlayerCore = /** @class */ (function () {
     };
     PlayerCore.prototype.unMute = function () {
         // get the current sound if any
-        var currentSound = this._getSoundFromQueue();
+        var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
         // if there is a sound currently being played
         if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
             this._playerAudio.changeVolume({ volume: this._postMuteVolume, sound: currentSound, forceUpdateUserVolume: false });
@@ -833,12 +817,12 @@ var PlayerCore = /** @class */ (function () {
     PlayerCore.prototype.setPosition = function (soundPositionInPercent) {
         var _this = this;
         // get the current sound if any
-        var currentSound = this._getSoundFromQueue();
+        var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
         // if there is a sound currently being played
         if (currentSound !== null) {
             // check if the duration got set manually
             if (currentSound.duration === null || isNaN(currentSound.duration)) {
-                // the user can set the sound duration manually but if he didn't the song has to
+                // the user can set the sound duration manually but if he didn't the sound has to
                 // get preloaded as the duration is a property of the audioBuffer
                 this._loadSound(currentSound)
                     .then(function (sound) {
@@ -861,14 +845,12 @@ var PlayerCore = /** @class */ (function () {
     };
     PlayerCore.prototype.setPositionInSeconds = function (soundPositionInSeconds) {
         // get the current sound if any
-        var currentSound = this._getSoundFromQueue();
+        var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
         // if there is a sound currently being played
         if (currentSound !== null) {
-            // is the song is being played
+            // is the sound is being played
             if (currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
-                // stop the track playback
-                this.pause();
-                // start the playback at the given position
+                // resume the playback at the given position
                 this.play({ whichSound: currentSound.id, playTimeOffset: soundPositionInSeconds });
             }
             else {
@@ -1033,19 +1015,40 @@ var PlayerCore = /** @class */ (function () {
         var _this = this;
         var _b = _a === void 0 ? {} : _a, whichSound = _b.whichSound, playTimeOffset = _b.playTimeOffset;
         return new Promise(function (resolve, reject) {
-            // TODO: check the available codecs and defined sources, play the first one that has matches and available codec
-            // TODO: let user define order of preferred codecs for playerback
             // get the current sound if any
-            var currentSound = _this._getSoundFromQueue();
-            // if there is a sound currently being played or paused, stop the current sound
-            if (currentSound !== null && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING || currentSound.state === PlayerSound.SOUND_STATE_PAUSED)) {
-                _this.stop();
-            }
+            var currentSound = _this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+            console.log('this._currentIndex: ', _this._currentIndex);
+            console.log('currentSound: ', currentSound);
             // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
-            var sound = _this._getSoundFromQueue({ whichSound: whichSound });
+            var sound = _this._getSoundFromQueue({ whichSound: whichSound, updateIndex: true });
+            console.log('sound: ', sound);
             // if there is no sound we could play, do nothing
             if (sound === null) {
                 throw new Error('no more sounds in array');
+            }
+            // if there is a sound currently being played OR paused
+            // AND the current sound is NOT the same sound as the one that will now be played
+            // STOP the current sound
+            if (currentSound !== null
+                && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING || currentSound.state === PlayerSound.SOUND_STATE_PAUSED)
+                && (currentSound.id !== sound.id)) {
+                _this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
+            }
+            // if there is a sound currently being played
+            // AND the current sound is the same sound as the one that will now be played
+            // PAUSE the current sound
+            if (currentSound !== null
+                && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING)
+                && (currentSound.id === sound.id)) {
+                _this._stop(currentSound, PlayerSound.SOUND_STATE_PAUSED);
+            }
+            // if the current sound and the next one are not the same sound
+            // we set the firstTimePlayed to true to indicate it is a fresh start and not a resume after a pause
+            if (currentSound === null || (currentSound !== null && (currentSound.id !== sound.id))) {
+                sound.firstTimePlayed = true;
+            }
+            else {
+                sound.firstTimePlayed = false;
             }
             // if the user wants to play the sound from a certain position
             if (playTimeOffset !== undefined) {
@@ -1087,7 +1090,7 @@ var PlayerCore = /** @class */ (function () {
                         sound.state = PlayerSound.SOUND_STATE_PLAYING;
                         // the audiocontext time right now (since the audiocontext got created)
                         sound.startTime = sound.getCurrentTime();
-                        sound = this._setupSoundEvents(sound);
+                        sound = this._triggerSoundCallbacks(sound);
                         return [2 /*return*/];
                 }
             });
@@ -1188,18 +1191,17 @@ var PlayerCore = /** @class */ (function () {
             });
         });
     };
-    PlayerCore.prototype._setupSoundEvents = function (sound) {
+    PlayerCore.prototype._triggerSoundCallbacks = function (sound) {
         var _this = this;
-        // if there is an onResumed callback for the sound trigger it
+        // if there is an onResumed callback for the sound, trigger it
         if (sound.onResumed !== null && !sound.firstTimePlayed) {
             sound.onResumed(sound.playTimeOffset);
         }
-        // if there is an onStarted callback for the sound trigger it
+        // if there is an onStarted callback for the sound, trigger it
         if (sound.onStarted !== null && sound.firstTimePlayed) {
             sound.onStarted(sound.playTimeOffset);
-            sound.firstTimePlayed = false;
         }
-        // if there is an onPlaying callback for the sound trigger it
+        // if there is an onPlaying callback for the sound, trigger it
         if (sound.onPlaying !== null) {
             // on request animation frame callback set playing progress
             // request animation frame callback has a argument, which
@@ -1215,11 +1217,10 @@ var PlayerCore = /** @class */ (function () {
     };
     PlayerCore.prototype._onEnded = function () {
         // get the current sound if any
-        var currentSound = this._getSoundFromQueue();
+        var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
         // if there is a sound currently being played
         if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
-            var updateIndex = false;
-            var nextSound = this._getSoundFromQueue({ whichSound: 'next', updateIndex: updateIndex });
+            var nextSound = this._getSoundFromQueue({ whichSound: PlayerCore.PLAY_SOUND_NEXT, updateIndex: true });
             if (currentSound.onEnded !== null) {
                 var willPlayNext = false;
                 // check if there is another sound in the queue and if playing
@@ -1233,14 +1234,14 @@ var PlayerCore = /** @class */ (function () {
                 }
                 currentSound.onEnded(willPlayNext);
             }
-            // reset the is first time sound is being played to true
+            // reset "first time played"
             currentSound.firstTimePlayed = true;
-            // reset the playTimeOffset
+            // reset the "play time offset"
             currentSound.playTimeOffset = 0;
             this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
             if (nextSound !== null) {
                 if (this._playNextOnEnded) {
-                    this.play({ whichSound: 'next' });
+                    this.play({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
                 }
             }
             else {
@@ -1258,26 +1259,41 @@ var PlayerCore = /** @class */ (function () {
      * a string it can be next / previous / first / last
      */
     PlayerCore.prototype._getSoundFromQueue = function (_a) {
-        var _b = _a === void 0 ? {} : _a, whichSound = _b.whichSound, _c = _b.updateIndex, updateIndex = _c === void 0 ? true : _c;
+        var _b;
+        var _c = _a === void 0 ? {} : _a, whichSound = _c.whichSound, _d = _c.updateIndex, updateIndex = _d === void 0 ? false : _d;
         var sound = null;
+        var soundIndex = null;
         // check if the queue is empty
         if (this._queue.length === 0) {
             return sound;
         }
-        // if which song to play did not get specified, play one based from the queue based on the queue index position marker
-        if (whichSound === undefined && this._queue[this._currentIndex] !== undefined) {
-            sound = this._queue[this._currentIndex];
+        // if which sound to play did not get specified
+        if (whichSound === undefined) {
+            // if whichSound is not defined
+            // AND the currentIndex is null
+            // we set it to first sound in queue
+            soundIndex = 0;
+            if (this._currentIndex !== null) {
+                soundIndex = this._currentIndex;
+            }
+            sound = this._queue[soundIndex];
         }
         else {
-            var soundIndex = null;
-            // if which song to play is a constant
+            // if which sound to play is a constant
             switch (whichSound) {
+                case PlayerCore.CURRENT_SOUND:
+                    if (this._currentIndex !== null) {
+                        sound = this._queue[this._currentIndex];
+                    }
+                    break;
                 case PlayerCore.PLAY_SOUND_NEXT:
                     if (this._queue[this._currentIndex + 1] !== undefined) {
                         soundIndex = this._currentIndex + 1;
                         sound = this._queue[soundIndex];
                     }
                     else if (this._loopQueue) {
+                        // if last sound is playing and loop is enabled
+                        // on next we jump to first sound
                         soundIndex = 0;
                         sound = this._queue[soundIndex];
                     }
@@ -1285,6 +1301,12 @@ var PlayerCore = /** @class */ (function () {
                 case PlayerCore.PLAY_SOUND_PREVIOUS:
                     if (this._queue[this._currentIndex - 1] !== undefined) {
                         soundIndex = this._currentIndex - 1;
+                        sound = this._queue[soundIndex];
+                    }
+                    else if (this._loopQueue) {
+                        // if first sound is playing and loop is enabled
+                        // on previous we jump to last sound
+                        soundIndex = this._queue.length - 1;
                         sound = this._queue[soundIndex];
                     }
                     break;
@@ -1296,30 +1318,32 @@ var PlayerCore = /** @class */ (function () {
                     break;
                 case PlayerCore.PLAY_SOUND_LAST:
                     if (this._queue.length > 0) {
-                        soundIndex = this._queue.length - 2;
+                        soundIndex = this._queue.length - 1;
                         sound = this._queue[soundIndex];
                     }
                     break;
                 default:
                     // if "which sound to play" (soundId) is a string or number
-                    sound = this._findSoundById({ soundId: whichSound });
+                    _b = this._findSoundById({ soundId: whichSound }), sound = _b[0], soundIndex = _b[1];
             }
-            if (soundIndex !== null && updateIndex) {
-                this._currentIndex = soundIndex;
-            }
+        }
+        if (soundIndex !== null && updateIndex) {
+            this._currentIndex = soundIndex;
         }
         return sound;
     };
     PlayerCore.prototype._findSoundById = function (_a) {
         var soundId = _a.soundId;
         var sound = null;
-        this._queue.some(function (soundFromQueue) {
+        var soundIndex = 0;
+        this._queue.some(function (soundFromQueue, index) {
             if (soundFromQueue.id === soundId) {
                 sound = soundFromQueue;
+                soundIndex = index;
                 return true;
             }
         });
-        return sound;
+        return [sound, soundIndex];
     };
     PlayerCore.prototype._findBestSource = function (soundSource) {
         var _this = this;
@@ -1428,47 +1452,50 @@ var PlayerCore = /** @class */ (function () {
     };
     PlayerCore.prototype.pause = function () {
         // get the current sound
-        var sound = this._getSoundFromQueue();
-        if (sound === null) {
+        var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+        if (currentSound === null) {
             return;
         }
-        if (sound.state === PlayerSound.SOUND_STATE_PAUSED) {
+        if (currentSound.state === PlayerSound.SOUND_STATE_PAUSED) {
             // TODO: just return or throw an error
             return;
         }
-        var timeAtPause = sound.getCurrentTime();
-        sound.playTimeOffset += timeAtPause - sound.startTime;
+        var timeAtPause = currentSound.getCurrentTime();
+        currentSound.playTimeOffset += timeAtPause - currentSound.startTime;
         // trigger paused event
-        if (sound.onPaused !== null) {
-            sound.onPaused(sound.playTimeOffset);
+        if (currentSound.onPaused !== null) {
+            currentSound.onPaused(currentSound.playTimeOffset);
         }
-        // using stop here because even if though it is just a "pause" you can't call play the song again
+        // using stop here because even if though it is just a "pause" you can't call play the sound again
         // re-using an audio buffer source node is not allowed, so no matter what we will have to create a new one
         // we call the internal stop method as we don't want to trigger the onStopped callback
-        this._stop(sound, PlayerSound.SOUND_STATE_PAUSED);
+        this._stop(currentSound, PlayerSound.SOUND_STATE_PAUSED);
     };
     PlayerCore.prototype.stop = function () {
         // get the current sound
-        var sound = this._getSoundFromQueue();
-        if (sound === null) {
+        var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+        if (currentSound === null) {
             return;
         }
         // check if sound is already stopped
-        if (sound.state === PlayerSound.SOUND_STATE_STOPPED) {
+        if (currentSound.state === PlayerSound.SOUND_STATE_STOPPED) {
             // TODO: just return or throw an error
             return;
         }
-        var timeAtStop = sound.getCurrentTime();
-        sound.playTimeOffset += timeAtStop - sound.startTime;
+        var timeAtStop = currentSound.getCurrentTime();
+        currentSound.playTimeOffset += timeAtStop - currentSound.startTime;
         // trigger stopped event
-        if (sound.onStopped !== null) {
-            sound.onStopped(sound.playTimeOffset);
+        if (currentSound.onStopped !== null) {
+            currentSound.onStopped(currentSound.playTimeOffset);
         }
-        // reset the playTimeOffset
-        sound.playTimeOffset = 0;
-        this._stop(sound, PlayerSound.SOUND_STATE_STOPPED);
+        this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
     };
     PlayerCore.prototype._stop = function (sound, soundState) {
+        // if it is fully stopped, not just paused
+        if (soundState === PlayerSound.SOUND_STATE_STOPPED) {
+            // reset the playTimeOffset
+            sound.playTimeOffset = 0;
+        }
         // tell the source node to stop playing
         if (sound.audioBufferSourceNode !== null) {
             // to stop playing if using the AudioBufferSourceNode use the stop method
@@ -1576,11 +1603,11 @@ var PlayerCore = /** @class */ (function () {
     // constants
     PlayerCore.WHERE_IN_QUEUE_AT_END = 'append';
     PlayerCore.WHERE_IN_QUEUE_AT_START = 'prepend';
-    PlayerCore.WHERE_IN_QUEUE_AFTER_CURRENT = 'afterCurrent';
     PlayerCore.PLAY_SOUND_NEXT = 'next';
     PlayerCore.PLAY_SOUND_PREVIOUS = 'previous';
     PlayerCore.PLAY_SOUND_FIRST = 'first';
     PlayerCore.PLAY_SOUND_LAST = 'last';
+    PlayerCore.CURRENT_SOUND = 'current';
     PlayerCore.PLAYER_MODE_AUDIO = 'player_mode_audio';
     PlayerCore.PLAYER_MODE_AJAX = 'player_mode_ajax';
     PlayerCore.PLAYER_MODE_FETCH = 'player_mode_fetch';

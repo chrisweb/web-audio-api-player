@@ -46,7 +46,7 @@ export declare class PlayerCore {
     protected _queue: ISound[];
     protected _volume: number;
     protected _soundsBaseUrl: string;
-    protected _currentIndex: number;
+    protected _currentIndex: number | null;
     protected _playerAudio: PlayerAudio;
     protected _playingProgressIntervalTime: number;
     protected _playingProgressRequestId: number | null;
@@ -65,11 +65,11 @@ export declare class PlayerCore {
     protected _loadPlayerMode: typePlayerModes;
     static readonly WHERE_IN_QUEUE_AT_END: string;
     static readonly WHERE_IN_QUEUE_AT_START: string;
-    static readonly WHERE_IN_QUEUE_AFTER_CURRENT: string;
     static readonly PLAY_SOUND_NEXT = "next";
     static readonly PLAY_SOUND_PREVIOUS = "previous";
     static readonly PLAY_SOUND_FIRST = "first";
     static readonly PLAY_SOUND_LAST = "last";
+    static readonly CURRENT_SOUND = "current";
     static readonly PLAYER_MODE_AUDIO = "player_mode_audio";
     static readonly PLAYER_MODE_AJAX = "player_mode_ajax";
     static readonly PLAYER_MODE_FETCH = "player_mode_fetch";
@@ -82,7 +82,6 @@ export declare class PlayerCore {
     addSoundToQueue({ soundAttributes, whereInQueue }: ISoundsQueueOptions): ISound;
     _appendSoundToQueue(sound: ISound): void;
     _prependSoundToQueue(sound: ISound): void;
-    _addSoundToQueueAfterCurrent(sound: ISound): void;
     resetQueue(): void;
     reset(): void;
     getQueue(): ISound[];
@@ -104,7 +103,7 @@ export declare class PlayerCore {
     protected _play(sound: ISound): Promise<void>;
     protected _playAudioBuffer(sound: ISound): Promise<void>;
     protected _playMediaElementAudio(sound: ISound): Promise<void>;
-    protected _setupSoundEvents(sound: ISound): ISound;
+    protected _triggerSoundCallbacks(sound: ISound): ISound;
     protected _progressTrigger: (sound: ISound, timestamp: DOMHighResTimeStamp) => void;
     protected _onEnded(): void;
     /**
@@ -112,7 +111,7 @@ export declare class PlayerCore {
      * a string it can be next / previous / first / last
      */
     protected _getSoundFromQueue({ whichSound, updateIndex }?: IGetSoundFromQueue): ISound | null;
-    protected _findSoundById({ soundId }: IFindSoundById): ISound | null;
+    protected _findSoundById({ soundId }: IFindSoundById): [ISound | null, number];
     protected _findBestSource(soundSource: (ISoundSource)[] | ISoundSource): IFindBestSourceResponse;
     protected _checkCodecSupport(codec: string): boolean;
     protected _checkMimeTypesSupport(mediaMimeTypes: string[]): boolean;
