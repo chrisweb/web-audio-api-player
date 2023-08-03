@@ -701,7 +701,7 @@ export class PlayerCore {
             const currentSound = this._getSoundFromQueue();
 
             // if there is a sound currently being played or paused, stop the current sound
-            if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
+            if (currentSound !== null && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING || currentSound.state === PlayerSound.SOUND_STATE_PAUSED)) {
                 this.stop();
             }
 
