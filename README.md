@@ -419,6 +419,8 @@ fileInput.addEventListener('change', function(event) {
 * feature that let's the dev set a volume (via a modifier value / coefficient) per song, useful if some songs are louder than others and you want to normalize the volume of all songs in a playlist to be similar
 * add hooks to the sound object for all the native source node events [AudioBufferSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode)
 * add (stereo) panning
+* allow to add an array of sounds to queue all at once
+* allow to add sound to queue after a sound by id (not just at beginning or end, as it is as of now)
 
 ## note to self: publish package on npmjs.com
 
