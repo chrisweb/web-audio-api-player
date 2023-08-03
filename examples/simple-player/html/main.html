@@ -34,14 +34,14 @@
         </div>
 
         <div id="js-buttons-box" data-player-context="off">
-            <button id="js-shuffle-button" class="button">S</button>
+            <!--<button id="js-shuffle-button" class="button">Shuffle (pick & play random song)</button>-->
             <button id="js-previous-button" class="button">|<</button>
             <button id="js-play-pause-button" class="button">
                 <span id="js-play">></span>
                 <span id="js-pause" class="hidden">||</span>
             </button>
             <button id="js-next-button" class="button">>|</button>
-            <button id="js-repeat-button" class="button">R</button>
+            <<!--button id="js-loop-playlist-button" class="button">Loop playlist</button>-->
         </div>
 
         <progress max="100" value="0" id="js-player-loading-progress"></progress>
@@ -51,6 +51,13 @@
 
         <input type="range" min="0" max="100" value="0" step="1" id="js-player-volume" />
 
+    </section>
+
+    <section id="js-extra-buttons">
+        <button id="js-first" class="button">First</button>
+        <button id="js-last" class="button">Last</button>
+        <button id="js-byId" class="button" data-song-id="1314412">Song by ID: 1314412 (= 1st song in queue)</button>
+        <button id="js-byId" class="button" data-song-id="1214935">Song by ID: 1214935 (= 2nd / last song in queue)</button>
     </section>
 
 </body>

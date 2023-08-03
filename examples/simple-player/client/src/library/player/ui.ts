@@ -8,6 +8,7 @@ class PlayerUI {
     protected _volumeSlider: HTMLInputElement
     protected _loadingProgressBar: HTMLInputElement
     protected _playingProgressBar: HTMLInputElement
+    protected _extraButtons: HTMLElement
 
     constructor(player: PlayerCore) {
 
@@ -31,6 +32,9 @@ class PlayerUI {
         // playing progress bar (html5 input range)
         this._playingProgressBar = document.getElementById('js-player-playing-progress') as HTMLInputElement
 
+        // extra buttons
+        this._extraButtons = document.getElementById('js-extra-buttons')
+
         // start listening to events
         this._createListeners()
 
@@ -46,6 +50,7 @@ class PlayerUI {
         this._buttonsBox.addEventListener('click', this._onClickButtonsBox.bind(this))
         this._volumeSlider.addEventListener('input', this._onInputVolume.bind(this))
         this._playingProgressBar.addEventListener('input', this._onInputPlayingProgress.bind(this))
+        this._extraButtons.addEventListener('click', this._onClickExtraButtons.bind(this))
 
     }
 
@@ -124,7 +129,7 @@ class PlayerUI {
 
         }
 
-        if ($button.id === 'js-repeat-button') {
+        if ($button.id === 'js-loop-playlist-button') {
 
             // TODO
 
@@ -153,6 +158,26 @@ class PlayerUI {
         const rangeElement = event.target as HTMLInputElement
         const value = parseInt(rangeElement.value)
         this.player.setPosition(value)
+    }
+
+    protected _onClickExtraButtons(event: Event): void {
+
+        event.preventDefault()
+
+        const $button = event.target as HTMLElement
+
+        if ($button.id === 'js-first') {
+            this.player.play({ whichSound: 'first' });
+        }
+
+        if ($button.id === 'js-last') {
+            this.player.play({ whichSound: 'last' });
+        }
+
+        if ($button.id === 'js-byId') {
+            const songId = $button.getAttribute('data-song-id');
+            this.player.play({ whichSound: parseInt(songId) });
+        }
 
     }
 
