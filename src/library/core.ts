@@ -706,7 +706,6 @@ export class PlayerCore {
             }
 
             // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
-            // TODO: next / previous ... should be constants, more accurate to compare and would also allow id to be string or number
             const sound = this._getSoundFromQueue({ whichSound });
 
             // if there is no sound we could play, do nothing
@@ -1208,9 +1207,9 @@ export class PlayerCore {
             sound.onPaused(sound.playTimeOffset);
         }
 
-        // using stop here as even if it is a pause you can't call play again
-        // re-using an audio buffer source node is not allowed, so no matter what
-        // we will have to create a new one
+        // using stop here because even if though it is just a "pause" you can't call play the song again
+        // re-using an audio buffer source node is not allowed, so no matter what we will have to create a new one
+        // we call the internal stop method as we don't want to trigger the onStopped callback
         this._stop(sound, PlayerSound.SOUND_STATE_PAUSED);
 
     }
@@ -1278,28 +1277,28 @@ export class PlayerCore {
     public next(): void {
 
         // alias for play next
-        this.play({ whichSound: 'next' });
+        this.play({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
 
     }
 
     public previous(): void {
 
         // alias for play previous
-        this.play({ whichSound: 'previous' });
+        this.play({ whichSound: PlayerCore.PLAY_SOUND_PREVIOUS });
 
     }
 
     public first(): void {
 
         // alias for play first
-        this.play({ whichSound: 'first' });
+        this.play({ whichSound: PlayerCore.PLAY_SOUND_FIRST });
 
     }
 
     public last(): void {
 
         // alias for play last
-        this.play({ whichSound: 'last' });
+        this.play({ whichSound: PlayerCore.PLAY_SOUND_LAST });
 
     }
 
