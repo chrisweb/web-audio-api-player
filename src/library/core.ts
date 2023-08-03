@@ -73,7 +73,7 @@ export class PlayerCore {
     // the base url that all sounds will have in common
     protected _soundsBaseUrl: string;
     // the current sound in queue index
-    protected _currentIndex: number;
+    protected _currentIndex: number | null;
     // instance of the audio library class
     protected _playerAudio: PlayerAudio;
     // playing progress time interval
@@ -82,17 +82,17 @@ export class PlayerCore {
     protected _playingProgressRequestId: number | null = null;
     // playing progress animation frame previous timestamp
     protected _playingProgressPreviousTimestamp: DOMHighResTimeStamp = 0;
-    // when a song finishes, automatically play the next one
+    // when a sound finishes, automatically play the next one
     protected _playNextOnEnded: boolean;
     // do we start over again at the end of the queue
     protected _loopQueue: boolean;
-    // do we start over again at the end of the song
+    // do we start over again at the end of the sound
     protected _loopSong: boolean;
     // a custon audioGraph created by the user
     protected _customAudioGraph: IAudioGraph | null = null;
     // a custom audio context created by the user
     protected _customAudioContext: AudioContext | null = null;
-    // stop the song currently being played on (queue) reset
+    // stop the sound currently being played on (queue) reset
     protected _stopOnReset: boolean;
     // the volume level before we muted
     protected _postMuteVolume: number = null;
@@ -104,18 +104,19 @@ export class PlayerCore {
     protected _createAudioContextOnFirstUserInteraction: boolean;
     // save the volume value in localstorage
     protected _persistVolume: boolean;
-    // mode used to load songs
+    // mode used to load sounds
     protected _loadPlayerMode: typePlayerModes;
 
     // constants
     static readonly WHERE_IN_QUEUE_AT_END: string = 'append';
     static readonly WHERE_IN_QUEUE_AT_START: string = 'prepend';
-    static readonly WHERE_IN_QUEUE_AFTER_CURRENT: string = 'afterCurrent';
 
     static readonly PLAY_SOUND_NEXT = 'next';
     static readonly PLAY_SOUND_PREVIOUS = 'previous';
     static readonly PLAY_SOUND_FIRST = 'first';
     static readonly PLAY_SOUND_LAST = 'last';
+
+    static readonly CURRENT_SOUND = 'current';
 
     static readonly PLAYER_MODE_AUDIO = 'player_mode_audio';
     static readonly PLAYER_MODE_AJAX = 'player_mode_ajax';
@@ -144,7 +145,7 @@ export class PlayerCore {
         this._volume = options.volume;
         this._soundsBaseUrl = options.soundsBaseUrl;
         this._queue = [];
-        this._currentIndex = 0;
+        this._currentIndex = null;
         this._playingProgressIntervalTime = options.playingProgressIntervalTime;
         this._playNextOnEnded = options.playNextOnEnded;
         this._loopQueue = options.loopQueue;
@@ -250,18 +251,11 @@ export class PlayerCore {
 
         const sound: ISound = new PlayerSound(soundAttributes);
 
-        // TODO: is queue just an array of sounds, or do we need something more complex with a position tracker?
-
-        // TODO: allow array of soundAttributes to be injected, to create several at once, if input is an array output should be too
-
         switch (whereInQueue) {
             case PlayerCore.WHERE_IN_QUEUE_AT_END:
                 this._appendSoundToQueue(sound);
                 break;
             case PlayerCore.WHERE_IN_QUEUE_AT_START:
-                this._prependSoundToQueue(sound);
-                break;
-            case PlayerCore.WHERE_IN_QUEUE_AFTER_CURRENT:
                 this._prependSoundToQueue(sound);
                 break;
         }
@@ -282,28 +276,9 @@ export class PlayerCore {
 
     }
 
-    public _addSoundToQueueAfterCurrent(sound: ISound): void {
-
-        // TODO: add option to play after being added or user uses play method?
-
-        // if there is no current song yet, append the song to the queue
-        if (this._currentIndex === null) {
-
-            this._appendSoundToQueue(sound);
-
-        } else {
-
-            const afterCurrentIndex = this._currentIndex + 1;
-
-            this._queue.splice(afterCurrentIndex, 0, sound);
-
-        }
-
-    }
-
     public resetQueue(): void {
 
-        // check if a song is getting played and stop it
+        // check if a sound is getting played and stop it
         if (this._stopOnReset) {
             this.stop();
         }
@@ -334,7 +309,7 @@ export class PlayerCore {
         this._isMuted = false;
 
         // get the current sound if any
-        const currentSound = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         // if there is a sound currently being played
         if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
@@ -368,7 +343,7 @@ export class PlayerCore {
         this._postMuteVolume = currentVolume;
 
         // get the current sound if any
-        const currentSound = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         // if there is a sound currently being played
         if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
@@ -382,7 +357,7 @@ export class PlayerCore {
     public unMute(): void {
 
         // get the current sound if any
-        const currentSound = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         // if there is a sound currently being played
         if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
@@ -402,7 +377,7 @@ export class PlayerCore {
     public setPosition(soundPositionInPercent: number): void {
 
         // get the current sound if any
-        const currentSound = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         // if there is a sound currently being played
         if (currentSound !== null) {
@@ -410,7 +385,7 @@ export class PlayerCore {
             // check if the duration got set manually
             if (currentSound.duration === null || isNaN(currentSound.duration)) {
 
-                // the user can set the sound duration manually but if he didn't the song has to
+                // the user can set the sound duration manually but if he didn't the sound has to
                 // get preloaded as the duration is a property of the audioBuffer
                 this._loadSound(currentSound)
                     .then((sound: ISound) => {
@@ -446,25 +421,18 @@ export class PlayerCore {
     public setPositionInSeconds(soundPositionInSeconds: number): void {
 
         // get the current sound if any
-        const currentSound = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         // if there is a sound currently being played
         if (currentSound !== null) {
 
-            // is the song is being played
+            // is the sound is being played
             if (currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
-
-                // stop the track playback
-                this.pause();
-
-                // start the playback at the given position
+                // resume the playback at the given position
                 this.play({ whichSound: currentSound.id, playTimeOffset: soundPositionInSeconds });
-
             } else {
-
                 // only set the sound position but don't play
                 currentSound.playTimeOffset = soundPositionInSeconds;
-
             }
 
         } else {
@@ -694,23 +662,50 @@ export class PlayerCore {
 
         return new Promise((resolve, reject) => {
 
-            // TODO: check the available codecs and defined sources, play the first one that has matches and available codec
-            // TODO: let user define order of preferred codecs for playerback
-
             // get the current sound if any
-            const currentSound = this._getSoundFromQueue();
+            const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
-            // if there is a sound currently being played or paused, stop the current sound
-            if (currentSound !== null && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING || currentSound.state === PlayerSound.SOUND_STATE_PAUSED)) {
-                this.stop();
-            }
+            console.log('this._currentIndex: ', this._currentIndex)
+            console.log('currentSound: ', currentSound)
 
             // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
-            const sound = this._getSoundFromQueue({ whichSound });
+            const sound = this._getSoundFromQueue({ whichSound, updateIndex: true });
+
+            console.log('sound: ', sound)
 
             // if there is no sound we could play, do nothing
             if (sound === null) {
                 throw new Error('no more sounds in array');
+            }
+
+            // if there is a sound currently being played OR paused
+            // AND the current sound is NOT the same sound as the one that will now be played
+            // STOP the current sound
+            if (
+                currentSound !== null
+                && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING || currentSound.state === PlayerSound.SOUND_STATE_PAUSED)
+                && (currentSound.id !== sound.id)
+            ) {
+                this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
+            }
+
+            // if there is a sound currently being played
+            // AND the current sound is the same sound as the one that will now be played
+            // PAUSE the current sound
+            if (
+                currentSound !== null
+                && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING)
+                && (currentSound.id === sound.id)
+            ) {
+                this._stop(currentSound, PlayerSound.SOUND_STATE_PAUSED);
+            }
+
+            // if the current sound and the next one are not the same sound
+            // we set the firstTimePlayed to true to indicate it is a fresh start and not a resume after a pause
+            if (currentSound === null || (currentSound !== null && (currentSound.id !== sound.id))) {
+                sound.firstTimePlayed = true;
+            } else {
+                sound.firstTimePlayed = false;
             }
 
             // if the user wants to play the sound from a certain position
@@ -855,33 +850,26 @@ export class PlayerCore {
 
     protected _triggerSoundCallbacks(sound: ISound): ISound {
 
-        // if there is an onResumed callback for the sound trigger it
+        // if there is an onResumed callback for the sound, trigger it
         if (sound.onResumed !== null && !sound.firstTimePlayed) {
             sound.onResumed(sound.playTimeOffset);
         }
 
-        // if there is an onStarted callback for the sound trigger it
+        // if there is an onStarted callback for the sound, trigger it
         if (sound.onStarted !== null && sound.firstTimePlayed) {
-
             sound.onStarted(sound.playTimeOffset);
-            sound.firstTimePlayed = false;
-
         }
 
-        // if there is an onPlaying callback for the sound trigger it
+        // if there is an onPlaying callback for the sound, trigger it
         if (sound.onPlaying !== null) {
-
             // on request animation frame callback set playing progress
             // request animation frame callback has a argument, which
             // is the timestamp when the callback gets called
             this._playingProgressRequestId = window.requestAnimationFrame((timestamp) => {
                 this._progressTrigger(sound, timestamp)
             });
-
         } else {
-
             this._playingProgressRequestId = null;
-
         }
 
         return sound;
@@ -904,14 +892,12 @@ export class PlayerCore {
     protected _onEnded(): void {
 
         // get the current sound if any
-        const currentSound = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         // if there is a sound currently being played
         if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
 
-            const updateIndex = false;
-
-            const nextSound = this._getSoundFromQueue({ whichSound: 'next', updateIndex });
+            const nextSound = this._getSoundFromQueue({ whichSound: PlayerCore.PLAY_SOUND_NEXT, updateIndex: true });
 
             if (currentSound.onEnded !== null) {
 
@@ -932,10 +918,10 @@ export class PlayerCore {
 
             }
 
-            // reset the is first time sound is being played to true
+            // reset "first time played"
             currentSound.firstTimePlayed = true;
 
-            // reset the playTimeOffset
+            // reset the "play time offset"
             currentSound.playTimeOffset = 0;
 
             this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
@@ -943,7 +929,7 @@ export class PlayerCore {
             if (nextSound !== null) {
 
                 if (this._playNextOnEnded) {
-                    this.play({ whichSound: 'next' });
+                    this.play({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
                 }
 
             } else {
@@ -966,31 +952,41 @@ export class PlayerCore {
      * whichSound is optional, if set it can be the sound id or if it's
      * a string it can be next / previous / first / last
      */
-    protected _getSoundFromQueue({ whichSound, updateIndex = true }: IGetSoundFromQueue = {}): ISound | null {
+    protected _getSoundFromQueue({ whichSound, updateIndex = false }: IGetSoundFromQueue = {}): ISound | null {
 
         let sound = null;
+        let soundIndex: number | null = null;
 
         // check if the queue is empty
         if (this._queue.length === 0) {
             return sound;
         }
 
-        // if which song to play did not get specified, play one based from the queue based on the queue index position marker
-        if (whichSound === undefined && this._queue[this._currentIndex] !== undefined) {
-
-            sound = this._queue[this._currentIndex];
-
+        // if which sound to play did not get specified
+        if (whichSound === undefined) {
+            // if whichSound is not defined
+            // AND the currentIndex is null
+            // we set it to first sound in queue
+            soundIndex = 0
+            if (this._currentIndex !== null) {
+                soundIndex = this._currentIndex
+            }
+            sound = this._queue[soundIndex];
         } else {
-
-            let soundIndex: number | null = null;
-
-            // if which song to play is a constant
+            // if which sound to play is a constant
             switch (whichSound) {
+                case PlayerCore.CURRENT_SOUND:
+                    if (this._currentIndex !== null) {
+                        sound = this._queue[this._currentIndex];
+                    }
+                    break;
                 case PlayerCore.PLAY_SOUND_NEXT:
                     if (this._queue[this._currentIndex + 1] !== undefined) {
                         soundIndex = this._currentIndex + 1;
                         sound = this._queue[soundIndex];
                     } else if (this._loopQueue) {
+                        // if last sound is playing and loop is enabled
+                        // on next we jump to first sound
                         soundIndex = 0;
                         sound = this._queue[soundIndex];
                     }
@@ -998,6 +994,11 @@ export class PlayerCore {
                 case PlayerCore.PLAY_SOUND_PREVIOUS:
                     if (this._queue[this._currentIndex - 1] !== undefined) {
                         soundIndex = this._currentIndex - 1;
+                        sound = this._queue[soundIndex];
+                    } else if (this._loopQueue) {
+                        // if first sound is playing and loop is enabled
+                        // on previous we jump to last sound
+                        soundIndex = this._queue.length - 1;
                         sound = this._queue[soundIndex];
                     }
                     break;
@@ -1009,42 +1010,40 @@ export class PlayerCore {
                     break;
                 case PlayerCore.PLAY_SOUND_LAST:
                     if (this._queue.length > 0) {
-                        soundIndex = this._queue.length - 2;
+                        soundIndex = this._queue.length - 1;
                         sound = this._queue[soundIndex];
                     }
                     break;
                 default:
                     // if "which sound to play" (soundId) is a string or number
-                    sound = this._findSoundById({ soundId: whichSound });
+                    [sound, soundIndex] = this._findSoundById({ soundId: whichSound });
             }
+        }
 
-            if (soundIndex !== null && updateIndex) {
-                this._currentIndex = soundIndex;
-            }
-
+        if (soundIndex !== null && updateIndex) {
+            this._currentIndex = soundIndex;
         }
 
         return sound;
 
     }
 
-    protected _findSoundById({ soundId }: IFindSoundById): ISound | null {
+    protected _findSoundById({ soundId }: IFindSoundById): [ISound | null, number] {
 
-        let sound = null;
+        let sound: ISound = null;
+        let soundIndex = 0;
 
-        this._queue.some((soundFromQueue: ISound) => {
+        this._queue.some((soundFromQueue, index) => {
 
             if (soundFromQueue.id === soundId) {
-
                 sound = soundFromQueue;
-
+                soundIndex = index;
                 return true;
-
             }
 
         });
 
-        return sound;
+        return [sound, soundIndex];
 
     }
 
@@ -1088,21 +1087,17 @@ export class PlayerCore {
             if (isCodecSupported)
 
                 if (bestSource.url !== null && source.isPreferred) {
-
                     // if multiple sources but this one if preferred and if previous
                     // sources also had a supported codec we still overwrite the
                     // previous match
                     bestSource.url = soundUrl;
                     bestSource.codec = source.codec;
-
                 } else {
-
                     // if no best source has been found so far, we don't
                     // care if it's preferred it's automatically chosen
                     // as best
                     bestSource.url = soundUrl;
                     bestSource.codec = source.codec;
-
                 }
 
         });
@@ -1187,65 +1182,68 @@ export class PlayerCore {
     public pause(): void {
 
         // get the current sound
-        const sound: ISound | null = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
-        if (sound === null) {
+        if (currentSound === null) {
             return;
         }
 
-        if (sound.state === PlayerSound.SOUND_STATE_PAUSED) {
+        if (currentSound.state === PlayerSound.SOUND_STATE_PAUSED) {
             // TODO: just return or throw an error
             return;
         }
 
-        const timeAtPause = sound.getCurrentTime();
+        const timeAtPause = currentSound.getCurrentTime();
 
-        sound.playTimeOffset += timeAtPause - sound.startTime;
+        currentSound.playTimeOffset += timeAtPause - currentSound.startTime;
 
         // trigger paused event
-        if (sound.onPaused !== null) {
-            sound.onPaused(sound.playTimeOffset);
+        if (currentSound.onPaused !== null) {
+            currentSound.onPaused(currentSound.playTimeOffset);
         }
 
-        // using stop here because even if though it is just a "pause" you can't call play the song again
+        // using stop here because even if though it is just a "pause" you can't call play the sound again
         // re-using an audio buffer source node is not allowed, so no matter what we will have to create a new one
         // we call the internal stop method as we don't want to trigger the onStopped callback
-        this._stop(sound, PlayerSound.SOUND_STATE_PAUSED);
+        this._stop(currentSound, PlayerSound.SOUND_STATE_PAUSED);
 
     }
 
     public stop(): void {
 
         // get the current sound
-        const sound: ISound | null = this._getSoundFromQueue();
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
-        if (sound === null) {
+        if (currentSound === null) {
             return;
         }
 
         // check if sound is already stopped
-        if (sound.state === PlayerSound.SOUND_STATE_STOPPED) {
+        if (currentSound.state === PlayerSound.SOUND_STATE_STOPPED) {
             // TODO: just return or throw an error
             return;
         }
 
-        const timeAtStop = sound.getCurrentTime();
+        const timeAtStop = currentSound.getCurrentTime();
 
-        sound.playTimeOffset += timeAtStop - sound.startTime;
+        currentSound.playTimeOffset += timeAtStop - currentSound.startTime;
 
         // trigger stopped event
-        if (sound.onStopped !== null) {
-            sound.onStopped(sound.playTimeOffset);
+        if (currentSound.onStopped !== null) {
+            currentSound.onStopped(currentSound.playTimeOffset);
         }
 
-        // reset the playTimeOffset
-        sound.playTimeOffset = 0;
-
-        this._stop(sound, PlayerSound.SOUND_STATE_STOPPED);
+        this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
 
     }
 
     protected _stop(sound: ISound, soundState: typeSoundStates): void {
+
+        // if it is fully stopped, not just paused
+        if (soundState === PlayerSound.SOUND_STATE_STOPPED) {
+            // reset the playTimeOffset
+            sound.playTimeOffset = 0;
+        }
 
         // tell the source node to stop playing
         if (sound.audioBufferSourceNode !== null) {
