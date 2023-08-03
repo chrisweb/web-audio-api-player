@@ -26,7 +26,7 @@ export interface ISoundAttributes {
     // source(s) are NOT mandatory as user can provide an arrayBuffer
     // and / or audioBuffer in which case the source url is not needed
     source?: (ISoundSource)[] | ISoundSource;
-    id: number;
+    id?: number | string;
     loop?: boolean;
     audioBuffer?: AudioBuffer | null;
     arrayBuffer?: ArrayBuffer | null;
@@ -78,7 +78,7 @@ export class PlayerSound implements ISound {
     public source: (ISoundSource)[] | ISoundSource;
     public url: string | null = null;
     public codec: string | null = null;
-    public id: number;
+    public id: number | string;
     public loop: boolean;
     public audioBufferSourceNode: AudioBufferSourceNode | null = null;
     public mediaElementAudioSourceNode: MediaElementAudioSourceNode | null = null;
@@ -116,7 +116,12 @@ export class PlayerSound implements ISound {
             this.source = soundAttributes.source;
         }
 
-        this.id = soundAttributes.id;
+        if (typeof soundAttributes.id !== 'undefined') {
+            this.id = soundAttributes.id;
+        } else {
+            this.id = this._generateSoundId()
+        }
+
         this.loop = soundAttributes.loop || false;
 
         // the user can set the duration manually
@@ -212,6 +217,10 @@ export class PlayerSound implements ISound {
 
         return duration;
 
+    }
+
+    protected _generateSoundId() {
+        return Date.now().toString(36) + Math.random().toString(36).substring(2)
     }
 
 }

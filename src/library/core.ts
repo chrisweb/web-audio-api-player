@@ -47,7 +47,6 @@ interface IPlayOptions {
 
 interface IFindSoundById {
     soundId: string | number;
-    updateIndex: boolean;
 }
 
 interface IFindBestSourceResponse {
@@ -982,12 +981,6 @@ export class PlayerCore {
 
             sound = this._queue[this._currentIndex];
 
-        } else if (typeof whichSound === 'number') {
-
-            // if "which sound to play" (soundId) is a numeric ID
-            // the case where soundId is a string is handled below
-            sound = this._findSoundById({ soundId: whichSound, updateIndex });
-
         } else {
 
             let soundIndex: number | null = null;
@@ -1022,8 +1015,8 @@ export class PlayerCore {
                     }
                     break;
                 default:
-                    // if "which sound to play" (soundId) is a string
-                    sound = this._findSoundById({ soundId: whichSound, updateIndex });
+                    // if "which sound to play" (soundId) is a string or number
+                    sound = this._findSoundById({ soundId: whichSound });
             }
 
             if (soundIndex !== null && updateIndex) {
@@ -1036,19 +1029,15 @@ export class PlayerCore {
 
     }
 
-    protected _findSoundById({ soundId, updateIndex }: IFindSoundById): ISound | null {
+    protected _findSoundById({ soundId }: IFindSoundById): ISound | null {
 
         let sound = null;
 
-        this._queue.some((soundFromQueue: ISound, queueIndex: number) => {
+        this._queue.some((soundFromQueue: ISound) => {
 
             if (soundFromQueue.id === soundId) {
 
                 sound = soundFromQueue;
-
-                if (updateIndex) {
-                    this._currentIndex = queueIndex;
-                }
 
                 return true;
 
@@ -1235,6 +1224,7 @@ export class PlayerCore {
             return;
         }
 
+        // check if sound is already stopped
         if (sound.state === PlayerSound.SOUND_STATE_STOPPED) {
             // TODO: just return or throw an error
             return;
