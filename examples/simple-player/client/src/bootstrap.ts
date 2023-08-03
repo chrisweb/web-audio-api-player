@@ -64,7 +64,7 @@ const firstSoundAttributes: ISoundAttributes = {
 // add the first to the songs (sounds) queue
 const firstSound = player.addSoundToQueue({ soundAttributes: firstSoundAttributes })
 
-console.log(firstSound)
+console.log('firstSound: ', firstSound)
 
 // create a second sound
 const secondSoundAttributes: ISoundAttributes = {
@@ -103,7 +103,7 @@ const secondSoundAttributes: ISoundAttributes = {
 // add the second song (sound) to the queue
 const secondSound = player.addSoundToQueue({ soundAttributes: secondSoundAttributes })
 
-console.log(secondSound)
+console.log('secondSound: ', secondSound)
 
 // turn the automute feature on/off: if page becomes invisible auto mute, unmute when page becomes visible again
 player.setVisibilityAutoMute(true)
