@@ -69,7 +69,7 @@ Note: if you use typescript, import the **ISoundAttributes** interface along wit
 
 * onLoading: [function] (optional) a callback funtion that will get triggered at intervals during the loading process of a sound
 * onPlaying: [function] (optional) a callback funtion that will get triggered at intervals while the sound is playing
-* onEnded: [function] (optional) a callback funtion that will get triggered when the end of the sound playback is reached
+* onEnded: [function] (optional) a callback funtion that will get triggered when the end of the sound is reached
 * onStarted: [function] (optional) a callback funtion that will get triggered when the sound playback starts
 * onStopped: [function] (optional) a callback funtion that will get triggered when the sound playback is stopped (the difference between pause and stop is that stop will free the resources needed to play a song)
 * onPaused: [function] (optional) a callback funtion that will get triggered when the sound playback is being paused (use pause instead of stop if there is a reason to assume that the playback will be resumed at anytime, if this can't be assumed it is recommended to call stop)
