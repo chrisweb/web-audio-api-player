@@ -96,7 +96,12 @@ var PlayerSound = /** @class */ (function () {
         else {
             this.source = soundAttributes.source;
         }
-        this.id = soundAttributes.id;
+        if (typeof soundAttributes.id !== 'undefined') {
+            this.id = soundAttributes.id;
+        }
+        else {
+            this.id = this._generateSoundId();
+        }
         this.loop = soundAttributes.loop || false;
         // the user can set the duration manually
         // this is usefull if we need to convert the position percentage into seconds but don't want to preload the song
@@ -178,6 +183,9 @@ var PlayerSound = /** @class */ (function () {
             duration = this.audioElement.duration;
         }
         return duration;
+    };
+    PlayerSound.prototype._generateSoundId = function () {
+        return Date.now().toString(36) + Math.random().toString(36).substring(2);
     };
     // static constants
     PlayerSound.SOUND_STATE_STOPPED = 'sound_state_stopped';
@@ -1262,11 +1270,6 @@ var PlayerCore = /** @class */ (function () {
         if (whichSound === undefined && this._queue[this._currentIndex] !== undefined) {
             sound = this._queue[this._currentIndex];
         }
-        else if (typeof whichSound === 'number') {
-            // if "which sound to play" (soundId) is a numeric ID
-            // the case where soundId is a string is handled below
-            sound = this._findSoundById({ soundId: whichSound, updateIndex: updateIndex });
-        }
         else {
             var soundIndex = null;
             // if which song to play is a constant
@@ -1300,8 +1303,8 @@ var PlayerCore = /** @class */ (function () {
                     }
                     break;
                 default:
-                    // if "which sound to play" (soundId) is a string
-                    sound = this._findSoundById({ soundId: whichSound, updateIndex: updateIndex });
+                    // if "which sound to play" (soundId) is a string or number
+                    sound = this._findSoundById({ soundId: whichSound });
             }
             if (soundIndex !== null && updateIndex) {
                 this._currentIndex = soundIndex;
@@ -1310,15 +1313,11 @@ var PlayerCore = /** @class */ (function () {
         return sound;
     };
     PlayerCore.prototype._findSoundById = function (_a) {
-        var _this = this;
-        var soundId = _a.soundId, updateIndex = _a.updateIndex;
+        var soundId = _a.soundId;
         var sound = null;
-        this._queue.some(function (soundFromQueue, queueIndex) {
+        this._queue.some(function (soundFromQueue) {
             if (soundFromQueue.id === soundId) {
                 sound = soundFromQueue;
-                if (updateIndex) {
-                    _this._currentIndex = queueIndex;
-                }
                 return true;
             }
         });
@@ -1456,6 +1455,7 @@ var PlayerCore = /** @class */ (function () {
         if (sound === null) {
             return;
         }
+        // check if sound is already stopped
         if (sound.state === PlayerSound.SOUND_STATE_STOPPED) {
             // TODO: just return or throw an error
             return;

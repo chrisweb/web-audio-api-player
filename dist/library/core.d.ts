@@ -33,7 +33,6 @@ interface IPlayOptions {
 }
 interface IFindSoundById {
     soundId: string | number;
-    updateIndex: boolean;
 }
 interface IFindBestSourceResponse {
     url: string | null;
@@ -113,7 +112,7 @@ export declare class PlayerCore {
      * a string it can be next / previous / first / last
      */
     protected _getSoundFromQueue({ whichSound, updateIndex }?: IGetSoundFromQueue): ISound | null;
-    protected _findSoundById({ soundId, updateIndex }: IFindSoundById): ISound | null;
+    protected _findSoundById({ soundId }: IFindSoundById): ISound | null;
     protected _findBestSource(soundSource: (ISoundSource)[] | ISoundSource): IFindBestSourceResponse;
     protected _checkCodecSupport(codec: string): boolean;
     protected _checkMimeTypesSupport(mediaMimeTypes: string[]): boolean;

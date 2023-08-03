@@ -18,7 +18,7 @@ export interface IOnAnyAction {
 }
 export interface ISoundAttributes {
     source?: (ISoundSource)[] | ISoundSource;
-    id: number;
+    id?: number | string;
     loop?: boolean;
     audioBuffer?: AudioBuffer | null;
     arrayBuffer?: ArrayBuffer | null;
@@ -62,7 +62,7 @@ export declare class PlayerSound implements ISound {
     source: (ISoundSource)[] | ISoundSource;
     url: string | null;
     codec: string | null;
-    id: number;
+    id: number | string;
     loop: boolean;
     audioBufferSourceNode: AudioBufferSourceNode | null;
     mediaElementAudioSourceNode: MediaElementAudioSourceNode | null;
@@ -91,5 +91,6 @@ export declare class PlayerSound implements ISound {
     constructor(soundAttributes: ISoundAttributes);
     getCurrentTime(): number;
     getDuration(): number;
+    protected _generateSoundId(): string;
 }
 export {};
