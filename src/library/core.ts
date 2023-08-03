@@ -700,7 +700,7 @@ export class PlayerCore {
             // get the current sound if any
             const currentSound = this._getSoundFromQueue();
 
-            // if there is a sound currently being played, stop the current sound
+            // if there is a sound currently being played or paused, stop the current sound
             if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
                 this.stop();
             }
@@ -1229,8 +1229,9 @@ export class PlayerCore {
             return;
         }
 
-        // reset the is first time sound is being played to true
-        sound.firstTimePlayed = true;
+        const timeAtStop = sound.getCurrentTime();
+
+        sound.playTimeOffset += timeAtStop - sound.startTime;
 
         // trigger stopped event
         if (sound.onStopped !== null) {
