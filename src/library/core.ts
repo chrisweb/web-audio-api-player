@@ -761,7 +761,7 @@ export class PlayerCore {
         // the audiocontext time right now (since the audiocontext got created)
         sound.startTime = sound.getCurrentTime();
 
-        sound = this._triggerSoundEvents(sound);
+        sound = this._triggerSoundCallbacks(sound);
 
     }
 
@@ -853,7 +853,7 @@ export class PlayerCore {
 
     }
 
-    protected _triggerSoundEvents(sound: ISound): ISound {
+    protected _triggerSoundCallbacks(sound: ISound): ISound {
 
         // if there is an onResumed callback for the sound trigger it
         if (sound.onResumed !== null && !sound.firstTimePlayed) {
