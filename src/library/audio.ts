@@ -52,6 +52,7 @@ interface IAudioBufferSourceOptions extends AudioBufferSourceOptions {
 
 interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions {
     onEnded: IOnEnded;
+    // add a loop here to match AudioBufferSourceOptions which has a loop
     loop: boolean;
 }
 
