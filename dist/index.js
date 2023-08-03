@@ -1038,12 +1038,11 @@ var PlayerCore = /** @class */ (function () {
             // TODO: let user define order of preferred codecs for playerback
             // get the current sound if any
             var currentSound = _this._getSoundFromQueue();
-            // if there is a sound currently being played, stop the current sound
-            if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
+            // if there is a sound currently being played or paused, stop the current sound
+            if (currentSound !== null && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING || currentSound.state === PlayerSound.SOUND_STATE_PAUSED)) {
                 _this.stop();
             }
             // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
-            // TODO: next / previous ... should be constants, more accurate to compare and would also allow id to be string or number
             var sound = _this._getSoundFromQueue({ whichSound: whichSound });
             // if there is no sound we could play, do nothing
             if (sound === null) {
@@ -1444,9 +1443,9 @@ var PlayerCore = /** @class */ (function () {
         if (sound.onPaused !== null) {
             sound.onPaused(sound.playTimeOffset);
         }
-        // using stop here as even if it is a pause you can't call play again
-        // re-using an audio buffer source node is not allowed, so no matter what
-        // we will have to create a new one
+        // using stop here because even if though it is just a "pause" you can't call play the song again
+        // re-using an audio buffer source node is not allowed, so no matter what we will have to create a new one
+        // we call the internal stop method as we don't want to trigger the onStopped callback
         this._stop(sound, PlayerSound.SOUND_STATE_PAUSED);
     };
     PlayerCore.prototype.stop = function () {
@@ -1460,8 +1459,8 @@ var PlayerCore = /** @class */ (function () {
             // TODO: just return or throw an error
             return;
         }
-        // reset the is first time sound is being played to true
-        sound.firstTimePlayed = true;
+        var timeAtStop = sound.getCurrentTime();
+        sound.playTimeOffset += timeAtStop - sound.startTime;
         // trigger stopped event
         if (sound.onStopped !== null) {
             sound.onStopped(sound.playTimeOffset);
@@ -1494,19 +1493,19 @@ var PlayerCore = /** @class */ (function () {
     };
     PlayerCore.prototype.next = function () {
         // alias for play next
-        this.play({ whichSound: 'next' });
+        this.play({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
     };
     PlayerCore.prototype.previous = function () {
         // alias for play previous
-        this.play({ whichSound: 'previous' });
+        this.play({ whichSound: PlayerCore.PLAY_SOUND_PREVIOUS });
     };
     PlayerCore.prototype.first = function () {
         // alias for play first
-        this.play({ whichSound: 'first' });
+        this.play({ whichSound: PlayerCore.PLAY_SOUND_FIRST });
     };
     PlayerCore.prototype.last = function () {
         // alias for play last
-        this.play({ whichSound: 'last' });
+        this.play({ whichSound: PlayerCore.PLAY_SOUND_LAST });
     };
     PlayerCore.prototype._playingProgress = function (sound) {
         var timeNow = sound.getCurrentTime();
