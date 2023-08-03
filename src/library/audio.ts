@@ -34,7 +34,7 @@ interface IAudioGraph {
     waveShaperNode?: WaveShaperNode;
 }
 
-interface IOnEnded {
+interface IOnSourceNodeEnded {
     (event?: Event): void
 }
 
@@ -47,11 +47,11 @@ interface IAudioOptions {
 }
 
 interface IAudioBufferSourceOptions extends AudioBufferSourceOptions {
-    onEnded: IOnEnded;
+    onSourceNodeEnded: IOnSourceNodeEnded;
 }
 
 interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions {
-    onEnded: IOnEnded;
+    onSourceNodeEnded: IOnSourceNodeEnded;
     // add a loop here to match AudioBufferSourceOptions which has a loop
     loop: boolean;
 }
@@ -360,11 +360,11 @@ class PlayerAudio {
         audioBufferSourceNode.loop = audioBufferSourceOptions.loop;
 
         // if the song ends destroy it's audioGraph as the source can't be reused anyway
-        // NOTE: the onended handler won't have any effect if the loop property is set to
+        // NOTE: the source nodes onended handler won't have any effect if the loop property is set to
         // true, as the audio won't stop playing. To see the effect in this case you'd
         // have to use AudioBufferSourceNode.stop()
         audioBufferSourceNode.onended = (event: Event): void => {
-            audioBufferSourceOptions.onEnded(event);
+            audioBufferSourceOptions.onSourceNodeEnded(event);
             this.destroySourceNode(sound);
         };
 
@@ -386,15 +386,14 @@ class PlayerAudio {
         // do we loop this song
         mediaElementAudioSourceNode.mediaElement.loop = sourceNodeOptions.loop;
 
-        // ??? no onEnded on MediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/onended
-        // ??? mediaElementAudioSourceNode.mediaElement.ended
+        // MediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/onended
 
         // if the song ends destroy it's audioGraph as the source can't be reused anyway
-        // NOTE: the onEnded handler won't have any effect if the loop property is set to
+        // NOTE: the source nodes onended handler won't have any effect if the loop property is set to
         // true, as the audio won't stop playing. To see the effect in this case you'd
         // have to use AudioBufferSourceNode.stop()
         mediaElementAudioSourceNode.mediaElement.onended = (): void => {
-            sourceNodeOptions.onEnded();
+            sourceNodeOptions.onSourceNodeEnded();
             this.destroySourceNode(sound);
             // TODO on end destroy the audio element, probably not if loop enabled, but if loop
             // is disabled, maybe still a good idea to keep it (cache?), but not all audio elements
