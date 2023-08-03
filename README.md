@@ -37,33 +37,33 @@ the best way to get started is to check out the examples folder, check out the s
 Note: if you use typescript, import the **ICoreOptions** interface along with the playerCore, this makes it a lot easier to see what player options are available and what the type of each value is
 
 * volume: [number] (default: 80) the current playback volume
-* loopQueue: [boolean] (default: false) after the last song in the queue has finished to play should the player do a loop and continue to play by playing the first song or stop playing
-* soundsBaseUrl: [string] (default: '') the base url for the location of the songs
-* playingProgressIntervalTime: [number] (default: 200) the interval in milliseconds at which the player should trigger a songs **onPlaying** callback which will tell you the playing progress in percent, this value is a minimum value because the player uses the [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) internally, meaning that if the browser is very busy it might take a bit longer than the defined interval time before the progress value is being reported, this helps to prevent that your UI uses resources that are needed more urgently somewhere else
-* playNextOnEnded: [boolean] (default: true) when a sound or song finishes playing should the player play the next song that is in the queue or just stop playing
+* loopQueue: [boolean] (default: false) after the last sound in the queue has finished to play should the player do a loop and continue to play by playing the first sound or stop playing
+* soundsBaseUrl: [string] (default: '') the base url for the location of the sounds
+* playingProgressIntervalTime: [number] (default: 200) the interval in milliseconds at which the player should trigger a sounds **onPlaying** callback which will tell you the playing progress in percent, this value is a minimum value because the player uses the [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) internally, meaning that if the browser is very busy it might take a bit longer than the defined interval time before the progress value is being reported, this helps to prevent that your UI uses resources that are needed more urgently somewhere else
+* playNextOnEnded: [boolean] (default: true) when a sound or song finishes playing should the player play the next sound that is in the queue or just stop playing
 * audioGraph: [IAudioGraph] (default: null) a custom audiograph you inject to replace the default audiograph of the player
 * audioContext: [AudioContext] (default: null) a custom audiocontext you inject to replace the default audiocontext of the player
-* stopOnReset: [boolean] (default: true) when the queue gets reset and a song is currently being played, should the player stop or continue playing that song
-* visibilityAutoMute: [boolean] (default: false) tells the player if a song is playing and the visibility API triggers a visibility change event, if the currently playing song should get muted or not, uses the [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) internally
-* createAudioContextOnFirstUserInteraction: [boolean] (default: true) for a song to be played the player needs to have an audiocontext, on mobile you can play sounds / songs until the user has interacted in some way with your UI, this means autoplay with no user interaction will not work, when this option is set to true the player will try to catch the very first user interaction and initialize and audiocontext so that when a song needs to be played the context will be available
+* stopOnReset: [boolean] (default: true) when the queue gets reset and a sound is currently being played, should the player stop or continue playing that sound
+* visibilityAutoMute: [boolean] (default: false) tells the player if a sound is playing and the visibility API triggers a visibility change event, if the currently playing sound should get muted or not, uses the [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) internally
+* createAudioContextOnFirstUserInteraction: [boolean] (default: true) for a sound to be played the player needs to have an audiocontext, on mobile you can play sounds / songs until the user has interacted in some way with your UI, this means autoplay with no user interaction will not work, when this option is set to true the player will try to catch the very first user interaction and initialize and audiocontext so that when a sound needs to be played the context will be available
 * persistVolume: [boolean] (default: true) if this value is set to true the player will use the localstorage of the browser and save the value of the volume (localstorage entry key is **WebAudioAPIPlayerVolume**), if the page gets reloaded or the user comes back later the player will check if there is a value in the localstorage and automatically set the player volume to that value
 * loadPlayerMode: [typePlayerModes] (default: PLAYER_MODE_AUDIO) this is a constant you can import from player, currently you can chose between two modes, [PLAYER_MODE_AUDIO](#player_mode_audio) which uses the audio element to load sounds via the audio element and [PLAYER_MODE_AJAX](#player_mode_ajax) to load sounds via the web audio API
 
 ### sound attributes
 
-Note: if you use typescript, import the **ISoundAttributes** interface along with the playerCore, this makes it a lot easier to see what song attributes are available and what the type of each value is
+Note: if you use typescript, import the **ISoundAttributes** interface along with the playerCore, this makes it a lot easier to see what sound attributes are available and what the type of each value is
 
 **sound options:**
 
-* source?: [(ISoundSource)[] | ISoundSource] a single sound source or an array of sound sources, an **ISoundSource** object consists of 3 values:
-  * **url** [string] is the base url defined in the player options + the path defined here or you add the full url here, the URL will get used by the player to load the song when needed
-  * **codec** [string] the codec that got used to encode the song, this allowed the player to check if that codec is supported by the browser and it also allows the player to decide which source to use if multiple sources have been defined
+* source: [(ISoundSource)[] | ISoundSource] (optional if an AudioBuffer or ArrayBuffer is provided instead else mandatory) a single sound source or an array of sound sources, an **ISoundSource** object consists of 3 values:
+  * **url** [string] is the base url defined in the player options + the path defined here or you add the full url here, the URL will get used by the player to load the sound when needed
+  * **codec** [string] the codec that got used to encode the sound, this allowed the player to check if that codec is supported by the browser and it also allows the player to decide which source to use if multiple sources have been defined
   * **isPreferred** [boolean] (optional) the player will use the first source that has a codec this is supported by the browser, if more than one codec is supported it will take the source that is marked as **isPreferred**
-* id: [number] a unique and numeric id for the song, used as a reference to link content to that sound which is not part of the sound object itself
-* loop: [boolean] (optional, default false) if the song playback should loop when it reaches the end of sound
+* id: [number | string] (optional, if none is set the player will generate one) unique id for the sound, can be used as a reference to link sound data which is not part of the sound object itself to an external source, for example if you have sound info stored in a database, set the sound id to the database id and you have a link between the two, it also allows you to call the player.play funtion using the sound id as argument to play that sound
+* loop: [boolean] (optional, default false) if the sound playback should loop when it reaches the end of sound
 * audioBuffer: [AudioBuffer] (optional) if you want to inject your own custom [AudioBuffer](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer) to be used instead of the default one the player will create
 * arrayBuffer: [ArrayBuffer] (optional) if you want to inject your own custom [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) to be used instead of the default one the player will create
-* duration: [number] (optional) if you know the duration of the sound and want to tell the player about it early, the player depending on the play mode will need to wait for the song to be fully loaded until it can determine the duration
+* duration: [number] (optional) if you know the duration of the sound and want to tell the player about it early, the player depending on the play mode will need to wait for the sound to be fully loaded until it can determine the duration
 
 **sound callbacks:**
 
