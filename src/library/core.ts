@@ -772,7 +772,7 @@ export class PlayerCore {
             // source node options
             const sourceOptions: IAudioBufferSourceOptions = {
                 loop: sound.loop,
-                onEnded: (/*event: Event*/) => {
+                onSourceNodeEnded: (/*event: Event*/) => {
                     this._onEnded()
                 }
             };
@@ -815,7 +815,7 @@ export class PlayerCore {
             // source node options
             const sourceOptions: IMediaElementAudioSourceOptions = {
                 loop: sound.loop,
-                onEnded: (/**event: Event*/) => {
+                onSourceNodeEnded: (/**event: Event*/) => {
                     this._onEnded()
                 },
                 mediaElement: sound.audioElement
