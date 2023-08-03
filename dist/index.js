@@ -418,11 +418,11 @@ var PlayerAudio = /** @class */ (function () {
                         // do we loop this song
                         audioBufferSourceNode.loop = audioBufferSourceOptions.loop;
                         // if the song ends destroy it's audioGraph as the source can't be reused anyway
-                        // NOTE: the onended handler won't have any effect if the loop property is set to
+                        // NOTE: the source nodes onended handler won't have any effect if the loop property is set to
                         // true, as the audio won't stop playing. To see the effect in this case you'd
                         // have to use AudioBufferSourceNode.stop()
                         audioBufferSourceNode.onended = function (event) {
-                            audioBufferSourceOptions.onEnded(event);
+                            audioBufferSourceOptions.onSourceNodeEnded(event);
                             _this.destroySourceNode(sound);
                         };
                         return [2 /*return*/];
@@ -448,14 +448,13 @@ var PlayerAudio = /** @class */ (function () {
                         sound.mediaElementAudioSourceNode = mediaElementAudioSourceNode;
                         // do we loop this song
                         mediaElementAudioSourceNode.mediaElement.loop = sourceNodeOptions.loop;
-                        // ??? no onEnded on MediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/onended
-                        // ??? mediaElementAudioSourceNode.mediaElement.ended
+                        // MediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/onended
                         // if the song ends destroy it's audioGraph as the source can't be reused anyway
-                        // NOTE: the onEnded handler won't have any effect if the loop property is set to
+                        // NOTE: the source nodes onended handler won't have any effect if the loop property is set to
                         // true, as the audio won't stop playing. To see the effect in this case you'd
                         // have to use AudioBufferSourceNode.stop()
                         mediaElementAudioSourceNode.mediaElement.onended = function () {
-                            sourceNodeOptions.onEnded();
+                            sourceNodeOptions.onSourceNodeEnded();
                             _this.destroySourceNode(sound);
                             // TODO on end destroy the audio element, probably not if loop enabled, but if loop
                             // is disabled, maybe still a good idea to keep it (cache?), but not all audio elements
@@ -1104,7 +1103,7 @@ var PlayerCore = /** @class */ (function () {
                         if (!(sound.audioBufferSourceNode === null)) return [3 /*break*/, 4];
                         sourceOptions = {
                             loop: sound.loop,
-                            onEnded: function ( /*event: Event*/) {
+                            onSourceNodeEnded: function ( /*event: Event*/) {
                                 _this._onEnded();
                             }
                         };
@@ -1152,7 +1151,7 @@ var PlayerCore = /** @class */ (function () {
                         if (!(sound.mediaElementAudioSourceNode === null)) return [3 /*break*/, 4];
                         sourceOptions = {
                             loop: sound.loop,
-                            onEnded: function ( /**event: Event*/) {
+                            onSourceNodeEnded: function ( /**event: Event*/) {
                                 _this._onEnded();
                             },
                             mediaElement: sound.audioElement
