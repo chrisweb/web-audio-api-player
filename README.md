@@ -41,13 +41,12 @@ Note: if you use typescript, import the **ICoreOptions** interface along with th
 * soundsBaseUrl: [string] (default: '') the base url for the location of the sounds
 * playingProgressIntervalTime: [number] (default: 200) the interval in milliseconds at which the player should trigger a sounds **onPlaying** callback which will tell you the playing progress in percent, this value is a minimum value because the player uses the [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) internally, meaning that if the browser is very busy it might take a bit longer than the defined interval time before the progress value is being reported, this helps to prevent that your UI uses resources that are needed more urgently somewhere else
 * playNextOnEnded: [boolean] (default: true) when a sound or song finishes playing should the player play the next sound that is in the queue or just stop playing
-* audioGraph: [IAudioGraph] (default: null) a custom audiograph you inject to replace the default audiograph of the player
-* audioContext: [AudioContext] (default: null) a custom audiocontext you inject to replace the default audiocontext of the player
 * stopOnReset: [boolean] (default: true) when the queue gets reset and a sound is currently being played, should the player stop or continue playing that sound
 * visibilityAutoMute: [boolean] (default: false) tells the player if a sound is playing and the visibility API triggers a visibility change event, if the currently playing sound should get muted or not, uses the [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) internally
 * createAudioContextOnFirstUserInteraction: [boolean] (default: true) for a sound to be played the player needs to have an audiocontext, on mobile you can play sounds / songs until the user has interacted in some way with your UI, this means autoplay with no user interaction will not work, when this option is set to true the player will try to catch the very first user interaction and initialize and audiocontext so that when a sound needs to be played the context will be available
 * persistVolume: [boolean] (default: true) if this value is set to true the player will use the localstorage of the browser and save the value of the volume (localstorage entry key is **WebAudioAPIPlayerVolume**), if the page gets reloaded or the user comes back later the player will check if there is a value in the localstorage and automatically set the player volume to that value
-* loadPlayerMode: [typePlayerModes] (default: PLAYER_MODE_AUDIO) this is a constant you can import from player, currently you can chose between two modes, [PLAYER_MODE_AUDIO](#player_mode_audio) which uses the audio element to load sounds via the audio element and [PLAYER_MODE_AJAX](#player_mode_ajax) to load sounds via the web audio API
+* loadPlayerMode: [typePlayerModes] (default: PLAYER_MODE_AUDIO) this is a constant you can import from player, currently you can chose between two modes, [PLAYER_MODE_AUDIO](#player_mode_audio) which uses the audio element to load sounds via the audio element and [PLAYER_MODE_AJAX](#player_mode_ajax) to load sounds via the web audio API, for more info about the modes read the [modes extended knowledge](#modes-extended-knowledge) chapter
+* audioContext: [AudioContext] (default: null) a custom [audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext) you inject to replace the default audiocontext of the player
 
 ### sound attributes
 
@@ -63,7 +62,7 @@ Note: if you use typescript, import the **ISoundAttributes** interface along wit
 * loop: [boolean] (optional, default false) if the sound playback should loop when it reaches the end of sound
 * audioBuffer: [AudioBuffer] (optional) if you want to inject your own custom [AudioBuffer](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer) to be used instead of the default one the player will create
 * arrayBuffer: [ArrayBuffer] (optional) if you want to inject your own custom [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) to be used instead of the default one the player will create
-* duration: [number] (optional) if you know the duration of the sound and want to tell the player about it early, the player depending on the play mode will need to wait for the sound to be fully loaded until it can determine the duration
+* duration: [number] (optional) if you know the duration of the sound and want to tell the player about it early, in [PLAYER_MODE_AJAX](#player_mode_ajax) the player will need to wait for the sound to be fully loaded until it can determine the duration
 
 **sound callbacks:**
 
@@ -241,37 +240,27 @@ const onClickPlayHandler = () => {
 
 ### modes extended knowledge
 
-#### PLAYER_MODE_AUDIO
+#### differencies clarification
 
-sounds / songs get loaded via a hidden HTML `<audio>` element
+Note: You might have read (like I did) a lot of outdated web audio articles which stated the web audio element lacks a lot of features the web audio API and that hence it is not suited to create complex audio software or for example be used in games where you might want to add effects and filters to sounds. This is not true anymore and especially not true for this library. Yes the audio element if used as a standalone lacks a lot of features. But this library does combine the web audio element with the web audio API, meaning that no matter what mode you chose the sound will be converted to an AudioSourceNode.
 
-this is the default mode
+If you use this library, the difference is only how the sound (song) gets retrieved:
 
-* Support for streaming
-* Files get loaded using the audio element, the loading progress is not just a single value, it can be split into multiple parts (time ranges), so for example the start of a song from 0 to 10 percent got loaded, then there is a blank of not yet loaded data and then also the part from 35 to 60 percent has been loaded
-* A song can be played as soon as a big enough portion of the sound has been loaded (what "big enough" means, is that the browser calculates how much of the sounds needs to get loaded to be able to start playing it and continue loading (streaming) what is left without having to pause the sound at some time during the play process until the end of the playback)
+##### PLAYER_MODE_AJAX
 
-#### PLAYER_MODE_AJAX
+will use an [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest) the source will be an [AudioBufferSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode)
 
-songs / sounds get fetched using an `XMLHttpRequest`, this happens in the [request](src/library/request.ts) file, check it out if you want to know exactly how it works
+##### PLAYER_MODE_AUDIO
 
-* No support for streaming
-* Files get loaded using XMLHttpRequest, the loading progress is in percent and it is a single value between 0 and 100 percent loaded
-* A song has to be fully fetched before it can be turned into a buffer and hence before the playback can start
-
-#### features / differencies clarification
-
-Note: You might have read (like I did) a lot of outdated web audio articles which stated the web audio element lacks a lot of features the web audio API and that hence it is not suited to create complex audio software or for example be used in games where you might want to add effects and filters to sounds. This is not true anymore and especially not true for this library. Yes the audio element if used as a standalone lacks a lot of features. But this library does combine the web audio element with the web audio API.
-
-If you use this library, the difference is only how the sound (song) gets loaded (see list of differences above). If using fetch the source is a Buffer and if using the "HTML audio element" well the source is a media element. Everything that happens after is the same. This is why you can change in the player options the PLAYER_MODE, to either load the sound using [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest) if you set the mode to **PLAYER_MODE_AJAX** or load / stream it using the [audio element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio) by setting the mode to **PLAYER_MODE_AUDIO** (this is the default). But this influences only how the sound get loaded (fetched), if loaded via audio element, we use the web audio API [createMediaElementSource method](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaElementSource) of the audiocontext to pass it to the audiocontext of the web audio API. After feeding the web audio API with the input from the web audio element, the playback and what you do with it is being handled by the web audio API.
+will use the HTML [audio element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio), then the player will use [createMediaElementSource](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaElementSource) method of the [AudioContext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext) internally to create an [MediaElementAudioSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/MediaElementAudioSourceNode)
 
 #### so which PLAYER_MODE should I use
 
 It depends on what you intend to build.
 
-If you build a game where you have a lot (of small sounds) that get (pre-)loaded and maybe cached but played later at some time after they finished loading, use PLAYER_MODE_AJAX. Its progress is easier to understand, because when the loading progress of the sound has reached 100% you know it can be played. To display the loading progress a simple [HTML progress element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) is enough.
+If you build something like a music player, it is probably best to use the PLAYER_MODE_AUDIO as you might to want to start playing the sound (song) as quickly as possible and don't care if it has fully loaded, because in this mode the song will start playing as soon as enough data has been buffered even though the song has not been fully loaded yet (it will get the rest of it from the server in the background while playing). To display the time range(s) that have been loaded you could for example use a [2D canvas element](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D).
 
-If you build a music player, use the PLAYER_MODE_AUDIO as you might to want to start playing the sound (song) as quickly as possible and don't care if it has fully loaded yet as long as the part that has been loaded is enough to play the song until the end (while the rest of it is being streamed from the server in the background). To display the time range(s) that have been loaded you could for example use a [2D canvas element](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D).
+If you build something that has a lot (of small sounds) that get (pre-)loaded and maybe cached, but played later at some time after they finished loading, use PLAYER_MODE_AJAX. Its progress is easier to understand, because when the loading progress of the sound has reached 100% you know it can be played. To display the loading progress a simple [HTML progress element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) is enough.
 
 ### advanced usage
 
@@ -403,12 +392,12 @@ fileInput.addEventListener('change', function(event) {
 * write more documentation
 * make a list of all possible errors (set a distinct code for each error), handle all error cases that are still unhandled
 * [abort](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort) the loading of the sound if the user clicks play and then pause (or stop / next / previous) before the end of the buffering process
-* add new mode similar to XMLHttpRequest but that uses [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) to get the sound / song data from server
+* add new loadPlayerMode similar to XMLHttpRequest but that uses [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) to get the sound / song data from server
 * add feature to crossfade two songs "on end" (if there is a the next song in a playlist) or just fade out (current song) / fade in (next song)
 * currently the "find song in queue" can't retrieve songs by queue index, is this useful anyway?
 * use suspend and resume if for some time no sound was played? ... to free device resources. As suspend returns a promise, does this mean suspending and resuming takes time? if so how much time does it take, based on that information we can decide after how much time it makes sense to suspend the ctx to save device resources
 * use web workers, especially for the decoding of the ArrayBuffer into an AudioBuffer, to not block the main thread while decoding?
-* add a shuffle songs mode
+* add a shuffle songs feature
 * add a loop song (<https://webaudio.github.io/web-audio-api/#looping-AudioBufferSourceNode>) feature (actually maybe this already works today, need to verify)
 * add support for more codecs? Note: the player should check which codecs are supported by the browser and compare that list with the ones defined in the sound sources, then the player should use the first codec that is supported and that is marked as "isPreferred", if none is marked as "isPreferred" use the first sources codec that is supported
 * write code tests!!! (goal ofc 100% coverage), add [tests coverage badge](https://coveralls.io)
