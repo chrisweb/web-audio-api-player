@@ -7,11 +7,12 @@
     "moduleResolution": "node",
     "rootDir": "./src",
     "outDir": "dist",
-    "inlineSourceMap": true,
+    "sourceMap": true,
     "declarationDir": "dist",
     "noImplicitAny": true,
     "noFallthroughCasesInSwitch": true,
     "skipDefaultLibCheck": true,
+    "removeComments": true,
     "skipLibCheck": true,
     "lib": [
       "es5",

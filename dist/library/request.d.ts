@@ -1,4 +1,3 @@
-import { IPlayerError } from './error';
 import { IOnProgress } from './sound';
 export interface IRequested {
     url: string;
@@ -6,5 +5,5 @@ export interface IRequested {
     onLoading?: IOnProgress;
 }
 export declare class PlayerRequest {
-    getArrayBuffer(requested: IRequested): Promise<ArrayBuffer | IPlayerError>;
+    getArrayBuffer(requested: IRequested): Promise<ArrayBuffer>;
 }

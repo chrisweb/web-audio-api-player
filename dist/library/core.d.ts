@@ -1,10 +1,13 @@
 import { ISound, ISoundAttributes, ISoundSource, typeSoundStates } from './sound';
-import { PlayerAudio, IAudioGraph, IAudioOptions } from './audio';
+import { PlayerAudio, IAudioOptions } from './audio';
 import { PlayerError } from './error';
 declare const PLAYER_MODE_AUDIO = "player_mode_audio";
 declare const PLAYER_MODE_AJAX = "player_mode_ajax";
 declare const PLAYER_MODE_FETCH = "player_mode_fetch";
-export type typePlayerModes = typeof PLAYER_MODE_AUDIO | typeof PLAYER_MODE_AJAX | typeof PLAYER_MODE_FETCH;
+declare const WHERE_IN_QUEUE_AT_START = "prepend";
+declare const WHERE_IN_QUEUE_AT_END = "append";
+type typePlayerMode = typeof PLAYER_MODE_AUDIO | typeof PLAYER_MODE_AJAX | typeof PLAYER_MODE_FETCH;
+type typeWhereInQueue = typeof WHERE_IN_QUEUE_AT_START | typeof WHERE_IN_QUEUE_AT_END;
 export interface ICoreOptions {
     volume?: number;
     loopQueue?: boolean;
@@ -12,22 +15,21 @@ export interface ICoreOptions {
     soundsBaseUrl?: string;
     playingProgressIntervalTime?: number;
     playNextOnEnded?: boolean;
-    audioGraph?: IAudioGraph;
-    audioContext?: AudioContext;
     stopOnReset?: boolean;
     visibilityAutoMute?: boolean;
     createAudioContextOnFirstUserInteraction?: boolean;
     persistVolume?: boolean;
-    loadPlayerMode?: typePlayerModes;
+    loadPlayerMode?: typePlayerMode;
+    audioContext?: AudioContext;
 }
-interface ISoundsQueueOptions {
+export interface ISoundsQueueOptions {
     soundAttributes: ISoundAttributes;
-    whereInQueue?: string;
+    whereInQueue?: typeWhereInQueue;
 }
 interface IDecodeSoundOptions {
     sound: ISound;
 }
-interface IPlayOptions {
+export interface IPlayOptions {
     whichSound?: number | string | undefined;
     playTimeOffset?: number;
 }
@@ -35,8 +37,8 @@ interface IFindSoundById {
     soundId: string | number;
 }
 interface IFindBestSourceResponse {
-    url: string | null;
-    codec?: string | null;
+    url: string;
+    codec?: string;
 }
 interface IGetSoundFromQueue {
     whichSound?: string | number;
@@ -44,27 +46,14 @@ interface IGetSoundFromQueue {
 }
 export declare class PlayerCore {
     protected _queue: ISound[];
-    protected _volume: number;
-    protected _soundsBaseUrl: string;
-    protected _currentIndex: number | null;
+    protected _currentIndex: number;
     protected _playerAudio: PlayerAudio;
-    protected _playingProgressIntervalTime: number;
-    protected _playingProgressRequestId: number | null;
+    protected _playingProgressRequestId: number;
     protected _playingProgressPreviousTimestamp: DOMHighResTimeStamp;
-    protected _playNextOnEnded: boolean;
-    protected _loopQueue: boolean;
-    protected _loopSong: boolean;
-    protected _customAudioGraph: IAudioGraph | null;
-    protected _customAudioContext: AudioContext | null;
-    protected _stopOnReset: boolean;
     protected _postMuteVolume: number;
-    protected _isMuted: boolean;
-    protected _visibilityAutoMute: boolean;
-    protected _createAudioContextOnFirstUserInteraction: boolean;
-    protected _persistVolume: boolean;
-    protected _loadPlayerMode: typePlayerModes;
-    static readonly WHERE_IN_QUEUE_AT_END: string;
-    static readonly WHERE_IN_QUEUE_AT_START: string;
+    protected _options: ICoreOptions;
+    static readonly WHERE_IN_QUEUE_AT_END = "append";
+    static readonly WHERE_IN_QUEUE_AT_START = "prepend";
     static readonly PLAY_SOUND_NEXT = "next";
     static readonly PLAY_SOUND_PREVIOUS = "previous";
     static readonly PLAY_SOUND_FIRST = "first";
@@ -75,10 +64,7 @@ export declare class PlayerCore {
     static readonly PLAYER_MODE_FETCH = "player_mode_fetch";
     constructor(playerOptions?: ICoreOptions);
     protected _initialize(): void;
-    protected _webAudioApiOptions(): IAudioOptions;
-    protected _webAudioElementOptions(): IAudioOptions;
-    protected _detectAudioContextSupport(): boolean;
-    protected _detectAudioElementSupport(): boolean;
+    protected _audioOptions(): IAudioOptions;
     addSoundToQueue({ soundAttributes, whereInQueue }: ISoundsQueueOptions): ISound;
     _appendSoundToQueue(sound: ISound): void;
     _prependSoundToQueue(sound: ISound): void;
@@ -99,6 +85,7 @@ export declare class PlayerCore {
     protected _loadSoundUsingRequest(sound: ISound): Promise<ISound | PlayerError>;
     protected _initializeAudioElementListeners(sound: ISound): void;
     protected _decodeSound({ sound }: IDecodeSoundOptions): Promise<ISound>;
+    protected _cloneAudioBuffer(fromAudioBuffer: AudioBuffer): AudioBuffer;
     play({ whichSound, playTimeOffset }?: IPlayOptions): Promise<void>;
     protected _play(sound: ISound): Promise<void>;
     protected _playAudioBuffer(sound: ISound): Promise<void>;
@@ -106,12 +93,8 @@ export declare class PlayerCore {
     protected _triggerSoundCallbacks(sound: ISound): ISound;
     protected _progressTrigger: (sound: ISound, timestamp: DOMHighResTimeStamp) => void;
     protected _onEnded(): void;
-    /**
-     * whichSound is optional, if set it can be the sound id or if it's
-     * a string it can be next / previous / first / last
-     */
-    protected _getSoundFromQueue({ whichSound, updateIndex }?: IGetSoundFromQueue): ISound | null;
-    protected _findSoundById({ soundId }: IFindSoundById): [ISound | null, number];
+    protected _getSoundFromQueue({ whichSound, updateIndex }?: IGetSoundFromQueue): ISound;
+    protected _findSoundById({ soundId }: IFindSoundById): [ISound, number];
     protected _findBestSource(soundSource: (ISoundSource)[] | ISoundSource): IFindBestSourceResponse;
     protected _checkCodecSupport(codec: string): boolean;
     protected _checkMimeTypesSupport(mediaMimeTypes: string[]): boolean;
@@ -123,12 +106,10 @@ export declare class PlayerCore {
     first(): void;
     last(): void;
     protected _playingProgress(sound: ISound): void;
-    setAudioGraph(customAudioGraph: IAudioGraph): void;
-    getAudioGraph(): Promise<IAudioGraph>;
-    setAudioContext(customAudioContext: AudioContext): void;
-    getAudioContext(): Promise<AudioContext>;
     setVisibilityAutoMute(visibilityAutoMute: boolean): void;
     getVisibilityAutoMute(): boolean;
     protected _handleVisibilityChange(): void;
+    disconnect(): Promise<void>;
+    getAudioContext(): Promise<AudioContext>;
 }
 export {};

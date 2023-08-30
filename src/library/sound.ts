@@ -4,12 +4,6 @@ const SOUND_STATE_PLAYING = 'sound_state_playing';
 
 export type typeSoundStates = typeof SOUND_STATE_STOPPED | typeof SOUND_STATE_PAUSED | typeof SOUND_STATE_PLAYING;
 
-export interface ISoundSource {
-    url: string;
-    codec?: string;
-    isPreferred?: boolean;
-}
-
 export interface IOnProgress {
     (progress: number, maximumValue: number, currentValue: number): void;
 }
@@ -22,15 +16,21 @@ export interface IOnAnyAction {
     (playTimeOffset: number): void;
 }
 
+export interface ISoundSource {
+    url: string;
+    codec?: string;
+    isPreferred?: boolean;
+}
+
 export interface ISoundAttributes {
     // source(s) are NOT mandatory as user can provide an arrayBuffer
     // and / or audioBuffer in which case the source url is not needed
     source?: (ISoundSource)[] | ISoundSource;
     id?: number | string;
     loop?: boolean;
-    audioBuffer?: AudioBuffer | null;
-    arrayBuffer?: ArrayBuffer | null;
-    duration?: number | null;
+    audioBuffer?: AudioBuffer;
+    arrayBuffer?: ArrayBuffer;
+    duration?: number;
 
     // events
     onLoading?: IOnProgress;
@@ -43,26 +43,20 @@ export interface ISoundAttributes {
 }
 
 export interface ISound extends ISoundAttributes, ISoundSource {
-    audioBufferSourceNode: AudioBufferSourceNode | null;
-    mediaElementAudioSourceNode: MediaElementAudioSourceNode | null;
+    sourceNode: AudioBufferSourceNode | MediaElementAudioSourceNode;
+    gainNode: GainNode;
     isReadyToPLay: boolean;
     isBuffered: boolean;
     isBuffering: boolean;
-    audioBuffer: AudioBuffer | null;
-    arrayBuffer: ArrayBuffer | null;
-    audioBufferDate: Date | null;
-    loadingProgress: number;
+    audioElement: HTMLAudioElement;
+    audioBufferDate: Date;
     playTimeOffset: number;
     startTime: number;
     playTime: number;
     playedTimePercentage: number;
     state: typeSoundStates;
-    source: (ISoundSource)[] | ISoundSource;
-    url: string | null;
-    codec: string | null;
-    duration: number | null;
+    loadingProgress: number;
     firstTimePlayed: boolean;
-    audioElement: HTMLAudioElement | null;
     getCurrentTime(): number;
     getDuration(): number;
 }
@@ -76,26 +70,26 @@ export class PlayerSound implements ISound {
 
     // properties
     public source: (ISoundSource)[] | ISoundSource;
-    public url: string | null = null;
-    public codec: string | null = null;
+    public url: string = null;
+    public codec: string = null;
     public id: number | string;
     public loop: boolean;
-    public audioBufferSourceNode: AudioBufferSourceNode | null = null;
-    public mediaElementAudioSourceNode: MediaElementAudioSourceNode | null = null;
+    public sourceNode: AudioBufferSourceNode | MediaElementAudioSourceNode = null;
+    public gainNode: GainNode = null;
     public isReadyToPLay = false;
     public isBuffered = false;
     public isBuffering = false;
-    public audioElement: HTMLAudioElement | null = null;
-    public audioBuffer: AudioBuffer | null = null;
-    public arrayBuffer: ArrayBuffer | null = null;
-    public audioBufferDate: Date | null = null;
+    public audioElement: HTMLAudioElement = null;
+    public audioBuffer: AudioBuffer = null;
+    public arrayBuffer: ArrayBuffer = null;
+    public audioBufferDate: Date = null;
     public playTimeOffset = 0;
     public startTime = 0;
     public playTime = 0;
     public playedTimePercentage = 0;
     public state: typeSoundStates = SOUND_STATE_STOPPED;
     public loadingProgress = 0;
-    public duration: number | null = null;
+    public duration: number = null;
     public firstTimePlayed = true;
 
     // callbacks
@@ -171,17 +165,11 @@ export class PlayerSound implements ISound {
             this.onResumed = null;
         }
 
-        // if the arrayBufferType is injected through the sound attributes
-        const arrayBufferType: string = typeof soundAttributes.arrayBuffer;
-
-        if (arrayBufferType === 'ArrayBuffer') {
+        if (soundAttributes.arrayBuffer instanceof ArrayBuffer) {
             this.arrayBuffer = soundAttributes.arrayBuffer;
         }
 
-        // if the audioBuffer is injected through the sound attributes
-        const audioBufferType: string = typeof soundAttributes.audioBuffer;
-
-        if (audioBufferType === 'AudioBuffer') {
+        if (soundAttributes.audioBuffer instanceof AudioBuffer) {
             this.audioBuffer = soundAttributes.audioBuffer;
             this.isBuffering = false;
             this.isBuffered = true;
@@ -195,10 +183,12 @@ export class PlayerSound implements ISound {
 
         let currentTime: number;
 
-        if (this.audioBufferSourceNode !== null) {
-            currentTime = this.audioBufferSourceNode.context.currentTime;
-        } else if (this.mediaElementAudioSourceNode !== null) {
-            currentTime = this.audioElement.currentTime;
+        if (this.sourceNode !== null) {
+            if (this.sourceNode instanceof AudioBufferSourceNode) {
+                currentTime = this.sourceNode.context.currentTime;
+            } else if (this.sourceNode instanceof MediaElementAudioSourceNode) {
+                currentTime = this.audioElement.currentTime;
+            }
         }
 
         return currentTime;
@@ -209,10 +199,12 @@ export class PlayerSound implements ISound {
 
         let duration: number;
 
-        if (this.audioBufferSourceNode !== null) {
-            duration = this.audioBufferSourceNode.buffer.duration;
-        } else if (this.mediaElementAudioSourceNode !== null) {
-            duration = this.audioElement.duration;
+        if (this.sourceNode !== null) {
+            if (this.sourceNode instanceof AudioBufferSourceNode) {
+                duration = this.sourceNode.buffer.duration;
+            } else if (this.sourceNode instanceof MediaElementAudioSourceNode) {
+                duration = this.audioElement.duration;
+            }
         }
 
         return duration;

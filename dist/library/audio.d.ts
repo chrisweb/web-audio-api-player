@@ -1,6 +1,11 @@
-import { typePlayerModes } from './core';
 import { ISound } from './sound';
-interface IAudioGraph {
+export interface IAudioOptions {
+    audioContext: AudioContext;
+    createAudioContextOnFirstUserInteraction: boolean;
+    volume: number;
+    persistVolume: boolean;
+}
+export interface IAudioNodes {
     gainNode: GainNode;
     pannerNode?: PannerNode;
     stereoPannerNode?: StereoPannerNode;
@@ -18,57 +23,41 @@ interface IAudioGraph {
 interface IOnSourceNodeEnded {
     (event?: Event): void;
 }
-interface IAudioOptions {
-    customAudioContext?: AudioContext;
-    customAudioGraph?: IAudioGraph;
-    createAudioContextOnFirstUserInteraction?: boolean;
-    persistVolume: boolean;
-    loadPlayerMode: typePlayerModes;
-}
-interface IAudioBufferSourceOptions extends AudioBufferSourceOptions {
+export interface IAudioBufferSourceOptions extends AudioBufferSourceOptions {
     onSourceNodeEnded: IOnSourceNodeEnded;
 }
-interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions {
+export interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions {
     onSourceNodeEnded: IOnSourceNodeEnded;
     loop: boolean;
 }
-export interface IChangeVolumeOptions {
-    volume: number;
-    sound?: ISound;
-    forceUpdateUserVolume?: boolean;
-}
-declare class PlayerAudio {
+export declare class PlayerAudio {
+    protected _options: IAudioOptions;
+    protected _audioContext: AudioContext;
     protected _volume: number;
-    protected _audioContext: AudioContext | null;
-    protected _audioGraph: IAudioGraph | null;
-    protected _createAudioContextOnFirstUserInteraction: boolean;
-    protected _persistVolume: boolean;
-    protected _loadPlayerMode: typePlayerModes;
+    protected _audioNodes: IAudioNodes;
     constructor(options: IAudioOptions);
+    protected _initialize(): void;
     decodeAudio(arrayBuffer: ArrayBuffer): Promise<AudioBuffer>;
     protected _createAudioContext(): Promise<void>;
-    protected _autoCreateAudioContextRemoveListener(): void;
-    protected _autoCreateAudioContextOnFirstUserInteraction(): void;
+    protected _addAutoCreateAudioContextOnFirstUserInteractionEventListeners(): void;
+    protected _removeAutoCreateAudioContextOnFirstUserInteractionEventListeners(): void;
     getAudioContext(): Promise<AudioContext>;
-    setAudioContext(audioContext: AudioContext): void;
-    protected _setAudioContext(audioContext: AudioContext): void;
+    protected _unfreezeAudioContext(): Promise<void>;
+    freezeAudioContext(): Promise<void>;
+    detectAudioContextSupport(): boolean;
+    detectAudioElementSupport(): boolean;
+    shutDown(songsQueue: ISound[]): Promise<void>;
     protected _destroyAudioContext(): Promise<void>;
-    _unfreezeAudioContext(): Promise<void>;
-    _freezeAudioContext(): Promise<void>;
-    setAudioGraph(audioGraph: IAudioGraph): void;
-    getAudioGraph(): Promise<IAudioGraph>;
-    protected _createAudioGraph(): Promise<IAudioGraph>;
-    protected _destroyAudioGraph(): void;
     createAudioBufferSourceNode(audioBufferSourceOptions: IAudioBufferSourceOptions, sound: ISound): Promise<void>;
     createMediaElementSourceNode(sourceNodeOptions: IMediaElementAudioSourceOptions, sound: ISound): Promise<void>;
-    connectSourceNodeToGraphNodes(sourceNode: AudioBufferSourceNode | MediaElementAudioSourceNode): void;
-    destroySourceNode(sound: ISound): void;
-    changeVolume({ volume, sound, forceUpdateUserVolume }: IChangeVolumeOptions): number;
-    protected _changeGainValue(gainValue: number): void;
-    protected _setAutoCreateContextOnFirstTouch(autoCreate: boolean): void;
-    setPersistVolume(persistVolume: boolean): void;
-    getPersistVolume(): boolean;
-    setLoadPlayerMode(loadPlayerMode: typePlayerModes): void;
-    getLoadPlayerMode(): typePlayerModes;
+    protected _getPlayerGainNode(): Promise<GainNode>;
+    protected _disconnectPlayerGainNode(): void;
+    connectSound(sound: ISound): Promise<void>;
+    disconnectSound(sound: ISound): Promise<void>;
+    protected _changePlayerGainValue(gainValue: number): void;
+    protected _roundGainTwoDecimals(rawGainValue: number): number;
+    setVolume(volume: number, forceUpdateUserVolume?: boolean): void;
+    getVolume(): number;
+    protected _initializeVolume(): void;
 }
-export { PlayerAudio, IAudioGraph, IAudioOptions, IAudioBufferSourceOptions, IMediaElementAudioSourceOptions };
+export {};

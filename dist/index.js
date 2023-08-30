@@ -68,12 +68,12 @@ function __generator(thisArg, body) {
 }
 
 var SOUND_STATE_STOPPED = 'sound_state_stopped';
-var PlayerSound = /** @class */ (function () {
+var PlayerSound = (function () {
     function PlayerSound(soundAttributes) {
         this.url = null;
         this.codec = null;
-        this.audioBufferSourceNode = null;
-        this.mediaElementAudioSourceNode = null;
+        this.sourceNode = null;
+        this.gainNode = null;
         this.isReadyToPLay = false;
         this.isBuffered = false;
         this.isBuffering = false;
@@ -89,7 +89,6 @@ var PlayerSound = /** @class */ (function () {
         this.loadingProgress = 0;
         this.duration = null;
         this.firstTimePlayed = true;
-        // user provided values
         if (!Array.isArray(soundAttributes.source)) {
             this.source = [soundAttributes.source];
         }
@@ -103,9 +102,6 @@ var PlayerSound = /** @class */ (function () {
             this.id = this._generateSoundId();
         }
         this.loop = soundAttributes.loop || false;
-        // the user can set the duration manually
-        // this is usefull if we need to convert the position percentage into seconds but don't want to preload the song
-        // to get the duration the song has to get preloaded as the duration is a property of the audioBuffer
         this.duration = soundAttributes.duration || null;
         if (typeof soundAttributes.onLoading === 'function') {
             this.onLoading = soundAttributes.onLoading;
@@ -149,14 +145,10 @@ var PlayerSound = /** @class */ (function () {
         else {
             this.onResumed = null;
         }
-        // if the arrayBufferType is injected through the sound attributes
-        var arrayBufferType = typeof soundAttributes.arrayBuffer;
-        if (arrayBufferType === 'ArrayBuffer') {
+        if (soundAttributes.arrayBuffer instanceof ArrayBuffer) {
             this.arrayBuffer = soundAttributes.arrayBuffer;
         }
-        // if the audioBuffer is injected through the sound attributes
-        var audioBufferType = typeof soundAttributes.audioBuffer;
-        if (audioBufferType === 'AudioBuffer') {
+        if (soundAttributes.audioBuffer instanceof AudioBuffer) {
             this.audioBuffer = soundAttributes.audioBuffer;
             this.isBuffering = false;
             this.isBuffered = true;
@@ -166,79 +158,75 @@ var PlayerSound = /** @class */ (function () {
     }
     PlayerSound.prototype.getCurrentTime = function () {
         var currentTime;
-        if (this.audioBufferSourceNode !== null) {
-            currentTime = this.audioBufferSourceNode.context.currentTime;
-        }
-        else if (this.mediaElementAudioSourceNode !== null) {
-            currentTime = this.audioElement.currentTime;
+        if (this.sourceNode !== null) {
+            if (this.sourceNode instanceof AudioBufferSourceNode) {
+                currentTime = this.sourceNode.context.currentTime;
+            }
+            else if (this.sourceNode instanceof MediaElementAudioSourceNode) {
+                currentTime = this.audioElement.currentTime;
+            }
         }
         return currentTime;
     };
     PlayerSound.prototype.getDuration = function () {
         var duration;
-        if (this.audioBufferSourceNode !== null) {
-            duration = this.audioBufferSourceNode.buffer.duration;
-        }
-        else if (this.mediaElementAudioSourceNode !== null) {
-            duration = this.audioElement.duration;
+        if (this.sourceNode !== null) {
+            if (this.sourceNode instanceof AudioBufferSourceNode) {
+                duration = this.sourceNode.buffer.duration;
+            }
+            else if (this.sourceNode instanceof MediaElementAudioSourceNode) {
+                duration = this.audioElement.duration;
+            }
         }
         return duration;
     };
     PlayerSound.prototype._generateSoundId = function () {
         return Date.now().toString(36) + Math.random().toString(36).substring(2);
     };
-    // static constants
     PlayerSound.SOUND_STATE_STOPPED = 'sound_state_stopped';
     PlayerSound.SOUND_STATE_PAUSED = 'sound_state_paused';
     PlayerSound.SOUND_STATE_PLAYING = 'sound_state_playing';
     return PlayerSound;
 }());
 
-// https://github.com/Microsoft/TypeScript/issues/12123
-var PlayerError = /** @class */ (function (_super) {
+var PlayerError = (function (_super) {
     __extends(PlayerError, _super);
     function PlayerError(message, code) {
         var _this = _super.call(this, message) || this;
         _this.code = code || null;
-        // Set the prototype explictilly
         Object.setPrototypeOf(_this, PlayerError.prototype);
         return _this;
     }
     return PlayerError;
 }(Error));
 
-var PlayerAudio = /** @class */ (function () {
+var PlayerAudio = (function () {
     function PlayerAudio(options) {
         this._audioContext = null;
-        this._audioGraph = null;
-        this.setPersistVolume(options.persistVolume);
-        this._setAutoCreateContextOnFirstTouch(options.createAudioContextOnFirstUserInteraction);
-        this.setLoadPlayerMode(options.loadPlayerMode);
-        this.setAudioContext(options.customAudioContext);
-        if (options.customAudioContext === null) {
-            this._autoCreateAudioContextOnFirstUserInteraction();
-        }
-        if (!this._createAudioContextOnFirstUserInteraction) {
-            // if the autdioContext shouldn't be created on first user
-            // interaction, we create it during initialization
-            this.getAudioContext().catch(function () {
-                throw new PlayerError('audio context setup failed');
-            });
-        }
-        this.setAudioGraph(options.customAudioGraph);
+        this._volume = null;
+        this._audioNodes = {
+            gainNode: null,
+        };
+        this._options = options;
+        this._initialize();
     }
+    PlayerAudio.prototype._initialize = function () {
+        if (this._options.createAudioContextOnFirstUserInteraction) {
+            this._addAutoCreateAudioContextOnFirstUserInteractionEventListeners();
+        }
+    };
     PlayerAudio.prototype.decodeAudio = function (arrayBuffer) {
         return __awaiter(this, void 0, void 0, function () {
             var audioContext, audioBufferPromise;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.getAudioContext()];
+                    case 0: return [4, this.getAudioContext()];
                     case 1:
                         audioContext = _a.sent();
-                        audioBufferPromise = audioContext.decodeAudioData(arrayBuffer);
-                        // decodeAudioData returns a promise of type PromiseLike
-                        // using resolve to return a promise of type Promise
-                        return [2 /*return*/, Promise.resolve(audioBufferPromise)];
+                        return [4, audioContext.decodeAudioData(arrayBuffer)];
+                    case 2:
+                        audioBufferPromise = _a.sent();
+                        return [2, Promise.resolve(audioBufferPromise)];
                 }
             });
         });
@@ -246,11 +234,17 @@ var PlayerAudio = /** @class */ (function () {
     PlayerAudio.prototype._createAudioContext = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            var MyAudioContext = window.AudioContext || window.webkitAudioContext;
-            // initialize the audio context
+            if (_this._audioContext instanceof AudioContext) {
+                resolve();
+            }
+            var WebAudioContext = window.AudioContext || window.webkitAudioContext;
             try {
-                _this._audioContext = new MyAudioContext();
+                if (_this._options.audioContext !== null) {
+                    _this._audioContext = _this._options.audioContext;
+                }
+                else {
+                    _this._audioContext = new WebAudioContext();
+                }
                 resolve();
             }
             catch (error) {
@@ -258,185 +252,140 @@ var PlayerAudio = /** @class */ (function () {
             }
         });
     };
-    PlayerAudio.prototype._autoCreateAudioContextRemoveListener = function () {
-        document.removeEventListener('touchstart', this._autoCreateAudioContextRemoveListener.bind(this), false);
-        document.removeEventListener('touchend', this._autoCreateAudioContextRemoveListener.bind(this), false);
-        document.removeEventListener('mousedown', this._autoCreateAudioContextRemoveListener.bind(this), false);
-        this.getAudioContext().catch(function () {
-            throw new PlayerError('audio context setup failed');
-        });
+    PlayerAudio.prototype._addAutoCreateAudioContextOnFirstUserInteractionEventListeners = function () {
+        if (this._options.createAudioContextOnFirstUserInteraction) {
+            document.addEventListener('touchstart', this.getAudioContext.bind(this));
+            document.addEventListener('touchend', this.getAudioContext.bind(this));
+            document.addEventListener('mousedown', this.getAudioContext.bind(this));
+        }
     };
-    PlayerAudio.prototype._autoCreateAudioContextOnFirstUserInteraction = function () {
-        if (this._createAudioContextOnFirstUserInteraction) {
-            document.addEventListener('touchstart', this._autoCreateAudioContextRemoveListener.bind(this), false);
-            document.addEventListener('touchend', this._autoCreateAudioContextRemoveListener.bind(this), false);
-            document.addEventListener('mousedown', this._autoCreateAudioContextRemoveListener.bind(this), false);
+    PlayerAudio.prototype._removeAutoCreateAudioContextOnFirstUserInteractionEventListeners = function () {
+        if (this._options.createAudioContextOnFirstUserInteraction) {
+            document.removeEventListener('touchstart', this.getAudioContext.bind(this));
+            document.removeEventListener('touchend', this.getAudioContext.bind(this));
+            document.removeEventListener('mousedown', this.getAudioContext.bind(this));
         }
     };
     PlayerAudio.prototype.getAudioContext = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            if (_this._audioContext === null) {
-                _this._createAudioContext().then(function () {
-                    resolve(_this._audioContext);
-                }).catch(reject);
-            }
-            else if (_this._audioContext.state === 'suspended') {
-                _this._unfreezeAudioContext().then(function () {
-                    resolve(_this._audioContext);
-                });
-            }
-            else if (_this._audioContext.state === 'running') {
-                resolve(_this._audioContext);
-            }
-            else ;
-        });
-    };
-    PlayerAudio.prototype.setAudioContext = function (audioContext) {
-        var _this = this;
-        if (this._audioContext !== null) {
-            this._destroyAudioContext().then(function () {
-                _this._setAudioContext(audioContext);
-            });
-        }
-        else {
-            this._setAudioContext(audioContext);
-        }
-    };
-    PlayerAudio.prototype._setAudioContext = function (audioContext) {
-        this._audioContext = audioContext;
-    };
-    PlayerAudio.prototype._destroyAudioContext = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this._audioContext.close()];
+                    case 0:
+                        if (!(this._audioContext === null)) return [3, 2];
+                        return [4, this._createAudioContext()];
                     case 1:
                         _a.sent();
-                        this._audioContext = null;
-                        return [2 /*return*/];
+                        return [3, 4];
+                    case 2:
+                        if (!(this._audioContext.state === 'suspended')) return [3, 4];
+                        return [4, this._unfreezeAudioContext()];
+                    case 3:
+                        _a.sent();
+                        _a.label = 4;
+                    case 4: return [2, this._audioContext];
                 }
             });
         });
     };
     PlayerAudio.prototype._unfreezeAudioContext = function () {
-        // did resume get implemented
         if (typeof this._audioContext.suspend === 'undefined') {
-            // this browser does not support resume
-            // just send back a promise as resume would do
             return Promise.resolve();
         }
         else {
-            // resume the audio hardware access
-            // audio context resume returns a promise
-            // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/resume
             return this._audioContext.resume();
         }
     };
-    PlayerAudio.prototype._freezeAudioContext = function () {
-        // did suspend get implemented
+    PlayerAudio.prototype.freezeAudioContext = function () {
         if (typeof this._audioContext.suspend === 'undefined') {
             return Promise.resolve();
         }
         else {
-            // halt the audio hardware access temporarily to reduce CPU and battery usage
             return this._audioContext.suspend();
         }
     };
-    PlayerAudio.prototype.setAudioGraph = function (audioGraph) {
-        var _this = this;
-        if (this._audioGraph !== null) {
-            this._destroyAudioGraph();
+    PlayerAudio.prototype.detectAudioContextSupport = function () {
+        var audioContextSupported = false;
+        if (typeof window.webkitAudioContext !== 'undefined') {
+            audioContextSupported = true;
         }
-        // check if there is gain node
-        if (audioGraph !== null &&
-            (!('gainNode' in audioGraph)
-                || audioGraph.gainNode === null
-                || audioGraph.gainNode === undefined)) {
-            this.getAudioContext().then(function (audioContext) {
-                audioGraph.gainNode = audioContext.createGain();
-                _this._audioGraph = audioGraph;
-            });
+        else if (typeof AudioContext !== 'undefined') {
+            audioContextSupported = true;
         }
-        else {
-            this._audioGraph = audioGraph;
-        }
+        return audioContextSupported;
     };
-    PlayerAudio.prototype.getAudioGraph = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            if (_this._audioGraph !== null) {
-                resolve(_this._audioGraph);
-            }
-            else {
-                _this._createAudioGraph()
-                    .then(function (audioGraph) {
-                    _this._audioGraph = audioGraph;
-                    resolve(audioGraph);
-                }).catch(reject);
-            }
-        });
+    PlayerAudio.prototype.detectAudioElementSupport = function () {
+        return !!document.createElement('audio').canPlayType;
     };
-    PlayerAudio.prototype._createAudioGraph = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            _this.getAudioContext().then(function (audioContext) {
-                if (!_this._audioGraph) {
-                    _this._audioGraph = {
-                        gainNode: audioContext.createGain()
-                    };
+    PlayerAudio.prototype.shutDown = function (songsQueue) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        this._removeAutoCreateAudioContextOnFirstUserInteractionEventListeners();
+                        songsQueue.forEach(function (sound) {
+                            if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
+                                if (typeof sound.sourceNode.mediaElement !== 'undefined') {
+                                    sound.sourceNode.mediaElement.remove();
+                                }
+                            }
+                            else if (sound.sourceNode instanceof AudioBufferSourceNode) ;
+                        });
+                        this._disconnectPlayerGainNode();
+                        return [4, this._destroyAudioContext()];
+                    case 1:
+                        _a.sent();
+                        return [2];
                 }
-                // connect the gain node to the destination (speakers)
-                // https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
-                _this._audioGraph.gainNode.connect(audioContext.destination);
-                // update the gainValue (volume)
-                var gainValue = _this._volume / 100;
-                _this._changeGainValue(gainValue);
-                // resolve
-                resolve(_this._audioGraph);
-            }).catch(reject);
+            });
         });
     };
-    PlayerAudio.prototype._destroyAudioGraph = function () {
-        if (this._audioGraph !== null) {
-            this._audioGraph.gainNode.disconnect();
-        }
-        // TODO: disconnect other nodes!?
-        this._audioGraph = null;
+    PlayerAudio.prototype._destroyAudioContext = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!(this._audioContext !== null)) return [3, 2];
+                        return [4, this._audioContext.close()];
+                    case 1:
+                        _a.sent();
+                        this._audioContext = null;
+                        _a.label = 2;
+                    case 2: return [2];
+                }
+            });
+        });
     };
     PlayerAudio.prototype.createAudioBufferSourceNode = function (audioBufferSourceOptions, sound) {
         return __awaiter(this, void 0, void 0, function () {
             var audioContext, audioBufferSourceNode;
-            var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.getAudioContext()];
+                    case 0: return [4, this.getAudioContext()];
                     case 1:
                         audioContext = _a.sent();
                         audioBufferSourceNode = audioContext.createBufferSource();
-                        sound.audioBufferSourceNode = audioBufferSourceNode;
-                        // do we loop this song
+                        sound.sourceNode = audioBufferSourceNode;
                         audioBufferSourceNode.loop = audioBufferSourceOptions.loop;
-                        // if the song ends destroy it's audioGraph as the source can't be reused anyway
-                        // NOTE: the source nodes onended handler won't have any effect if the loop property is set to
-                        // true, as the audio won't stop playing. To see the effect in this case you'd
-                        // have to use AudioBufferSourceNode.stop()
+                        sound.gainNode = audioBufferSourceNode.context.createGain();
+                        sound.gainNode.gain.value = 1;
+                        audioBufferSourceNode.connect(sound.gainNode);
                         audioBufferSourceNode.onended = function (event) {
                             audioBufferSourceOptions.onSourceNodeEnded(event);
-                            _this.destroySourceNode(sound);
                         };
-                        return [2 /*return*/];
+                        return [2];
                 }
             });
         });
     };
     PlayerAudio.prototype.createMediaElementSourceNode = function (sourceNodeOptions, sound) {
         return __awaiter(this, void 0, void 0, function () {
-            var audioContext, mediaElementAudioSourceNode;
+            var mediaElementAudioSourceNode, audioContext;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.getAudioContext()];
+                    case 0:
+                        if (!(sound.sourceNode === null)) return [3, 2];
+                        return [4, this.getAudioContext()];
                     case 1:
                         audioContext = _a.sent();
                         try {
@@ -445,172 +394,161 @@ var PlayerAudio = /** @class */ (function () {
                         catch (error) {
                             throw new PlayerError(error);
                         }
-                        sound.mediaElementAudioSourceNode = mediaElementAudioSourceNode;
-                        // do we loop this song
                         mediaElementAudioSourceNode.mediaElement.loop = sourceNodeOptions.loop;
-                        // MediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/onended
-                        // if the song ends destroy it's audioGraph as the source can't be reused anyway
-                        // NOTE: the source nodes onended handler won't have any effect if the loop property is set to
-                        // true, as the audio won't stop playing. To see the effect in this case you'd
-                        // have to use AudioBufferSourceNode.stop()
-                        mediaElementAudioSourceNode.mediaElement.onended = function () {
-                            sourceNodeOptions.onSourceNodeEnded();
-                            _this.destroySourceNode(sound);
-                            // TODO on end destroy the audio element, probably not if loop enabled, but if loop
-                            // is disabled, maybe still a good idea to keep it (cache?), but not all audio elements
-                            // because of memory consumption if suddenly hundreds of audio elements in one page
-                        };
-                        return [2 /*return*/];
+                        sound.gainNode = mediaElementAudioSourceNode.context.createGain();
+                        sound.gainNode.gain.value = 1;
+                        mediaElementAudioSourceNode.connect(sound.gainNode);
+                        mediaElementAudioSourceNode.mediaElement.onended = function () { return __awaiter(_this, void 0, void 0, function () {
+                            return __generator(this, function (_a) {
+                                sourceNodeOptions.onSourceNodeEnded();
+                                return [2];
+                            });
+                        }); };
+                        sound.sourceNode = mediaElementAudioSourceNode;
+                        _a.label = 2;
+                    case 2: return [2];
                 }
             });
         });
     };
-    PlayerAudio.prototype.connectSourceNodeToGraphNodes = function (sourceNode) {
-        // audio routing graph
-        this.getAudioGraph().then(function (audioGraph) {
-            // https://developer.mozilla.org/en-US/docs/Web/API/GainNode
-            sourceNode.connect(audioGraph.gainNode);
-            // https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode
-            if ('analyserNode' in audioGraph
-                && audioGraph.analyserNode !== null
-                && audioGraph.analyserNode !== undefined) {
-                sourceNode.connect(audioGraph.analyserNode);
-            }
-            // https://developer.mozilla.org/en-US/docs/Web/API/DelayNode
-            if ('delayNode' in audioGraph
-                && audioGraph.delayNode !== null
-                && audioGraph.delayNode !== undefined) {
-                sourceNode.connect(audioGraph.delayNode);
-            }
-            // https://developer.mozilla.org/en-US/docs/Web/API/PannerNode
-            if ('pannerNode' in audioGraph
-                && audioGraph.pannerNode !== null
-                && audioGraph.pannerNode !== undefined) {
-                sourceNode.connect(audioGraph.pannerNode);
-            }
-            // https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode
-            // TODO: handle other types of nodes as well
-            // https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode
-            // https://developer.mozilla.org/en-US/docs/Web/API/ChannelMergerNode
-            // https://developer.mozilla.org/en-US/docs/Web/API/ChannelSplitterNode
-            // https://developer.mozilla.org/en-US/docs/Web/API/ConvolverNode
-            // https://developer.mozilla.org/en-US/docs/Web/API/DynamicsCompressorNode
-            // https://developer.mozilla.org/en-US/docs/Web/API/IIRFilterNode
-            // https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode
-            // https://developer.mozilla.org/en-US/docs/Web/API/WaveShaperNode
-            // do it recursivly!?
-            // let the user chose the order in which they get connected?
+    PlayerAudio.prototype._getPlayerGainNode = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var gainNode, audioContext;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!(this._audioNodes.gainNode instanceof GainNode)) return [3, 1];
+                        gainNode = this._audioNodes.gainNode;
+                        return [3, 3];
+                    case 1: return [4, this.getAudioContext()];
+                    case 2:
+                        audioContext = _a.sent();
+                        gainNode = audioContext.createGain();
+                        gainNode.connect(audioContext.destination);
+                        this._audioNodes.gainNode = gainNode;
+                        _a.label = 3;
+                    case 3:
+                        this._initializeVolume();
+                        return [2, gainNode];
+                }
+            });
         });
     };
-    PlayerAudio.prototype.destroySourceNode = function (sound) {
-        // destroy the source node
-        if (sound.audioBufferSourceNode !== null) {
-            sound.audioBufferSourceNode.disconnect();
-        }
-        else if (sound.mediaElementAudioSourceNode !== null) {
-            sound.mediaElementAudioSourceNode.disconnect();
-        }
-        else {
-            throw new PlayerError('can\'t destroy as no source node in sound');
-        }
-        // the audio buffer source node we set it to null, to let it get destroyed
-        // by the garbage collector as you can't reuse an audio buffer source node
-        // (after it got stopped) as specified in the specs
-        sound.audioBufferSourceNode = null;
-        // an media element source node can be reused (there is no stop method, only
-        // a pause method) so we don't set it to null
-        //sound.mediaElementAudioSourceNode = null;
+    PlayerAudio.prototype._disconnectPlayerGainNode = function () {
+        this._audioNodes.gainNode.disconnect();
+        this._audioNodes.gainNode = null;
     };
-    PlayerAudio.prototype.changeVolume = function (_a) {
-        var volume = _a.volume, _b = _a.sound, sound = _b === void 0 ? null : _b, _c = _a.forceUpdateUserVolume, forceUpdateUserVolume = _c === void 0 ? true : _c;
-        if (this._persistVolume) {
-            var userVolume = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
-            // we sometimes change the volume, for a fade in/out or when muting, but
-            // in this cases we don't want to update the user's persisted volume, in
-            // which case forceUpdateUserVolume is false else it would be true
-            if (!isNaN(userVolume) && !forceUpdateUserVolume) {
-                volume = userVolume;
-            }
-            else {
-                if (forceUpdateUserVolume) {
-                    localStorage.setItem('WebAudioAPIPlayerVolume', volume.toString());
+    PlayerAudio.prototype.connectSound = function (sound) {
+        return __awaiter(this, void 0, void 0, function () {
+            var playerGainNode, soundGainNode;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this._getPlayerGainNode()];
+                    case 1:
+                        playerGainNode = _a.sent();
+                        soundGainNode = sound.gainNode;
+                        if (soundGainNode !== null) {
+                            soundGainNode.connect(playerGainNode);
+                        }
+                        return [2];
                 }
+            });
+        });
+    };
+    PlayerAudio.prototype.disconnectSound = function (sound) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                if (sound.gainNode !== null) ;
+                else {
+                    throw new PlayerError('can\'t destroy as no source node in sound');
+                }
+                if (sound.sourceNode instanceof AudioBufferSourceNode) {
+                    sound.sourceNode = null;
+                }
+                return [2];
+            });
+        });
+    };
+    PlayerAudio.prototype._changePlayerGainValue = function (gainValue) {
+        if (this._audioNodes.gainNode instanceof GainNode) {
+            this._audioNodes.gainNode.gain.value = gainValue;
+        }
+    };
+    PlayerAudio.prototype._roundGainTwoDecimals = function (rawGainValue) {
+        return Math.round((rawGainValue + Number.EPSILON) * 100) / 100;
+    };
+    PlayerAudio.prototype.setVolume = function (volume, forceUpdateUserVolume) {
+        if (forceUpdateUserVolume === void 0) { forceUpdateUserVolume = true; }
+        if (this._options.persistVolume && forceUpdateUserVolume) {
+            localStorage.setItem('WebAudioAPIPlayerVolume', volume.toString());
+        }
+        var gainValue = volume / 100;
+        if (this._audioNodes.gainNode instanceof GainNode) {
+            var roundedGain = this._roundGainTwoDecimals(this._audioNodes.gainNode.gain.value);
+            if (roundedGain !== this._volume) {
+                this._changePlayerGainValue(gainValue);
             }
-        }
-        // update the player volume / gain value
-        var volumeLevel = volume / 100;
-        if (sound !== null) {
-            sound.audioElement.volume = volumeLevel;
-        }
-        else {
-            this._changeGainValue(volumeLevel);
         }
         this._volume = volume;
+    };
+    PlayerAudio.prototype.getVolume = function () {
+        var volume;
+        if (this._volume !== null) {
+            volume = this._volume;
+        }
+        else {
+            if (this._options.persistVolume) {
+                var userVolumeInPercent = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
+                if (!isNaN(userVolumeInPercent)) {
+                    volume = userVolumeInPercent;
+                }
+            }
+            if (typeof volume === 'undefined') {
+                volume = this._options.volume;
+            }
+        }
         return volume;
     };
-    PlayerAudio.prototype._changeGainValue = function (gainValue) {
-        this.getAudioGraph().then(function (audioGraph) {
-            audioGraph.gainNode.gain.value = gainValue;
-        });
-    };
-    PlayerAudio.prototype._setAutoCreateContextOnFirstTouch = function (autoCreate) {
-        // protected as this can only be used during initialization, if false
-        // the audioContext is created by default during Initialization and this
-        // can't be undone or changed later on
-        this._createAudioContextOnFirstUserInteraction = autoCreate;
-    };
-    PlayerAudio.prototype.setPersistVolume = function (persistVolume) {
-        this._persistVolume = persistVolume;
-    };
-    PlayerAudio.prototype.getPersistVolume = function () {
-        return this._persistVolume;
-    };
-    PlayerAudio.prototype.setLoadPlayerMode = function (loadPlayerMode) {
-        this._loadPlayerMode = loadPlayerMode;
-    };
-    PlayerAudio.prototype.getLoadPlayerMode = function () {
-        return this._loadPlayerMode;
+    PlayerAudio.prototype._initializeVolume = function () {
+        if (this._options.persistVolume) {
+            var userVolumeInPercent = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
+            if (!isNaN(userVolumeInPercent)) {
+                this.setVolume(userVolumeInPercent, false);
+            }
+        }
+        if (this._volume === null) {
+            this.setVolume(this._options.volume, false);
+        }
     };
     return PlayerAudio;
 }());
 
-var PlayerRequest = /** @class */ (function () {
+var PlayerRequest = (function () {
     function PlayerRequest() {
     }
-    // TODO: add possibility to abort http request
     PlayerRequest.prototype.getArrayBuffer = function (requested) {
         return new Promise(function (resolve, reject) {
             var xhr = new XMLHttpRequest();
-            // TODO: abort the request?
-            // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort
-            // thirs parameter is for "async", default true but who knows if prefer to explicitly set it just in case
             xhr.open('GET', requested.url, true);
-            // set the expected response type from the server to arraybuffer
             xhr.responseType = 'arraybuffer';
             xhr.onload = function () {
-                // gets called even on for example 404, so check the status
                 if (xhr.status === 200) {
-                    // successful request so now we can resolve the promise
                     resolve(xhr.response);
                 }
                 else {
-                    // something went wrong so we reject with an error
                     reject(new PlayerError(xhr.statusText, xhr.status));
                 }
             };
             xhr.onprogress = function (event) {
                 var percentage = 100 / (event.total / event.loaded);
-                // update value on sound object
                 requested.loadingProgress = percentage;
                 if (requested.onLoading !== null) {
                     requested.onLoading(percentage, event.total, event.loaded);
                 }
             };
-            // also reject for any kind of network errors
             xhr.onerror = function () {
                 reject(new PlayerError('xhr network error'));
             };
-            // now make the request
             xhr.send();
         });
     };
@@ -618,30 +556,18 @@ var PlayerRequest = /** @class */ (function () {
 }());
 
 var PLAYER_MODE_AUDIO = 'player_mode_audio';
-var PlayerCore = /** @class */ (function () {
+var WHERE_IN_QUEUE_AT_END = 'append';
+var PlayerCore = (function () {
     function PlayerCore(playerOptions) {
-        if (playerOptions === void 0) { playerOptions = {}; }
         var _this = this;
-        // playing progress animation frame request id
+        if (playerOptions === void 0) { playerOptions = {}; }
         this._playingProgressRequestId = null;
-        // playing progress animation frame previous timestamp
         this._playingProgressPreviousTimestamp = 0;
-        // a custon audioGraph created by the user
-        this._customAudioGraph = null;
-        // a custom audio context created by the user
-        this._customAudioContext = null;
-        // the volume level before we muted
-        this._postMuteVolume = null;
-        // is muted?
-        this._isMuted = false;
         this._progressTrigger = function (sound, timestamp) {
-            // throttle requests to not more than once every 200ms 
-            if ((timestamp - _this._playingProgressPreviousTimestamp) >= _this._playingProgressIntervalTime) {
-                // execute playing progress callback
+            if ((timestamp - _this._playingProgressPreviousTimestamp) >= _this._options.playingProgressIntervalTime) {
                 _this._playingProgress(sound);
                 _this._playingProgressPreviousTimestamp = timestamp;
             }
-            // request animation frame loop
             _this._playingProgressRequestId = window.requestAnimationFrame(function (timestamp) {
                 _this._progressTrigger(sound, timestamp);
             });
@@ -653,93 +579,49 @@ var PlayerCore = /** @class */ (function () {
             soundsBaseUrl: '',
             playingProgressIntervalTime: 200,
             playNextOnEnded: true,
-            audioGraph: null,
-            audioContext: null,
             stopOnReset: true,
             visibilityAutoMute: false,
             createAudioContextOnFirstUserInteraction: true,
             persistVolume: true,
-            loadPlayerMode: PLAYER_MODE_AUDIO
+            loadPlayerMode: PLAYER_MODE_AUDIO,
+            audioContext: null,
         };
         var options = Object.assign({}, defaultOptions, playerOptions);
-        this._volume = options.volume;
-        this._soundsBaseUrl = options.soundsBaseUrl;
         this._queue = [];
         this._currentIndex = null;
-        this._playingProgressIntervalTime = options.playingProgressIntervalTime;
-        this._playNextOnEnded = options.playNextOnEnded;
-        this._loopQueue = options.loopQueue;
-        this._loopSong = options.loopSong;
-        this._stopOnReset = options.stopOnReset;
-        this._visibilityAutoMute = options.visibilityAutoMute;
-        this._createAudioContextOnFirstUserInteraction = options.createAudioContextOnFirstUserInteraction;
-        this._persistVolume = options.persistVolume;
-        this._loadPlayerMode = options.loadPlayerMode;
-        if (typeof options.audioContext !== 'undefined') {
-            this._customAudioContext = options.audioContext;
-        }
-        if (typeof options.audioGraph !== 'undefined') {
-            this._customAudioGraph = options.audioGraph;
-        }
+        this._options = options;
         this._initialize();
     }
     PlayerCore.prototype._initialize = function () {
-        var audioOptions;
-        switch (this._loadPlayerMode) {
+        var audioOptions = this._audioOptions();
+        this._playerAudio = new PlayerAudio(audioOptions);
+        switch (this._options.loadPlayerMode) {
             case PlayerCore.PLAYER_MODE_AUDIO:
-                if (!this._detectAudioContextSupport()) {
+                if (!this._playerAudio.detectAudioContextSupport()) {
                     throw new PlayerError('audio context is not supported by this device');
                 }
-                audioOptions = this._webAudioApiOptions();
+                if (!this._playerAudio.detectAudioElementSupport()) {
+                    throw new PlayerError('audio element is not supported by this device');
+                }
                 break;
             case PlayerCore.PLAYER_MODE_AJAX:
-                if (!this._detectAudioElementSupport()) {
+                if (!this._playerAudio.detectAudioContextSupport()) {
                     throw new PlayerError('audio context is not supported by this device');
                 }
-                audioOptions = this._webAudioElementOptions();
                 break;
         }
-        // player audio library instance
-        this._playerAudio = new PlayerAudio(audioOptions);
     };
-    PlayerCore.prototype._webAudioApiOptions = function () {
-        var webAudioApiOptions = {
-            customAudioContext: this._customAudioContext,
-            customAudioGraph: this._customAudioGraph,
-            createAudioContextOnFirstUserInteraction: this._createAudioContextOnFirstUserInteraction,
-            persistVolume: this._persistVolume,
-            loadPlayerMode: this._loadPlayerMode
+    PlayerCore.prototype._audioOptions = function () {
+        var audioOptions = {
+            audioContext: this._options.audioContext,
+            createAudioContextOnFirstUserInteraction: this._options.createAudioContextOnFirstUserInteraction,
+            volume: this._options.volume,
+            persistVolume: this._options.persistVolume,
         };
-        return webAudioApiOptions;
-    };
-    PlayerCore.prototype._webAudioElementOptions = function () {
-        var webAudioElementOptions = {
-            customAudioContext: null,
-            customAudioGraph: null,
-            createAudioContextOnFirstUserInteraction: false,
-            persistVolume: this._persistVolume,
-            loadPlayerMode: this._loadPlayerMode
-        };
-        return webAudioElementOptions;
-    };
-    PlayerCore.prototype._detectAudioContextSupport = function () {
-        // basic audio context detection
-        var audioContextSupported = false;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (typeof window.webkitAudioContext !== 'undefined') {
-            audioContextSupported = true;
-        }
-        else if (typeof AudioContext !== 'undefined') {
-            audioContextSupported = true;
-        }
-        return audioContextSupported;
-    };
-    PlayerCore.prototype._detectAudioElementSupport = function () {
-        // basic audio element detection
-        return !!document.createElement('audio').canPlayType;
+        return audioOptions;
     };
     PlayerCore.prototype.addSoundToQueue = function (_a) {
-        var soundAttributes = _a.soundAttributes, _b = _a.whereInQueue, whereInQueue = _b === void 0 ? PlayerCore.WHERE_IN_QUEUE_AT_END : _b;
+        var soundAttributes = _a.soundAttributes, _b = _a.whereInQueue, whereInQueue = _b === void 0 ? WHERE_IN_QUEUE_AT_END : _b;
         var sound = new PlayerSound(soundAttributes);
         switch (whereInQueue) {
             case PlayerCore.WHERE_IN_QUEUE_AT_END:
@@ -758,75 +640,48 @@ var PlayerCore = /** @class */ (function () {
         this._queue.unshift(sound);
     };
     PlayerCore.prototype.resetQueue = function () {
-        // check if a sound is getting played and stop it
-        if (this._stopOnReset) {
+        if (this._options.stopOnReset) {
             this.stop();
         }
-        // TODO: destroy all the sounds or clear the cached buffers?
         this._queue = [];
     };
     PlayerCore.prototype.reset = function () {
         this.resetQueue();
     };
     PlayerCore.prototype.getQueue = function () {
-        // TODO: is this needed?
         return this._queue;
     };
     PlayerCore.prototype.setVolume = function (volume) {
-        this._volume = volume;
-        this._isMuted = false;
-        // get the current sound if any
-        var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
-        // if there is a sound currently being played
-        if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
-            this._playerAudio.changeVolume({ volume: volume, sound: currentSound, forceUpdateUserVolume: true });
-        }
+        this._playerAudio.setVolume(volume);
     };
     PlayerCore.prototype.getVolume = function () {
-        return this._volume;
+        return this._playerAudio.getVolume();
     };
     PlayerCore.prototype.setLoopQueue = function (loppQueue) {
-        this._loopQueue = loppQueue;
+        this._options.loopQueue = loppQueue;
     };
     PlayerCore.prototype.getLoopQueue = function () {
-        return this._loopQueue;
+        return this._options.loopQueue;
     };
     PlayerCore.prototype.mute = function () {
         var currentVolume = this.getVolume();
         this._postMuteVolume = currentVolume;
-        // get the current sound if any
-        var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
-        // if there is a sound currently being played
-        if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
-            this._playerAudio.changeVolume({ volume: 0, sound: currentSound, forceUpdateUserVolume: false });
-        }
-        this._isMuted = true;
+        this._playerAudio.setVolume(0, false);
     };
     PlayerCore.prototype.unMute = function () {
-        // get the current sound if any
-        var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
-        // if there is a sound currently being played
-        if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
-            this._playerAudio.changeVolume({ volume: this._postMuteVolume, sound: currentSound, forceUpdateUserVolume: false });
-        }
-        this._isMuted = false;
+        this._playerAudio.setVolume(this._postMuteVolume, false);
+        this._postMuteVolume = null;
     };
     PlayerCore.prototype.isMuted = function () {
-        return this._isMuted;
+        return this._postMuteVolume === null ? true : false;
     };
     PlayerCore.prototype.setPosition = function (soundPositionInPercent) {
         var _this = this;
-        // get the current sound if any
         var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
-        // if there is a sound currently being played
         if (currentSound !== null) {
-            // check if the duration got set manually
             if (currentSound.duration === null || isNaN(currentSound.duration)) {
-                // the user can set the sound duration manually but if he didn't the sound has to
-                // get preloaded as the duration is a property of the audioBuffer
                 this._loadSound(currentSound)
                     .then(function (sound) {
-                    // calculate the position in seconds
                     var soundPositionInSeconds = (sound.duration / 100) * soundPositionInPercent;
                     _this.setPositionInSeconds(soundPositionInSeconds);
                 }).catch(function (error) {
@@ -834,27 +689,18 @@ var PlayerCore = /** @class */ (function () {
                 });
             }
             else {
-                // calculate the position in seconds
                 var soundPositionInSeconds = (currentSound.duration / 100) * soundPositionInPercent;
                 this.setPositionInSeconds(soundPositionInSeconds);
             }
         }
-        else {
-            throw new PlayerError('position change called, but no current sound found');
-        }
     };
     PlayerCore.prototype.setPositionInSeconds = function (soundPositionInSeconds) {
-        // get the current sound if any
         var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
-        // if there is a sound currently being played
         if (currentSound !== null) {
-            // is the sound is being played
             if (currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
-                // resume the playback at the given position
                 this.play({ whichSound: currentSound.id, playTimeOffset: soundPositionInSeconds });
             }
             else {
-                // only set the sound position but don't play
                 currentSound.playTimeOffset = soundPositionInSeconds;
             }
         }
@@ -865,7 +711,7 @@ var PlayerCore = /** @class */ (function () {
     PlayerCore.prototype._loadSound = function (sound) {
         var loadSoundPromise;
         var notImplementedError;
-        switch (this._loadPlayerMode) {
+        switch (this._options.loadPlayerMode) {
             case PlayerCore.PLAYER_MODE_AUDIO:
                 loadSoundPromise = this._loadSoundUsingAudioElement(sound);
                 break;
@@ -873,7 +719,6 @@ var PlayerCore = /** @class */ (function () {
                 loadSoundPromise = this._loadSoundUsingRequest(sound);
                 break;
             case PlayerCore.PLAYER_MODE_FETCH:
-                // TODO: implement fetch
                 notImplementedError = new PlayerError(PlayerCore.PLAYER_MODE_FETCH + ' is not implemented yet', 1);
                 loadSoundPromise = Promise.reject(notImplementedError);
                 break;
@@ -883,35 +728,35 @@ var PlayerCore = /** @class */ (function () {
     PlayerCore.prototype._loadSoundUsingAudioElement = function (sound) {
         var _this = this;
         return new Promise(function (resolve, reject) {
-            var _a, _b;
-            // extract the url and codec from sources
-            var url = (_a = _this._findBestSource(sound.source), _a.url), codec = (_b = _a.codec, _b === void 0 ? null : _b);
+            var _a = _this._findBestSource(sound.source), url = _a.url, _b = _a.codec, codec = _b === void 0 ? null : _b;
             sound.url = url;
             sound.codec = codec;
             sound.arrayBuffer = null;
             if (sound.url !== null) {
-                var audioElement = new Audio();
-                // in chrome you will get this error message in the console:
-                // "MediaElementAudioSource outputs zeroes due to CORS access restrictions"
-                // to fix this put crossOrigin to anonymous or change the cors
-                // Access-Control-Allow-Origin header of the server to *
-                // "crossOrigin" has to be set before "src"
-                audioElement.crossOrigin = 'anonymous';
-                audioElement.src = sound.url;
-                audioElement.controls = false;
-                audioElement.autoplay = false;
-                document.body.appendChild(audioElement);
-                sound.audioElement = audioElement;
-                sound.duration = audioElement.duration;
+                var audioElement_1 = new Audio();
+                audioElement_1.crossOrigin = 'anonymous';
+                audioElement_1.src = sound.url;
+                audioElement_1.controls = false;
+                audioElement_1.autoplay = false;
+                audioElement_1.id = 'web_audio_api_player_sound_' + sound.id.toString();
+                document.body.appendChild(audioElement_1);
+                sound.audioElement = audioElement_1;
                 sound.isReadyToPLay = true;
                 _this._initializeAudioElementListeners(sound);
-                sound.audioElement.addEventListener('canplaythrough', function () {
+                var canplaythroughListener_1 = function () {
+                    sound.audioElement.removeEventListener('canplaythrough', canplaythroughListener_1);
+                    if (!isNaN(audioElement_1.duration)) {
+                        sound.duration = audioElement_1.duration;
+                    }
                     resolve(sound);
-                });
-                sound.audioElement.addEventListener('error', function () {
+                };
+                sound.audioElement.addEventListener('canplaythrough', canplaythroughListener_1);
+                var errorListener_1 = function () {
+                    sound.audioElement.removeEventListener('error', errorListener_1);
                     var soundLoadingError = new PlayerError('loading sound failed');
                     reject(soundLoadingError);
-                });
+                };
+                sound.audioElement.addEventListener('error', errorListener_1);
             }
             else {
                 var noUrlError = new PlayerError('sound has no url', 1);
@@ -920,76 +765,31 @@ var PlayerCore = /** @class */ (function () {
         });
     };
     PlayerCore.prototype._loadSoundUsingRequest = function (sound) {
-        // TODO: would be good to cache buffers, so need to check if is in cache
-        // let the user choose (by setting an option) what amount of sounds will be cached
-        // add a cached date / timestamp to be able to clear cache by oldest first
-        // or even better add a played counter to cache by least played and date
         var _this = this;
         return new Promise(function (resolve, reject) {
-            var _a, _b;
-            // if the sound already has an AudioBuffer
-            if (sound.audioBuffer !== null) {
-                resolve(sound);
+            var _a = _this._findBestSource(sound.source), url = _a.url, _b = _a.codec, codec = _b === void 0 ? null : _b;
+            sound.url = url;
+            sound.codec = codec;
+            if (sound.url !== null) {
+                var request = new PlayerRequest();
+                sound.isBuffering = true;
+                request.getArrayBuffer(sound).then(function (arrayBuffer) {
+                    sound.arrayBuffer = arrayBuffer;
+                    _this._decodeSound({ sound: sound }).then(function (sound) {
+                        resolve(sound);
+                    }).catch(reject);
+                }).catch(function (requestError) {
+                    reject(requestError);
+                });
             }
-            // if the sound has already an ArrayBuffer but no AudioBuffer
-            if (sound.arrayBuffer !== null && sound.audioBuffer === null) {
-                _this._decodeSound({ sound: sound }).then(function (sound) {
-                    resolve(sound);
-                }).catch(reject);
-            }
-            // if the sound has no ArrayBuffer and also no AudioBuffer yet
-            if (sound.arrayBuffer === null && sound.audioBuffer === null) {
-                // extract the url and codec from sources
-                var url = (_a = _this._findBestSource(sound.source), _a.url), codec = (_b = _a.codec, _b === void 0 ? null : _b);
-                sound.url = url;
-                sound.codec = codec;
-                if (sound.url !== null) {
-                    var request = new PlayerRequest();
-                    // change buffering state
-                    sound.isBuffering = true;
-                    request.getArrayBuffer(sound).then(function (arrayBuffer) {
-                        sound.arrayBuffer = arrayBuffer;
-                        _this._decodeSound({ sound: sound }).then(function (sound) {
-                            resolve(sound);
-                        }).catch(reject);
-                    }).catch(function (requestError) {
-                        reject(requestError);
-                    });
-                }
-                else {
-                    var noUrlError = new PlayerError('sound has no url', 1);
-                    reject(noUrlError);
-                }
+            else {
+                var noUrlError = new PlayerError('sound has no url', 1);
+                reject(noUrlError);
             }
         });
     };
     PlayerCore.prototype._initializeAudioElementListeners = function (sound) {
-        // TODO: use the events to change isReadyToPLay to true? like canplaythrough?
-        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio#Events
-        // abort
-        // canplaythrough
-        // error
-        // loadeddata
-        // loadstart
-        // play
-        // playing
-        // progress
-        // timeupdate
-        // volumechange
-        // waiting
-        // see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event
-        // TODO: how does canplaythrough behave if the source is a stream?
         sound.audioElement.addEventListener('progress', function () {
-            //console.log('AAAAAAAAAAA', event, sound.audioElement.buffered.length, sound.audioElement.duration);
-            /*for (let i = 0; i < sound.audioElement.buffered.length; i++) {
-                console.log('********buffered', sound.audioElement.buffered.start(i), sound.audioElement.buffered.end(i));
-            }*/
-            /*if (sound.audioElement.buffered.length > 0
-                && !isNaN(sound.audioElement.duration)) {
-                    const endBuf = sound.audioElement.buffered.end(0);
-                    const soFar = ((endBuf / sound.audioElement.duration) * 100);
-                    console.log('********buffered222222 soFar', soFar);
-            }*/
             sound.loadingProgress = sound.audioElement.duration;
         });
         sound.audioElement.addEventListener('timeupdate', function () {
@@ -998,163 +798,152 @@ var PlayerCore = /** @class */ (function () {
     };
     PlayerCore.prototype._decodeSound = function (_a) {
         var sound = _a.sound;
-        var arrayBuffer = sound.arrayBuffer;
-        return this._playerAudio.decodeAudio(arrayBuffer).then(function (audioBuffer) {
+        return this._playerAudio.decodeAudio(sound.arrayBuffer).then(function (audioBuffer) {
             sound.audioBuffer = audioBuffer;
             sound.isBuffering = false;
             sound.isBuffered = true;
             sound.audioBufferDate = new Date();
-            sound.duration = sound.audioBuffer.duration;
+            sound.duration = audioBuffer.duration;
             sound.isReadyToPLay = true;
             return sound;
         }).catch(function (decodeAudioError) {
             throw decodeAudioError;
         });
     };
+    PlayerCore.prototype._cloneAudioBuffer = function (fromAudioBuffer) {
+        var audioBuffer = new AudioBuffer({
+            length: fromAudioBuffer.length,
+            numberOfChannels: fromAudioBuffer.numberOfChannels,
+            sampleRate: fromAudioBuffer.sampleRate
+        });
+        for (var channelI = 0; channelI < audioBuffer.numberOfChannels; ++channelI) {
+            var samples = fromAudioBuffer.getChannelData(channelI);
+            audioBuffer.copyToChannel(samples, channelI);
+        }
+        return audioBuffer;
+    };
     PlayerCore.prototype.play = function (_a) {
         var _this = this;
         var _b = _a === void 0 ? {} : _a, whichSound = _b.whichSound, playTimeOffset = _b.playTimeOffset;
         return new Promise(function (resolve, reject) {
-            // get the current sound if any
             var currentSound = _this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
-            console.log('this._currentIndex: ', _this._currentIndex);
-            console.log('currentSound: ', currentSound);
-            // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
             var sound = _this._getSoundFromQueue({ whichSound: whichSound, updateIndex: true });
-            console.log('sound: ', sound);
-            // if there is no sound we could play, do nothing
             if (sound === null) {
                 throw new Error('no more sounds in array');
             }
-            // if there is a sound currently being played OR paused
-            // AND the current sound is NOT the same sound as the one that will now be played
-            // STOP the current sound
             if (currentSound !== null
                 && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING || currentSound.state === PlayerSound.SOUND_STATE_PAUSED)
                 && (currentSound.id !== sound.id)) {
                 _this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
             }
-            // if there is a sound currently being played
-            // AND the current sound is the same sound as the one that will now be played
-            // PAUSE the current sound
             if (currentSound !== null
                 && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING)
                 && (currentSound.id === sound.id)) {
                 _this._stop(currentSound, PlayerSound.SOUND_STATE_PAUSED);
             }
-            // if the current sound and the next one are not the same sound
-            // we set the firstTimePlayed to true to indicate it is a fresh start and not a resume after a pause
             if (currentSound === null || (currentSound !== null && (currentSound.id !== sound.id))) {
                 sound.firstTimePlayed = true;
             }
             else {
                 sound.firstTimePlayed = false;
             }
-            // if the user wants to play the sound from a certain position
             if (playTimeOffset !== undefined) {
                 sound.playTimeOffset = playTimeOffset;
             }
-            // has the sound already been loaded?
             if (!sound.isReadyToPLay) {
                 _this._loadSound(sound).then(function () {
                     _this._play(sound).then(resolve).catch(reject);
                 }).catch(reject);
             }
             else {
+                if (sound.audioBuffer !== null) {
+                    sound.audioBuffer = _this._cloneAudioBuffer(sound.audioBuffer);
+                }
                 _this._play(sound).then(resolve).catch(reject);
             }
         });
     };
     PlayerCore.prototype._play = function (sound) {
         return __awaiter(this, void 0, void 0, function () {
-            var volume;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        volume = this._volume;
-                        if (this._isMuted) {
-                            volume = 0;
-                        }
-                        this._volume = this._playerAudio.changeVolume({ volume: volume, sound: sound, forceUpdateUserVolume: false });
-                        if (!(sound.audioBuffer !== null)) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this._playAudioBuffer(sound)];
+                        if (!(sound.audioBuffer !== null)) return [3, 2];
+                        return [4, this._playAudioBuffer(sound)];
                     case 1:
                         _a.sent();
-                        return [3 /*break*/, 4];
-                    case 2: return [4 /*yield*/, this._playMediaElementAudio(sound)];
+                        return [3, 4];
+                    case 2: return [4, this._playMediaElementAudio(sound)];
                     case 3:
                         _a.sent();
                         _a.label = 4;
                     case 4:
-                        // state is now playing
                         sound.state = PlayerSound.SOUND_STATE_PLAYING;
-                        // the audiocontext time right now (since the audiocontext got created)
                         sound.startTime = sound.getCurrentTime();
                         sound = this._triggerSoundCallbacks(sound);
-                        return [2 /*return*/];
+                        return [2];
                 }
             });
         });
     };
     PlayerCore.prototype._playAudioBuffer = function (sound) {
         return __awaiter(this, void 0, void 0, function () {
-            var sourceOptions, error_1, audioBufferSourceNode;
+            var sourceOptions, error_1;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (!(sound.audioBufferSourceNode === null)) return [3 /*break*/, 4];
+                        if (!(sound.sourceNode === null)) return [3, 4];
                         sourceOptions = {
                             loop: sound.loop,
-                            onSourceNodeEnded: function ( /*event: Event*/) {
+                            onSourceNodeEnded: function () {
                                 _this._onEnded();
                             }
                         };
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
-                        return [4 /*yield*/, this._playerAudio.createAudioBufferSourceNode(sourceOptions, sound)];
+                        return [4, this._playerAudio.createAudioBufferSourceNode(sourceOptions, sound)];
                     case 2:
                         _a.sent();
-                        return [3 /*break*/, 4];
+                        return [3, 4];
                     case 3:
                         error_1 = _a.sent();
                         throw new PlayerError(error_1);
                     case 4:
-                        audioBufferSourceNode = sound.audioBufferSourceNode;
-                        // add the buffer to the source node
-                        audioBufferSourceNode.buffer = sound.audioBuffer;
-                        // connect the source to the graph node(s)
-                        this._playerAudio.connectSourceNodeToGraphNodes(audioBufferSourceNode);
-                        // start playback
-                        // start(when, offset, duration)
+                        if (!(sound.sourceNode instanceof AudioBufferSourceNode)) return [3, 6];
+                        sound.sourceNode.buffer = sound.audioBuffer;
+                        return [4, this._playerAudio.connectSound(sound)];
+                    case 5:
+                        _a.sent();
                         try {
                             if (sound.playTimeOffset !== undefined) {
-                                audioBufferSourceNode.start(0, sound.playTimeOffset);
+                                sound.sourceNode.start(0, sound.playTimeOffset);
                             }
                             else {
-                                audioBufferSourceNode.start();
+                                sound.sourceNode.start();
                             }
                         }
                         catch (error) {
                             throw new PlayerError(error);
                         }
-                        return [2 /*return*/];
+                        _a.label = 6;
+                    case 6: return [2];
                 }
             });
         });
     };
     PlayerCore.prototype._playMediaElementAudio = function (sound) {
         return __awaiter(this, void 0, void 0, function () {
-            var sourceOptions, error_2, mediaElementAudioSourceNode;
+            var sourceOptions, error_2;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (!(sound.mediaElementAudioSourceNode === null)) return [3 /*break*/, 4];
+                        if (!(sound.sourceNode === null)) return [3, 4];
                         sourceOptions = {
                             loop: sound.loop,
-                            onSourceNodeEnded: function ( /**event: Event*/) {
+                            onSourceNodeEnded: function () {
                                 _this._onEnded();
                             },
                             mediaElement: sound.audioElement
@@ -1162,50 +951,42 @@ var PlayerCore = /** @class */ (function () {
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
-                        return [4 /*yield*/, this._playerAudio.createMediaElementSourceNode(sourceOptions, sound)];
+                        return [4, this._playerAudio.createMediaElementSourceNode(sourceOptions, sound)];
                     case 2:
                         _a.sent();
-                        return [3 /*break*/, 4];
+                        return [3, 4];
                     case 3:
                         error_2 = _a.sent();
                         throw new PlayerError(error_2);
                     case 4:
-                        mediaElementAudioSourceNode = sound.mediaElementAudioSourceNode;
-                        // connect the source to the graph node(s)
-                        this._playerAudio.connectSourceNodeToGraphNodes(mediaElementAudioSourceNode);
-                        // if an offset is defined use to play from a defined position
+                        if (!(sound.sourceNode instanceof MediaElementAudioSourceNode)) return [3, 6];
+                        return [4, this._playerAudio.connectSound(sound)];
+                    case 5:
+                        _a.sent();
                         if (sound.playTimeOffset !== undefined && !isNaN(sound.playTimeOffset)) {
-                            // TODO: problem if sound has not loaded until for example 90% but position gets set to 90%
-                            // the position will jump back
-                            // need to wait for sound to have loaded that part, use events???
                             sound.audioElement.currentTime = sound.playTimeOffset;
                         }
                         try {
-                            mediaElementAudioSourceNode.mediaElement.play();
+                            sound.sourceNode.mediaElement.play();
                         }
                         catch (error) {
                             throw new PlayerError(error);
                         }
-                        return [2 /*return*/];
+                        _a.label = 6;
+                    case 6: return [2];
                 }
             });
         });
     };
     PlayerCore.prototype._triggerSoundCallbacks = function (sound) {
         var _this = this;
-        // if there is an onResumed callback for the sound, trigger it
         if (sound.onResumed !== null && !sound.firstTimePlayed) {
             sound.onResumed(sound.playTimeOffset);
         }
-        // if there is an onStarted callback for the sound, trigger it
         if (sound.onStarted !== null && sound.firstTimePlayed) {
             sound.onStarted(sound.playTimeOffset);
         }
-        // if there is an onPlaying callback for the sound, trigger it
         if (sound.onPlaying !== null) {
-            // on request animation frame callback set playing progress
-            // request animation frame callback has a argument, which
-            // is the timestamp when the callback gets called
             this._playingProgressRequestId = window.requestAnimationFrame(function (timestamp) {
                 _this._progressTrigger(sound, timestamp);
             });
@@ -1216,62 +997,47 @@ var PlayerCore = /** @class */ (function () {
         return sound;
     };
     PlayerCore.prototype._onEnded = function () {
-        // get the current sound if any
         var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
-        // if there is a sound currently being played
         if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
             var nextSound = this._getSoundFromQueue({ whichSound: PlayerCore.PLAY_SOUND_NEXT, updateIndex: true });
             if (currentSound.onEnded !== null) {
                 var willPlayNext = false;
-                // check if there is another sound in the queue and if playing
-                // the next one on ended is activated
-                if (nextSound !== null && this._playNextOnEnded) {
+                if (nextSound !== null && this._options.playNextOnEnded) {
                     willPlayNext = true;
                 }
-                // if loopQueue is enabled then willPlayNext is always true
-                if (this._loopQueue) {
+                if (this._options.loopQueue) {
                     willPlayNext = true;
+                }
+                if (!willPlayNext) {
+                    this._playerAudio.freezeAudioContext();
                 }
                 currentSound.onEnded(willPlayNext);
             }
-            // reset "first time played"
             currentSound.firstTimePlayed = true;
-            // reset the "play time offset"
             currentSound.playTimeOffset = 0;
             this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
             if (nextSound !== null) {
-                if (this._playNextOnEnded) {
+                if (this._options.playNextOnEnded) {
                     this.play({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
                 }
             }
             else {
-                // we reached the end of the queue set the currentIndex back to zero
                 this._currentIndex = 0;
-                // if queue loop is active then play
-                if (this._loopQueue) {
+                if (this._options.loopQueue) {
                     this.play();
                 }
             }
         }
     };
-    /**
-     * whichSound is optional, if set it can be the sound id or if it's
-     * a string it can be next / previous / first / last
-     */
     PlayerCore.prototype._getSoundFromQueue = function (_a) {
         var _b;
         var _c = _a === void 0 ? {} : _a, whichSound = _c.whichSound, _d = _c.updateIndex, updateIndex = _d === void 0 ? false : _d;
         var sound = null;
         var soundIndex = null;
-        // check if the queue is empty
         if (this._queue.length === 0) {
             return sound;
         }
-        // if which sound to play did not get specified
         if (whichSound === undefined) {
-            // if whichSound is not defined
-            // AND the currentIndex is null
-            // we set it to first sound in queue
             soundIndex = 0;
             if (this._currentIndex !== null) {
                 soundIndex = this._currentIndex;
@@ -1279,7 +1045,6 @@ var PlayerCore = /** @class */ (function () {
             sound = this._queue[soundIndex];
         }
         else {
-            // if which sound to play is a constant
             switch (whichSound) {
                 case PlayerCore.CURRENT_SOUND:
                     if (this._currentIndex !== null) {
@@ -1291,9 +1056,7 @@ var PlayerCore = /** @class */ (function () {
                         soundIndex = this._currentIndex + 1;
                         sound = this._queue[soundIndex];
                     }
-                    else if (this._loopQueue) {
-                        // if last sound is playing and loop is enabled
-                        // on next we jump to first sound
+                    else if (this._options.loopQueue) {
                         soundIndex = 0;
                         sound = this._queue[soundIndex];
                     }
@@ -1303,9 +1066,7 @@ var PlayerCore = /** @class */ (function () {
                         soundIndex = this._currentIndex - 1;
                         sound = this._queue[soundIndex];
                     }
-                    else if (this._loopQueue) {
-                        // if first sound is playing and loop is enabled
-                        // on previous we jump to last sound
+                    else if (this._options.loopQueue) {
                         soundIndex = this._queue.length - 1;
                         sound = this._queue[soundIndex];
                     }
@@ -1323,7 +1084,6 @@ var PlayerCore = /** @class */ (function () {
                     }
                     break;
                 default:
-                    // if "which sound to play" (soundId) is a string or number
                     _b = this._findSoundById({ soundId: whichSound }), sound = _b[0], soundIndex = _b[1];
             }
         }
@@ -1352,8 +1112,6 @@ var PlayerCore = /** @class */ (function () {
             codec: null
         };
         var sources;
-        // if the source is not an array but a single source object
-        // we first transform it into an array
         if (!Array.isArray(soundSource)) {
             sources = [soundSource];
         }
@@ -1362,30 +1120,20 @@ var PlayerCore = /** @class */ (function () {
         }
         sources.forEach(function (source) {
             var soundUrl = '';
-            // if the player had as option a baseUrl for sounds add it now
-            if (_this._soundsBaseUrl !== '') {
-                soundUrl = _this._soundsBaseUrl;
+            if (_this._options.soundsBaseUrl !== '') {
+                soundUrl = _this._options.soundsBaseUrl;
             }
             soundUrl += source.url;
-            // check if the codec (if any got specified) is supported
-            // by the device
             var isCodecSupported = true;
             if (source.codec !== null) {
                 isCodecSupported = _this._checkCodecSupport(source.codec);
             }
-            // only if the codec of the source is supported
             if (isCodecSupported)
                 if (bestSource.url !== null && source.isPreferred) {
-                    // if multiple sources but this one if preferred and if previous
-                    // sources also had a supported codec we still overwrite the
-                    // previous match
                     bestSource.url = soundUrl;
                     bestSource.codec = source.codec;
                 }
                 else {
-                    // if no best source has been found so far, we don't
-                    // care if it's preferred it's automatically chosen
-                    // as best
                     bestSource.url = soundUrl;
                     bestSource.codec = source.codec;
                 }
@@ -1451,86 +1199,66 @@ var PlayerCore = /** @class */ (function () {
         return isSupported;
     };
     PlayerCore.prototype.pause = function () {
-        // get the current sound
         var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
         if (currentSound === null) {
             return;
         }
         if (currentSound.state === PlayerSound.SOUND_STATE_PAUSED) {
-            // TODO: just return or throw an error
             return;
         }
         var timeAtPause = currentSound.getCurrentTime();
         currentSound.playTimeOffset += timeAtPause - currentSound.startTime;
-        // trigger paused event
         if (currentSound.onPaused !== null) {
             currentSound.onPaused(currentSound.playTimeOffset);
         }
-        // using stop here because even if though it is just a "pause" you can't call play the sound again
-        // re-using an audio buffer source node is not allowed, so no matter what we will have to create a new one
-        // we call the internal stop method as we don't want to trigger the onStopped callback
         this._stop(currentSound, PlayerSound.SOUND_STATE_PAUSED);
     };
     PlayerCore.prototype.stop = function () {
-        // get the current sound
         var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
         if (currentSound === null) {
             return;
         }
-        // check if sound is already stopped
         if (currentSound.state === PlayerSound.SOUND_STATE_STOPPED) {
-            // TODO: just return or throw an error
             return;
         }
+        this._playerAudio.freezeAudioContext();
         var timeAtStop = currentSound.getCurrentTime();
         currentSound.playTimeOffset += timeAtStop - currentSound.startTime;
-        // trigger stopped event
         if (currentSound.onStopped !== null) {
             currentSound.onStopped(currentSound.playTimeOffset);
         }
         this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
     };
     PlayerCore.prototype._stop = function (sound, soundState) {
-        // if it is fully stopped, not just paused
         if (soundState === PlayerSound.SOUND_STATE_STOPPED) {
-            // reset the playTimeOffset
             sound.playTimeOffset = 0;
+            sound.firstTimePlayed = true;
         }
-        // tell the source node to stop playing
-        if (sound.audioBufferSourceNode !== null) {
-            // to stop playing if using the AudioBufferSourceNode use the stop method
-            sound.audioBufferSourceNode.stop(0);
-        }
-        else if (sound.mediaElementAudioSourceNode !== null) {
-            // to stop playing if using the MediaElementAudioSourceNode use the pause method
-            sound.mediaElementAudioSourceNode.mediaElement.pause();
-        }
-        else {
-            throw new PlayerError('can\'t stop as no source node in sound');
-        }
-        // destroy the audio buffer source node as it can anyway only get used once
-        this._playerAudio.destroySourceNode(sound);
-        // state is now stopped
-        sound.state = soundState;
-        if (this._playingProgressRequestId !== null) {
-            cancelAnimationFrame(this._playingProgressRequestId);
-            this._playingProgressPreviousTimestamp = 0;
+        if (sound.sourceNode !== null) {
+            if (sound.sourceNode instanceof AudioBufferSourceNode) {
+                sound.sourceNode.stop(0);
+            }
+            else if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
+                sound.sourceNode.mediaElement.pause();
+            }
+            this._playerAudio.disconnectSound(sound);
+            sound.state = soundState;
+            if (this._playingProgressRequestId !== null) {
+                cancelAnimationFrame(this._playingProgressRequestId);
+                this._playingProgressPreviousTimestamp = 0;
+            }
         }
     };
     PlayerCore.prototype.next = function () {
-        // alias for play next
         this.play({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
     };
     PlayerCore.prototype.previous = function () {
-        // alias for play previous
         this.play({ whichSound: PlayerCore.PLAY_SOUND_PREVIOUS });
     };
     PlayerCore.prototype.first = function () {
-        // alias for play first
         this.play({ whichSound: PlayerCore.PLAY_SOUND_FIRST });
     };
     PlayerCore.prototype.last = function () {
-        // alias for play last
         this.play({ whichSound: PlayerCore.PLAY_SOUND_LAST });
     };
     PlayerCore.prototype._playingProgress = function (sound) {
@@ -1541,34 +1269,8 @@ var PlayerCore = /** @class */ (function () {
         sound.playedTimePercentage = playingPercentage;
         sound.onPlaying(playingPercentage, duration, sound.playTime);
     };
-    PlayerCore.prototype.setAudioGraph = function (customAudioGraph) {
-        this._playerAudio.setAudioGraph(customAudioGraph);
-        this._customAudioGraph = customAudioGraph;
-    };
-    PlayerCore.prototype.getAudioGraph = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            _this._playerAudio.getAudioGraph().then(function (audioGraph) {
-                _this._customAudioGraph = audioGraph;
-                resolve(audioGraph);
-            }).catch(reject);
-        });
-    };
-    PlayerCore.prototype.setAudioContext = function (customAudioContext) {
-        this._playerAudio.setAudioContext(customAudioContext);
-        this._customAudioContext = customAudioContext;
-    };
-    PlayerCore.prototype.getAudioContext = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            _this._playerAudio.getAudioContext().then(function (audioContext) {
-                _this._customAudioContext = audioContext;
-                resolve(audioContext);
-            }).catch(reject);
-        });
-    };
     PlayerCore.prototype.setVisibilityAutoMute = function (visibilityAutoMute) {
-        this._visibilityAutoMute = visibilityAutoMute;
+        this._options.visibilityAutoMute = visibilityAutoMute;
         if (visibilityAutoMute) {
             document.addEventListener('visibilitychange', this._handleVisibilityChange.bind(this), false);
         }
@@ -1577,22 +1279,19 @@ var PlayerCore = /** @class */ (function () {
         }
     };
     PlayerCore.prototype.getVisibilityAutoMute = function () {
-        return this._visibilityAutoMute;
+        return this._options.visibilityAutoMute;
     };
     PlayerCore.prototype._handleVisibilityChange = function () {
         var hiddenKeyword;
-        if (typeof document.hidden !== 'undefined') { // Opera 12.10 and Firefox 18 and later support
+        if (typeof document.hidden !== 'undefined') {
             hiddenKeyword = 'hidden';
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }
         else if (typeof document.msHidden !== 'undefined') {
             hiddenKeyword = 'msHidden';
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }
         else if (typeof document.webkitHidden !== 'undefined') {
             hiddenKeyword = 'webkitHidden';
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (document[hiddenKeyword]) {
             this.mute();
         }
@@ -1600,7 +1299,31 @@ var PlayerCore = /** @class */ (function () {
             this.unMute();
         }
     };
-    // constants
+    PlayerCore.prototype.disconnect = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this._playerAudio.shutDown(this._queue)];
+                    case 1:
+                        _a.sent();
+                        return [2];
+                }
+            });
+        });
+    };
+    PlayerCore.prototype.getAudioContext = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var audioContext;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this._playerAudio.getAudioContext()];
+                    case 1:
+                        audioContext = _a.sent();
+                        return [2, audioContext];
+                }
+            });
+        });
+    };
     PlayerCore.WHERE_IN_QUEUE_AT_END = 'append';
     PlayerCore.WHERE_IN_QUEUE_AT_START = 'prepend';
     PlayerCore.PLAY_SOUND_NEXT = 'next';

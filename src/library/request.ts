@@ -1,4 +1,4 @@
-import { PlayerError, IPlayerError } from './error';
+import { PlayerError } from './error';
 import { IOnProgress } from './sound';
 
 export interface IRequested {
@@ -11,7 +11,7 @@ export class PlayerRequest {
 
     // TODO: add possibility to abort http request
 
-    public getArrayBuffer(requested: IRequested): Promise<ArrayBuffer | IPlayerError> {
+    public getArrayBuffer(requested: IRequested): Promise<ArrayBuffer> {
 
         return new Promise(function (resolve, reject) {
 

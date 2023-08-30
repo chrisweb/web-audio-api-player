@@ -367,6 +367,35 @@ things I intend to add some day or if you want to help but are not sure what to 
 
 if you are interested in helping out 😊 by working on one of the following TODOs, please start by reading the ["contributing"](#contributing-prs-welcome) chapter above
 
+
+* add a shuffle songs feature
+* add a loop song (<https://webaudio.github.io/web-audio-api/#looping-AudioBufferSourceNode>) feature (actually maybe this already works today, need to verify)
+* we have sound events, but would player event be useful, like onVolumeChange?
+* add (stereo) panning
+* allow to add an array of sounds to queue all at once
+* allow to add sound to queue after a sound by id (not just at beginning or end, as it is as of now)
+* for position and volume, allow to use a percentage or a value, for volume (gain) allow values beyond 0 to 1 to amplify wave or invert it?
+* add improve UI style of the "simple" example(s) (or any new example) and then add a screenshot of it to the readme to show what can be achieved
+* destroy the audiocontext at some point, to release memory?
+* feature to use the browser notification system to alert which song is being played
+* preload AudioBuffers into indexeddb (first song, next song, current song if loop or previous is triggered ...), let the developer set the amount of preloaded AudioBuffers, remove from "cache" by least used and by date when "cache" is full, maybe do such work using this browser feature [requestidlecallback](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback) (when available)
+* cache songs for offline mode? indexeddb is not very big (filesystem?), check if doable because saving a playlist of songs might exhaust the free space (depending on the playlist size)
+* some methods return a promise others don't, use promises for all to make it more consistent?
+* write more documentation
+* make a list of all possible errors (set a distinct code for each error), handle all error cases that are still unhandled
+* [abort](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort) the loading of the sound if the user clicks play and then pause (or stop / next / previous) before the end of the buffering process
+* add new loadPlayerMode similar to XMLHttpRequest but that uses [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) to get the sound / song data from server, fetch as of now is still young, it is not yet possible to get the loading progress (<https://stackoverflow.com/a/69400632/656689>)
+* add feature to crossfade two songs "on end" (if there is a the next song in a playlist) or just fade out (current song) / fade in (next song)
+* add sound option to set the initial gain value of a sound, for now it is always 1 (1 = no change to loudness), (optional method that lets you define a modifier (or coefficient) per song by which the gain will be changed), useful if some songs are louder than others and you want to normalize the volume of all songs in a playlist to be similar
+* currently the "find song in queue" can't retrieve songs by queue index, is this useful anyway?
+* use suspend and resume if for some time no sound was played? ... to free device resources. As suspend returns a promise, does this mean suspending and resuming takes time? if so how much time does it take, based on that information we can decide after how much time it makes sense to suspend the ctx to save device resources, should this be an event of the player so that user can attach a callback to show a dialog like netflix (still wathcing?)
+* use web workers, especially for the decoding of the ArrayBuffer into an AudioBuffer, to not block the main thread while decoding?
+* add support for more codecs? Note: the player should check which codecs are supported by the browser and compare that list with the ones defined in the sound sources, then the player should use the first codec that is supported and that is marked as "isPreferred", if none is marked as "isPreferred" use the first sources codec that is supported
+* write code tests!!! (goal ofc 100% coverage), add [tests coverage badge](https://coveralls.io)
+* add saucelabs (or similar) browser testing (and their badge [browser compatibility table badge](https://saucelabs.com/blog/new-open-sauce-ui-and-refreshed-build-status-badges) in readme) to add a test suite for all player features
+* use github actions for a CI/CD workflow
+* add live demo (via github pages?) for people to see how the player works
+* add hooks to the sound object for all the native source node events [AudioBufferSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode)
 * create a react example
 * create a vue.js example
 * create an example using the (browser) fileReader, something like:
@@ -381,35 +410,6 @@ fileInput.addEventListener('change', function(event) {
   reader.readAsArrayBuffer(this.files[0]);
 }, false);
 ```
-
-* add improve UI style of the "simple" example(s) (or any new example) and then add a screenshot of it to the readme to show what can be achieved
-* completely rewrite the sources system, where you can define multiple variants of a sound but with different codecs, app needs to check which codecs are supported by the device and choose one, use should be able to define which codec is preferred if playback support for multiple codecs is available
-* destroy the audiocontext at some point, to release memory?
-* feature to use the browser notification system to alert which song is being played
-* preload AudioBuffers into indexeddb (first song, next song, current song if loop or previous is triggered ...), let the developer set the amount of preloaded AudioBuffers, remove from "cache" by least used and by date when "cache" is full, maybe do such work using this browser feature [requestidlecallback](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback) (when available)
-* cache songs for offline mode? indexeddb is not very big (filesystem?), check if doable because saving a playlist of songs might exhaust the free space (depending on the playlist size)
-* some methods return a promise others don't, use promises for all to make it more consistent
-* write more documentation
-* make a list of all possible errors (set a distinct code for each error), handle all error cases that are still unhandled
-* [abort](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort) the loading of the sound if the user clicks play and then pause (or stop / next / previous) before the end of the buffering process
-* add new loadPlayerMode similar to XMLHttpRequest but that uses [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) to get the sound / song data from server
-* add feature to crossfade two songs "on end" (if there is a the next song in a playlist) or just fade out (current song) / fade in (next song)
-* currently the "find song in queue" can't retrieve songs by queue index, is this useful anyway?
-* use suspend and resume if for some time no sound was played? ... to free device resources. As suspend returns a promise, does this mean suspending and resuming takes time? if so how much time does it take, based on that information we can decide after how much time it makes sense to suspend the ctx to save device resources
-* use web workers, especially for the decoding of the ArrayBuffer into an AudioBuffer, to not block the main thread while decoding?
-* add a shuffle songs feature
-* add a loop song (<https://webaudio.github.io/web-audio-api/#looping-AudioBufferSourceNode>) feature (actually maybe this already works today, need to verify)
-* add support for more codecs? Note: the player should check which codecs are supported by the browser and compare that list with the ones defined in the sound sources, then the player should use the first codec that is supported and that is marked as "isPreferred", if none is marked as "isPreferred" use the first sources codec that is supported
-* write code tests!!! (goal ofc 100% coverage), add [tests coverage badge](https://coveralls.io)
-* add saucelabs (or similar) browser testing (and their badge [browser compatibility table badge](https://saucelabs.com/blog/new-open-sauce-ui-and-refreshed-build-status-badges) in readme) to add a test suite for all player features
-* add [travis](https://travis-ci.org) continuous integration and badge
-* add live demo (via github pages?) for people to see how the player works
-* for position and volume, allow to use a percentage or a value
-* feature that let's the dev set a volume (via a modifier value / coefficient) per song, useful if some songs are louder than others and you want to normalize the volume of all songs in a playlist to be similar
-* add hooks to the sound object for all the native source node events [AudioBufferSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode)
-* add (stereo) panning
-* allow to add an array of sounds to queue all at once
-* allow to add sound to queue after a sound by id (not just at beginning or end, as it is as of now)
 
 ## note to self: publish package on npmjs.com
 
