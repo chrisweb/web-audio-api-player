@@ -149,11 +149,18 @@ class PlayerUI {
             this.player.play({ whichSound: 'last' });
         }
 
-        if ($button.id === 'js-byId') {
+        if ($button.id.substring(0, 7) === 'js-byId') {
             const songId = $button.getAttribute('data-song-id');
             this.player.play({ whichSound: parseInt(songId) });
         }
 
+        if ($button.id === 'pause') {
+            this.player.pause();
+        }
+
+        if ($button.id === 'stop') {
+            this.player.stop();
+        }
     }
 
     protected _setPlayingProgress(percentage: number): void {
