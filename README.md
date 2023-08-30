@@ -371,6 +371,7 @@ if you are interested in helping out 😊 by working on one of the following TOD
 * add a shuffle songs feature
 * add a loop song (<https://webaudio.github.io/web-audio-api/#looping-AudioBufferSourceNode>) feature (actually maybe this already works today, need to verify)
 * we have sound events, but would player event be useful, like onVolumeChange?
+* allow to play starting at a certain position other then the beginning (or allow to set position while song is not playing? but probably not a good idea as sound is not loaded yet)
 * add (stereo) panning
 * allow to add an array of sounds to queue all at once
 * allow to add sound to queue after a sound by id (not just at beginning or end, as it is as of now)
