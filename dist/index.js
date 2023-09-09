@@ -1106,7 +1106,6 @@ var PlayerCore = (function () {
         return [sound, soundIndex];
     };
     PlayerCore.prototype._findBestSource = function (soundSource) {
-        var _this = this;
         var bestSource = {
             url: null,
             codec: null
@@ -1118,26 +1117,31 @@ var PlayerCore = (function () {
         else {
             sources = soundSource;
         }
-        sources.forEach(function (source) {
+        var i = 0;
+        while (i < sources.length) {
+            var source = sources[i];
             var soundUrl = '';
-            if (_this._options.soundsBaseUrl !== '') {
-                soundUrl = _this._options.soundsBaseUrl;
+            if (this._options.soundsBaseUrl !== '') {
+                soundUrl = this._options.soundsBaseUrl;
             }
             soundUrl += source.url;
             var isCodecSupported = true;
             if (source.codec !== null) {
-                isCodecSupported = _this._checkCodecSupport(source.codec);
+                isCodecSupported = this._checkCodecSupport(source.codec);
             }
-            if (isCodecSupported)
-                if (bestSource.url !== null && source.isPreferred) {
+            if (isCodecSupported) {
+                if (source.isPreferred) {
                     bestSource.url = soundUrl;
                     bestSource.codec = source.codec;
+                    break;
                 }
                 else {
                     bestSource.url = soundUrl;
                     bestSource.codec = source.codec;
                 }
-        });
+            }
+            i++;
+        }
         return bestSource;
     };
     PlayerCore.prototype._checkCodecSupport = function (codec) {
