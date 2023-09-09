@@ -927,8 +927,11 @@ export class PlayerCore {
             sources = soundSource;
         }
 
-        sources.forEach((source) => {
+        let i = 0;
 
+        while (i < sources.length) {
+
+            const source = sources[i]
             let soundUrl = '';
 
             // if the player had as option a baseUrl for sounds add it now
@@ -947,23 +950,31 @@ export class PlayerCore {
             }
 
             // only if the codec of the source is supported
-            if (isCodecSupported)
+            if (isCodecSupported) {
 
-                if (bestSource.url !== null && source.isPreferred) {
+                if (source.isPreferred) {
                     // if multiple sources but this one if preferred and if previous
                     // sources also had a supported codec we still overwrite the
                     // previous match
                     bestSource.url = soundUrl;
                     bestSource.codec = source.codec;
+                    // so the source is preferred and supported so we can exit early
+                    break;
                 } else {
                     // if no best source has been found so far, we don't
                     // care if it's preferred it's automatically chosen
                     // as best
                     bestSource.url = soundUrl;
                     bestSource.codec = source.codec;
+                    // source is supported, but maybe there is preferred & supported
+                    // so we don't exit the loop just yet
                 }
 
-        });
+            }
+
+            i++;
+
+        }
 
         return bestSource;
 
