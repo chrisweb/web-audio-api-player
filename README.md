@@ -32,48 +32,6 @@ the best way to get started is to check out the examples folder, check out the s
 
 ## documentation
 
-### player options
-
-Note: if you use typescript, import the **ICoreOptions** interface along with the playerCore, this makes it a lot easier to see what player options are available and what the type of each value is
-
-* volume: [number] (default: 80) the current playback volume
-* loopQueue: [boolean] (default: false) after the last sound in the queue has finished to play should the player do a loop and continue to play by playing the first sound or stop playing
-* soundsBaseUrl: [string] (default: '') the base url for the location of the sounds
-* playingProgressIntervalTime: [number] (default: 200) the interval in milliseconds at which the player should trigger a sounds **onPlaying** callback which will tell you the playing progress in percent, this value is a minimum value because the player uses the [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) internally, meaning that if the browser is very busy it might take a bit longer than the defined interval time before the progress value is being reported, this helps to prevent that your UI uses resources that are needed more urgently somewhere else
-* playNextOnEnded: [boolean] (default: true) when a sound or song finishes playing should the player play the next sound that is in the queue or just stop playing
-* stopOnReset: [boolean] (default: true) when the queue gets reset and a sound is currently being played, should the player stop or continue playing that sound
-* visibilityAutoMute: [boolean] (default: false) tells the player if a sound is playing and the visibility API triggers a visibility change event, if the currently playing sound should get muted or not, uses the [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) internally
-* createAudioContextOnFirstUserInteraction: [boolean] (default: true) for a sound to be played the player needs to have an audiocontext, on mobile you can play sounds / songs until the user has interacted in some way with your UI, this means autoplay with no user interaction will not work, when this option is set to true the player will try to catch the very first user interaction and initialize and audiocontext so that when a sound needs to be played the context will be available
-* persistVolume: [boolean] (default: true) if this value is set to true the player will use the localstorage of the browser and save the value of the volume (localstorage entry key is **WebAudioAPIPlayerVolume**), if the page gets reloaded or the user comes back later the player will check if there is a value in the localstorage and automatically set the player volume to that value
-* loadPlayerMode: [typePlayerModes] (default: PLAYER_MODE_AUDIO) this is a constant you can import from player, currently you can chose between two modes, [PLAYER_MODE_AUDIO](#player_mode_audio) which uses the audio element to load sounds via the audio element and [PLAYER_MODE_AJAX](#player_mode_ajax) to load sounds via the web audio API, for more info about the modes read the [modes extended knowledge](#modes-extended-knowledge) chapter
-* audioContext: [AudioContext] (default: null) a custom [audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext) you inject to replace the default audiocontext of the player
-
-### sound attributes
-
-Note: if you use typescript, import the **ISoundAttributes** interface along with the playerCore, this makes it a lot easier to see what sound attributes are available and what the type of each value is
-
-**sound options:**
-
-* source: [(ISoundSource)[] | ISoundSource] (optional if an AudioBuffer or ArrayBuffer is provided instead else mandatory) a single sound source or an array of sound sources, an **ISoundSource** object consists of 3 values:
-  * **url** [string] is the base url defined in the player options + the path defined here or you add the full url here, the URL will get used by the player to load the sound when needed
-  * **codec** [string] the codec that got used to encode the sound, this allowed the player to check if that codec is supported by the browser and it also allows the player to decide which source to use if multiple sources have been defined
-  * **isPreferred** [boolean] (optional) the player will use the first source that has a codec this is supported by the browser, if more than one codec is supported it will take the source that is marked as **isPreferred**
-* id: [number | string] (optional, if none is set the player will generate one) unique id for the sound, can be used as a reference to link sound data which is not part of the sound object itself to an external source, for example if you have sound info stored in a database, set the sound id to the database id and you have a link between the two, it also allows you to call the player.play funtion using the sound id as argument to play that sound
-* loop: [boolean] (optional, default false) if the sound playback should loop when it reaches the end of sound
-* audioBuffer: [AudioBuffer] (optional) if you want to inject your own custom [AudioBuffer](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer) to be used instead of the default one the player will create
-* arrayBuffer: [ArrayBuffer] (optional) if you want to inject your own custom [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) to be used instead of the default one the player will create
-* duration: [number] (optional) if you know the duration of the sound and want to tell the player about it early, in [PLAYER_MODE_AJAX](#player_mode_ajax) the player will need to wait for the sound to be fully loaded until it can determine the duration
-
-**sound callbacks:**
-
-* onLoading: [function] (optional) a callback funtion that will get triggered at intervals during the loading process of a sound
-* onPlaying: [function] (optional) a callback funtion that will get triggered at intervals while the sound is playing
-* onEnded: [function] (optional) a callback funtion that will get triggered when the end of the sound is reached
-* onStarted: [function] (optional) a callback funtion that will get triggered when the sound playback starts
-* onStopped: [function] (optional) a callback funtion that will get triggered when the sound playback is stopped (the difference between pause and stop is that stop will free the resources needed to play a song)
-* onPaused: [function] (optional) a callback funtion that will get triggered when the sound playback is being paused (use pause instead of stop if there is a reason to assume that the playback will be resumed at anytime, if this can't be assumed it is recommended to call stop)
-* onResumed: [function] (optional) a callback funtion that will get triggered when the sound playback gets resumed after if got set to pause
-
 ### guide to building a simple audio player UI
 
 in this chapter I will try to explain how to set up the most important parts of a player, but I also recommend you have a look at the [simple player example](examples/simple-player) which is an HTML / Javascript client and has an express.js server, to demonstrate how to build an UI, you can explore and run the example locally if you want to know more about how to use this package and see a working example
@@ -96,6 +54,8 @@ const options: ICoreOptions = {
 ```
 
 Note: the **soundsBaseUrl** is the first option we set, it will tell the player what the full URL for the songs source is (for example <https://www.example.com/songs/>) or if the player and songs are hosted on the same domain the path is enough, **loopQueue** by default is set to false, I enable it here, this means that at the end of a queue (a playlist) the player won't stop but instead go back to the first song and play that song
+
+Note 2: for a full list of all available player options check out the [player options chapter](#player-options)
 
 next we initialize the player using our options object and get a player instance in return:
 
@@ -123,6 +83,8 @@ const firstSongAttributes: ISoundAttributes = {
 ```
 
 the only two attributes that are mandatory are the source array and the sound id, the source only needs one entry but for demonstration purposes I added two here, the first one is the song encoded as an mp3 and the second source is the same song but this time it has is encoded using the ogg codec, a third source option is **isPreferred**, it tells the player that if the browser has support for both codecs but that it should preferrably use ogg over mp3, the id can be any numeric value, it can be usefull if you have additional song data stored somewhere, for example if you have the related band name info, the songs music genre and so on, for example stored in a database and want to display that data in the UI while the song is being played
+
+Note: for a full list of all available sound attributes check out the [sound attributes chapter](#sound-attributes)
 
 after we have set the attributes for our first song we pass these attributes to the player queue:
 
@@ -237,6 +199,56 @@ const onClickPlayHandler = () => {
     player.play()
 }
 ```
+
+One last tip, when you want to change the position of the song, for example when someone uses the range slider of your player UI, then it is best to not stop (or pause) the song and then use play() to resume playing at a certain position, instead the easiest way is just to call the **setPosition** method of the player:
+
+```ts
+const onChangePositionHandler = (positionInPercent: number): void => {
+    player.setPosition(positionInPercent)
+}
+```
+
+### player options
+
+Note: if you use typescript, import the **ICoreOptions** interface along with the playerCore, this makes it a lot easier to see what player options are available and what the type of each value is
+
+* volume: [number] (default: 80) the current playback volume
+* loopQueue: [boolean] (default: false) after the last sound in the queue has finished to play should the player do a loop and continue to play by playing the first sound or stop playing
+* soundsBaseUrl: [string] (default: '') the base url for the location of the sounds
+* playingProgressIntervalTime: [number] (default: 200) the interval in milliseconds at which the player should trigger a sounds **onPlaying** callback which will tell you the playing progress in percent, this value is a minimum value because the player uses the [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) internally, meaning that if the browser is very busy it might take a bit longer than the defined interval time before the progress value is being reported, this helps to prevent that your UI uses resources that are needed more urgently somewhere else
+* playNextOnEnded: [boolean] (default: true) when a sound or song finishes playing should the player play the next sound that is in the queue or just stop playing
+* stopOnReset: [boolean] (default: true) when the queue gets reset and a sound is currently being played, should the player stop or continue playing that sound
+* visibilityAutoMute: [boolean] (default: false) tells the player if a sound is playing and the visibility API triggers a visibility change event, if the currently playing sound should get muted or not, uses the [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) internally
+* createAudioContextOnFirstUserInteraction: [boolean] (default: true) for a sound to be played the player needs to have an audiocontext, on mobile you can play sounds / songs until the user has interacted in some way with your UI, this means autoplay with no user interaction will not work, when this option is set to true the player will try to catch the very first user interaction and initialize and audiocontext so that when a sound needs to be played the context will be available
+* persistVolume: [boolean] (default: true) if this value is set to true the player will use the localstorage of the browser and save the value of the volume (localstorage entry key is **WebAudioAPIPlayerVolume**), if the page gets reloaded or the user comes back later the player will check if there is a value in the localstorage and automatically set the player volume to that value
+* loadPlayerMode: [typePlayerModes] (default: PLAYER_MODE_AUDIO) this is a constant you can import from player, currently you can chose between two modes, [PLAYER_MODE_AUDIO](#player_mode_audio) which uses the audio element to load sounds via the audio element and [PLAYER_MODE_AJAX](#player_mode_ajax) to load sounds via the web audio API, for more info about the modes read the [modes extended knowledge](#modes-extended-knowledge) chapter
+* audioContext: [AudioContext] (default: null) a custom [audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext) you inject to replace the default audiocontext of the player
+
+### sound attributes
+
+Note: if you use typescript, import the **ISoundAttributes** interface along with the playerCore, this makes it a lot easier to see what sound attributes are available and what the type of each value is
+
+**sound options:**
+
+* source: [(ISoundSource)[] | ISoundSource] (optional if an AudioBuffer or ArrayBuffer is provided instead else mandatory) a single sound source or an array of sound sources, an **ISoundSource** object consists of 3 values:
+  * **url** [string] is the base url defined in the player options + the path defined here or you add the full url here, the URL will get used by the player to load the sound when needed
+  * **codec** [string] the codec that got used to encode the sound, this allowed the player to check if that codec is supported by the browser and it also allows the player to decide which source to use if multiple sources have been defined
+  * **isPreferred** [boolean] (optional) the player will use the first source that has a codec this is supported by the browser, if more than one codec is supported it will take the source that is marked as **isPreferred**
+* id: [number | string] (optional, if none is set the player will generate one) unique id for the sound, can be used as a reference to link sound data which is not part of the sound object itself to an external source, for example if you have sound info stored in a database, set the sound id to the database id and you have a link between the two, it also allows you to call the player.play funtion using the sound id as argument to play that sound
+* loop: [boolean] (optional, default false) if the sound playback should loop when it reaches the end of sound
+* audioBuffer: [AudioBuffer] (optional) if you want to inject your own custom [AudioBuffer](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer) to be used instead of the default one the player will create
+* arrayBuffer: [ArrayBuffer] (optional) if you want to inject your own custom [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) to be used instead of the default one the player will create
+* duration: [number] (optional) if you know the duration of the sound and want to tell the player about it early, in [PLAYER_MODE_AJAX](#player_mode_ajax) the player will need to wait for the sound to be fully loaded until it can determine the duration
+
+**sound callbacks:**
+
+* onLoading: [function] (optional) a callback funtion that will get triggered at intervals during the loading process of a sound
+* onPlaying: [function] (optional) a callback funtion that will get triggered at intervals while the sound is playing
+* onEnded: [function] (optional) a callback funtion that will get triggered when the end of the sound is reached
+* onStarted: [function] (optional) a callback funtion that will get triggered when the sound playback starts
+* onStopped: [function] (optional) a callback funtion that will get triggered when the sound playback is stopped (the difference between pause and stop is that stop will free the resources needed to play a song)
+* onPaused: [function] (optional) a callback funtion that will get triggered when the sound playback is being paused (use pause instead of stop if there is a reason to assume that the playback will be resumed at anytime, if this can't be assumed it is recommended to call stop)
+* onResumed: [function] (optional) a callback funtion that will get triggered when the sound playback gets resumed after if got set to pause
 
 ### modes extended knowledge
 
