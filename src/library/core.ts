@@ -756,7 +756,7 @@ export class PlayerCore {
         // if there is a sound currently being played
         if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
 
-            const nextSound = this._getSoundFromQueue({ whichSound: PlayerCore.PLAY_SOUND_NEXT, updateIndex: true });
+            const nextSound = this._getSoundFromQueue({ whichSound: PlayerCore.PLAY_SOUND_NEXT, updateIndex: false });
 
             if (currentSound.onEnded !== null) {
 
@@ -831,6 +831,8 @@ export class PlayerCore {
             // AND the currentIndex is null
             // we set it to first sound in queue
             soundIndex = 0
+
+            // else we use currentIndex (so the current sound)
             if (this._currentIndex !== null) {
                 soundIndex = this._currentIndex
             }
