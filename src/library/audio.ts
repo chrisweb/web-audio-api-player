@@ -223,16 +223,10 @@ export class PlayerAudio {
         songsQueue.forEach((sound) => {
             if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
                 if (typeof sound.sourceNode.mediaElement !== 'undefined') {
-                    // clone the element to remove all listeners
-                    // commented out remove listeners as media element is removed, so if there
-                    // is no reference to it, the listeners should get removed too
-                    //sound.sourceNode.mediaElement.replaceWith(sound.sourceNode.mediaElement.cloneNode(true));
-                    // call its own remove method
                     sound.sourceNode.mediaElement.remove();
                 }
-            } else if (sound.sourceNode instanceof AudioBufferSourceNode) {
-                // 
             }
+            sound.sourceNode.disconnect();
         });
 
         this._disconnectPlayerGainNode();
