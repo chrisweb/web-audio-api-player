@@ -53,7 +53,7 @@ export declare class PlayerAudio {
     protected _getPlayerGainNode(): Promise<GainNode>;
     protected _disconnectPlayerGainNode(): void;
     connectSound(sound: ISound): Promise<void>;
-    disconnectSound(sound: ISound): Promise<void>;
+    cleanUpAudiBufferSourceNode(sound: ISound): Promise<void>;
     protected _changePlayerGainValue(gainValue: number): void;
     protected _roundGainTwoDecimals(rawGainValue: number): number;
     setVolume(volume: number, forceUpdateUserVolume?: boolean): void;

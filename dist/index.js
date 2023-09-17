@@ -323,12 +323,14 @@ var PlayerAudio = (function () {
                     case 0:
                         this._removeAutoCreateAudioContextOnFirstUserInteractionEventListeners();
                         songsQueue.forEach(function (sound) {
-                            if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
-                                if (typeof sound.sourceNode.mediaElement !== 'undefined') {
-                                    sound.sourceNode.mediaElement.remove();
+                            if (sound.sourceNode !== null) {
+                                if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
+                                    if (typeof sound.sourceNode.mediaElement !== 'undefined') {
+                                        sound.sourceNode.mediaElement.remove();
+                                    }
                                 }
+                                sound.sourceNode.disconnect();
                             }
-                            sound.sourceNode.disconnect();
                         });
                         this._disconnectPlayerGainNode();
                         return [4, this._destroyAudioContext()];
@@ -435,7 +437,9 @@ var PlayerAudio = (function () {
         });
     };
     PlayerAudio.prototype._disconnectPlayerGainNode = function () {
-        this._audioNodes.gainNode.disconnect();
+        if (this._audioNodes.gainNode !== null) {
+            this._audioNodes.gainNode.disconnect();
+        }
         this._audioNodes.gainNode = null;
     };
     PlayerAudio.prototype.connectSound = function (sound) {
@@ -455,13 +459,9 @@ var PlayerAudio = (function () {
             });
         });
     };
-    PlayerAudio.prototype.disconnectSound = function (sound) {
+    PlayerAudio.prototype.cleanUpAudiBufferSourceNode = function (sound) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                if (sound.gainNode !== null) ;
-                else {
-                    throw new PlayerError('can\'t destroy as no source node in sound');
-                }
                 if (sound.sourceNode instanceof AudioBufferSourceNode) {
                     sound.sourceNode = null;
                 }
@@ -1245,7 +1245,7 @@ var PlayerCore = (function () {
             else if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
                 sound.sourceNode.mediaElement.pause();
             }
-            this._playerAudio.disconnectSound(sound);
+            this._playerAudio.cleanUpAudiBufferSourceNode(sound);
             sound.state = soundState;
             if (this._playingProgressRequestId !== null) {
                 cancelAnimationFrame(this._playingProgressRequestId);
