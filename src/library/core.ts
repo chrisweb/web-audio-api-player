@@ -1232,6 +1232,13 @@ export class PlayerCore {
 
     public async disconnect(): Promise<void> {
 
+        // adding another check here to cancel animation frame because:
+        // a player can be disconnect while song is paused or playing
+        // which means the cancelAnimationFrame in _stop would never get triggered
+        if (this._playingProgressRequestId !== null) {
+            cancelAnimationFrame(this._playingProgressRequestId);
+        }
+
         await this._playerAudio.shutDown(this._queue);
 
     }
