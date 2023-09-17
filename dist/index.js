@@ -328,7 +328,7 @@ var PlayerAudio = (function () {
                                     sound.sourceNode.mediaElement.remove();
                                 }
                             }
-                            else if (sound.sourceNode instanceof AudioBufferSourceNode) ;
+                            sound.sourceNode.disconnect();
                         });
                         this._disconnectPlayerGainNode();
                         return [4, this._destroyAudioContext()];
@@ -999,7 +999,7 @@ var PlayerCore = (function () {
     PlayerCore.prototype._onEnded = function () {
         var currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
         if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
-            var nextSound = this._getSoundFromQueue({ whichSound: PlayerCore.PLAY_SOUND_NEXT, updateIndex: true });
+            var nextSound = this._getSoundFromQueue({ whichSound: PlayerCore.PLAY_SOUND_NEXT, updateIndex: false });
             if (currentSound.onEnded !== null) {
                 var willPlayNext = false;
                 if (nextSound !== null && this._options.playNextOnEnded) {
@@ -1307,7 +1307,11 @@ var PlayerCore = (function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4, this._playerAudio.shutDown(this._queue)];
+                    case 0:
+                        if (this._playingProgressRequestId !== null) {
+                            cancelAnimationFrame(this._playingProgressRequestId);
+                        }
+                        return [4, this._playerAudio.shutDown(this._queue)];
                     case 1:
                         _a.sent();
                         return [2];
