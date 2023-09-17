@@ -1135,7 +1135,7 @@ export class PlayerCore {
                 sound.sourceNode.mediaElement.pause();
             }
 
-            this._playerAudio.disconnectSound(sound);
+            this._playerAudio.cleanUpAudiBufferSourceNode(sound);
 
             // state is now stopped
             sound.state = soundState;

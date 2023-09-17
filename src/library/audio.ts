@@ -221,12 +221,16 @@ export class PlayerAudio {
 
         // if media element source also destroy the media element? (for each song?)
         songsQueue.forEach((sound) => {
-            if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
-                if (typeof sound.sourceNode.mediaElement !== 'undefined') {
-                    sound.sourceNode.mediaElement.remove();
+            if (sound.sourceNode !== null) {
+                if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
+                    if (typeof sound.sourceNode.mediaElement !== 'undefined') {
+                        sound.sourceNode.mediaElement.remove();
+                    }
                 }
+                // disconnect no matter if AudioBufferSourceNode
+                // or MediaElementAudioSourceNode
+                sound.sourceNode.disconnect();
             }
-            sound.sourceNode.disconnect();
         });
 
         this._disconnectPlayerGainNode();
@@ -351,8 +355,10 @@ export class PlayerAudio {
 
     protected _disconnectPlayerGainNode(): void {
 
-        this._audioNodes.gainNode.disconnect();
-
+        if (this._audioNodes.gainNode !== null) {
+            this._audioNodes.gainNode.disconnect();
+        }
+        
         this._audioNodes.gainNode = null;
 
     }
@@ -368,18 +374,12 @@ export class PlayerAudio {
 
     }
 
-    public async disconnectSound(sound: ISound): Promise<void> {
-
-        if (sound.gainNode !== null) {
-            //sound.gainNode.disconnect();
-        } else {
-            throw new PlayerError('can\'t destroy as no source node in sound');
-        }
+    public async cleanUpAudiBufferSourceNode(sound: ISound): Promise<void> {
 
         if (sound.sourceNode instanceof AudioBufferSourceNode) {
-            // the audio buffer source node we set it to undefined, to let it get destroyed
-            // by the garbage collector as you can't reuse an audio buffer source node
-            // (after it got stopped) as specified in the specs
+            // the audio buffer source node we set it to null, so that it gets destroyed
+            // by the garbage collector (as you can't reuse an audio buffer source node,
+            // after it got stopped) as specified in the specs
             sound.sourceNode = null;
         }
 
