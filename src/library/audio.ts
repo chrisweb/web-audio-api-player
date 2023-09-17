@@ -216,6 +216,7 @@ export class PlayerAudio {
 
     public async shutDown(songsQueue: ISound[]): Promise<void> {
 
+        // I know, this is probably the longest function name you have ever seen ;)
         this._removeAutoCreateAudioContextOnFirstUserInteractionEventListeners();
 
         // if media element source also destroy the media element? (for each song?)
