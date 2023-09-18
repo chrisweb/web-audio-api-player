@@ -161,6 +161,10 @@ class PlayerUI {
         if ($button.id === 'stop') {
             this.player.stop();
         }
+
+        if ($button.id === 'disconnect') {
+            this.player.disconnect();
+        }
     }
 
     protected _setPlayingProgress(percentage: number): void {
