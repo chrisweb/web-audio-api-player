@@ -117,14 +117,14 @@ const secondSongAttributes: ISoundAttributes = {
     onStarted: (playTimeOffset) => {
         console.log('onStarted (playTimeOffset): ', playTimeOffset)
     },
-    onPaused: (playTimeOffset) => {
-        console.log('onPaused (playTimeOffset): ', playTimeOffset)
+    onPaused: (playTime) => {
+        console.log('onPaused (playTime): ', playTime)
     },
-    onStopped: (playTimeOffset) => {
-        console.log('onStopped (playTimeOffset): ', playTimeOffset)
+    onStopped: (playTime) => {
+        console.log('onStopped (playTime): ', playTime)
     },
-    onResumed: (playTimeOffset) => {
-        console.log('onResumed (playTimeOffset): ', playTimeOffset)
+    onResumed: (playTime) => {
+        console.log('onResumed (playTime): ', playTime)
     },
     onEnded: (willPlayNext) => {
         console.log('onEnded (willPlayNext): ', willPlayNext)
@@ -223,6 +223,7 @@ Note: if you use typescript, import the **ICoreOptions** interface along with th
 * persistVolume: [boolean] (default: true) if this value is set to true the player will use the localstorage of the browser and save the value of the volume (localstorage entry key is **WebAudioAPIPlayerVolume**), if the page gets reloaded or the user comes back later the player will check if there is a value in the localstorage and automatically set the player volume to that value
 * loadPlayerMode: [typePlayerModes] (default: PLAYER_MODE_AUDIO) this is a constant you can import from player, currently you can chose between two modes, [PLAYER_MODE_AUDIO](#player_mode_audio) which uses the audio element to load sounds via the audio element and [PLAYER_MODE_AJAX](#player_mode_ajax) to load sounds via the web audio API, for more info about the modes read the [modes extended knowledge](#modes-extended-knowledge) chapter
 * audioContext: [AudioContext] (default: null) a custom [audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext) you inject to replace the default audiocontext of the player
+* addAudioElementsToDom: [boolean] (default: false) when audio elements get created, they are by default offscreen (not added to the DOM), if you want the audio elements to be added to the DOM set this option to true
 
 ### sound attributes
 
@@ -242,13 +243,89 @@ Note: if you use typescript, import the **ISoundAttributes** interface along wit
 
 **sound callbacks:**
 
-* onLoading: [function] (optional) a callback funtion that will get triggered at intervals during the loading process of a sound
-* onPlaying: [function] (optional) a callback funtion that will get triggered at intervals while the sound is playing
-* onEnded: [function] (optional) a callback funtion that will get triggered when the end of the sound is reached
-* onStarted: [function] (optional) a callback funtion that will get triggered when the sound playback starts
-* onStopped: [function] (optional) a callback funtion that will get triggered when the sound playback is stopped (the difference between pause and stop is that stop will free the resources needed to play a song)
-* onPaused: [function] (optional) a callback funtion that will get triggered when the sound playback is being paused (use pause instead of stop if there is a reason to assume that the playback will be resumed at anytime, if this can't be assumed it is recommended to call stop)
-* onResumed: [function] (optional) a callback funtion that will get triggered when the sound playback gets resumed after if got set to pause
+* onLoading(loadingPercentage, total, loaded): [function] (optional) a callback funtion that will get triggered at intervals during the loading process of a sound, the interval duration can be changed using the [player option "playingProgressIntervalTime"](#player-options), the callback has three parameters, **loadingPercentage** is the percentage that has been loaded so far (number ranging from 0 to 100)
+  * if the player mode is [PLAYER_MODE_AUDIO](#player_mode_audio), then **total** is an integer telling you the total song duration in seconds ([MDN HTMLMediaElement duration](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/duration)), **loaded** is an integer that tells you the amount that already got loaded (buffered end) in seconds ([MDN HTMLMediaElement buffered](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered)), if you prefer to use the raw values I recommend you use the **sound.audioElement.buffered** and read them perciodically yourself
+  * if the player mode is [PLAYER_MODE_AJAX](#player_mode_ajax), then **total** is an integer telling you the total bytes that will get loaded ([MDN ProgressEvent total](https://developer.mozilla.org/en-US/docs/Web/API/ProgressEvent/total)), **loaded** is an integer that tells you the amount of bytes that already got loaded ([MDN ProgressEvent loaded](https://developer.mozilla.org/en-US/docs/Web/API/ProgressEvent/loaded))
+* onPlaying(playingPercentage, duration, playTime)): [function] (optional) a callback funtion that will get triggered at intervals while the sound is playing, the callback has three parameters, **playingPercentage** is the percentage that has been played so far (number ranging from 0 to 100), **duration** is the total song duration, playTime is the current time in seconds that have been played
+* onEnded(willPlayNext): [function] (optional) a callback funtion that will get triggered when the end of the sound is reached, returns one parameter **willPlayNext** which is a boolean, true if there is a next song in the internal queue that will get played or false if no next sound will get played
+* onStarted(playTimeOffset): [function] (optional) a callback funtion that will get triggered when the sound playback starts, returned value is the playTimeOffset of the song, usually playTimeOffset is zero unless you explicitly set it to be something else
+* onStopped(playTime): [function] (optional) a callback funtion that will get triggered when the sound playback is stopped (the difference between pause and stop is that stop will free the resources needed to play a song), returns one parameter **playTime** which is the current sound position in seconds
+* onPaused(playTime): [function] (optional) a callback funtion that will get triggered when the sound playback is being paused (use pause instead of stop if there is a reason to assume that the playback will be resumed at anytime, if this can't be assumed it is recommended to call stop), returns one parameter **playTime** which is the current sound position in seconds
+* onResumed(playTime): [function] (optional) a callback funtion that will get triggered when the sound playback gets resumed after if got set to pause, returns one parameter **playTime** which is the current sound position in seconds
+
+### player functions
+
+Note: all player functions a promise, I recommend using a try catch and await the promise or call promise.catch to fetch eventual errors thrown by the player, like so:
+
+```ts
+async function foo(): Promise<void> {
+    try {
+        await player.play()
+    } catch (error) {
+        console.error(error)
+    }
+}
+foo()
+```
+
+or like so:
+
+```ts
+function bar(): void {
+    player.play().catch((error) => {
+        console.error(error)
+    })
+}
+bar()
+```
+
+* play() [optional property IPlayOptions] (default {}) **starts playback** of a sound, returns a promise that when resolved returns the current sound
+
+```ts
+IPlayOptions {
+    whichSound: accepted values: song ID (number or string) OR one of these 4 constants: PlayerCore.PLAY_SOUND_NEXT, PlayerCore.PLAY_SOUND_PREVIOUS, PlayerCore.PLAY_SOUND_FIRST, PlayerCore.PLAY_SOUND_LAST
+    playTimeOffset: the time at which you want the sound to start in seconds
+}
+```
+
+Note: the playTimeOffset if set will always get honored, so if you want to resume after a pause don't set the playTimeOffset, if playTimeOffset is set the song will start at the specified position, if no playTimeOffset is set the player will use the songs playTime value, which is 0 for a song that gets played for the first time or an value > 0 for a song that was paused
+
+* pause() **pauses playback**, returns a promise that when resolved returns the current sound
+* stop() **stops playback**, returns a promise that when resolved returns the current sound
+* next() used to play the **next** sound from the internal queue, returns a promise that when resolved returns the current sound
+* previous() used to play the **previous** sound from the internal queue, returns a promise that when resolved returns the current sound
+* first() used to play the **first** sound from the internal queue, returns a promise that when resolved returns the current sound
+* last() used to play the **last** sound from the internal queue, returns a promise that when resolved returns the current sound
+* addSoundToQueue() [ISoundsQueueOptions] (default { soundAttributes, whereInQueue? }) adds a new sound to the queue, it returns a sound (ISound) object
+  * addSoundToQueue has a single parameter **soundsQueueOptions** is an object of type ISoundsQueueOptions, it has two properties **soundAttribtes** (object) and **whereInQueue** (string)
+  * the soundAttribtes property you probably want to set is **source**, source is either a single ISoundSource object or an array of ISoundSource objects and the second property you may want to set is **id** (string or number), if you set it you will be able to play sounds by id, however if you don't set it the player will create an id
+  * an ISoundSource object has two required properties **url** (string) and a **codec** (string), the third property **isPreferred** is optional, it can be used to tell the player which source is preferred (if you set two sources, one with the codec mp3 and another source for that same song but with the codec ogg and both codecs are supported then the player will take the one that is marked as preferred and if none is marked as preferred it will take the first one that has a codec which is supported)
+  * the other property **whereInQueue** is optional and tells the player to put the sound at the beginning or the end of the queue, use the constants PlayerCore.WHERE_IN_QUEUE_AT_START or PlayerCore.WHERE_IN_QUEUE_AT_END, if you don't specify a constant the sound will be put at the end of the queue
+  * for some sample code check out [building a simple player guide](#guide-to-building-a-simple-audio-player-ui) or for a working example have a look at [simple player example](./examples/simple-player/README.md) source code in the file bootstrap.ts, or use this basic example to get started:
+
+```ts
+const mySoundAttributes = {
+    source: [{ url: 'https://example.com/mySound.mp3', codec: 'mp3' }],
+}
+
+player.addSoundToQueue({ soundAttributes: mySoundAttributes })
+```
+
+* resetQueue() (or reset()) removes all sounds from the queue
+* getQueue() returns the an array of sounds currently in the queue
+* setVolume(volume: number) sets to the volume in percent, so a number ranging from 0 to 100
+* getVolume() returns the current volume
+* setLoopQueue(loppQueue: boolean) to let the player know it should loop the queue, meaning that after the last song in the queue finished playing it will play the first sound in the queue, set to false to just stop at the last song in queue
+* getLoopQueue() get the current boolean value to which **loopQueue** is set
+* mute() sets the volume to 0
+* unMute() resets the volume to it's previous value
+* isMuted() a boolean value, true if the volume is currently muted else false
+* setPosition(soundPositionInPercent: number) used to change the position of the song that is currently playing in percent, so a number ranging from 0 to 100, returns a promise
+* setPositionInSeconds(soundPositionInSeconds: number): used to change the position of the song that is currently playing in seconds, the number should be smaller than the duration of the song, returns a promise
+* setVisibilityAutoMute(visibilityAutoMute: boolean) a boolean value to change the **visibilityAutoMute** option of the player, if true the player will be muted when the visibility API [MDN visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) notices that the browser is in the background, will get unmuted when the visibility API notices that the browser is in the foreground again, if false the volume will not be automatically muted when the visibility changes
+* getVisibilityAutoMute() get the current boolean value that is set for the **visibilityAutoMute** option
+* disconnect() disconnects the player and destroys all songs in the queue, this function should get called for example in react when a component unmounts, call this function when you don't need the player anymore to free memory
+* getAudioContext() get the current audioContext that is being used by the player [MDN audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext)
 
 ### modes extended knowledge
 
@@ -278,15 +355,7 @@ If you build something that has a lot (of small sounds) that get (pre-)loaded an
 
 #### You can create and then inject your own AudioContext
 
-You can inject your own, if you want to reuse an existing one your app already created:
-
-TODO: add example
-
-You can also take the one created by the library and alter it the way you want:
-
-TODO: add example
-
-#### You can create and then inject your own AudioGraph (audio routing graph)
+You can inject your own using the **audioContext** [player option](#player-options), if you want to reuse an existing one your app already created
 
 This is especially useful if you want to add your own nodes to the AudioGraph (audio routing graph). For example you may want to add an [AnalyserNode](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode) or a pannerNode, delayNode or any other node that is available in the web audio API.
 
@@ -296,6 +365,7 @@ This is especially useful if you want to add your own nodes to the AudioGraph (a
 * [Web Audio API: Editor’s Draft, 18 July 2023](https://webaudio.github.io/web-audio-api/)  
 * [MDN "Web Audio API" page](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)  
 * [MDN "The Embed Audio element" page](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio)
+* [MDN webaudio examples repository on github](https://github.com/mdn/webaudio-examples/)
 * Support tables for audio features, [caniuse: web audio API / audio element / formats ...](https://caniuse.com/#search=audio)  
 
 ## development: build
@@ -334,25 +404,6 @@ to lint the typescript files
 
 `npm run lint`
 
-## notes about problems I encountered during development
-
-### web audio api typings notes
-
-As of the 25.05.2019 the web audio api typings seem to be included in lib.d.ts, so removing them from package.json:  
-
-```json
-  "dependencies": {
-    "@types/webaudioapi": "0.0.27"
-  },
-```
-
-Unfortunately (as of 06/2019) the defined window does not have AudioContext:  
-
-* check out [github ticket](https://github.com/microsoft/TypeScript/issues/31686)  
-* the current [dom.d.ts on github](https://github.com/microsoft/TypeScript/blob/master/src/lib/dom.generated.d.ts)  
-
-This is fixed, as of now (20.02.2023) the AudioContext is now defined properly
-
 ## Changelog
 
 check out the [releases page](https://github.com/chrisweb/web-audio-api-player/releases) on github
@@ -379,9 +430,10 @@ things I intend to add some day or if you want to help but are not sure what to 
 
 if you are interested in helping out 😊 by working on one of the following TODOs, please start by reading the ["contributing"](#contributing-prs-welcome) chapter above
 
-
-* add a shuffle songs feature
-* add a loop song (<https://webaudio.github.io/web-audio-api/#looping-AudioBufferSourceNode>) feature (actually maybe this already works today, need to verify)
+* instead of having sound properties like "isReadyToPLay, isBuffered, isBuffering" it would be better to use the SOUND_STATE_XXX constants
+* add a shuffle songs feature, I thought about adding a PLAY_SHUFFLE(D) option for the play() function but then only the first song would be a random pick, so the player itself needs a shuffle mode which also shuffles the next songs, you need to be able to turn it on / off at any time
+* it would probably be useful to have a duration change handler for songs
+* add a loop song (<https://webaudio.github.io/web-audio-api/#looping-AudioBufferSourceNode>) feature (actually maybe this already works today, need to verify), same for shuffle playlist (need to verify it works well before I remove this item from the TODOS)
 * we have sound events, but would player event be useful, like onVolumeChange?
 * allow to play starting at a certain position other then the beginning (or allow to set position while song is not playing? but probably not a good idea as sound is not loaded yet)
 * add (stereo) panning
@@ -424,21 +476,24 @@ fileInput.addEventListener('change', function(event) {
 }, false);
 ```
 
-## note to self: publish package on npmjs.com
+## notes about problems I encountered during development
 
-login to npmjs.com  
+### web audio api typings notes
 
-`npm login`
+As of the 25.05.2019 the web audio api typings seem to be included in lib.d.ts, so removing them from package.json:  
 
-to make a publishing test (without actually publishing) use:
+```json
+  "dependencies": {
+    "@types/webaudioapi": "0.0.27"
+  },
+```
 
-`npm publish --dry-run`
+Unfortunately (as of 06/2019) the defined window does not have AudioContext:  
 
-!!! before using the next the command ensure the version of your package in the package.json has been updated  
+* check out [github ticket](https://github.com/microsoft/TypeScript/issues/31686)  
+* the current [dom.d.ts on github](https://github.com/microsoft/TypeScript/blob/master/src/lib/dom.generated.d.ts)  
 
-publish a new version on npmjs  
-
-`npm publish`
+This is fixed, as of now (20.02.2023) the AudioContext is now defined properly
 
 ## License
 
