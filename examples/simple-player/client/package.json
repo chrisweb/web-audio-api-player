@@ -1,39 +1,38 @@
 {
-  "name": "web-audio-api-player_simple-player_example_client",
-  "version": "5.0.0",
-  "description": "web audio api player simple player example server client",
-  "keywords": [
-    "web",
-    "audio",
-    "api",
-    "javascript",
-    "typescript",
-    "player",
-    "promises",
-    "event-driven",
-    "play",
-    "sound",
-    "playlist"
-  ],
-  "homepage": "https://github.com/chrisweb/web-audio-api-player#readme",
-  "bugs": {
-    "url": "https://github.com/chrisweb/web-audio-api-player/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/chrisweb/web-audio-api-player.git"
-  },
-  "license": "MIT",
-  "author": "chrisweb <chris963@gmail.com> (https://chris.lu)",
-  "main": "build/bootstrap.js",
-  "scripts": {
-    "build": "tsc -p ./",
-    "build:debug": "tsc -p ./ --listFiles --traceResolution",
-    "watch": "tsc -w"
-  },
-  "dependencies": {
-  },
-  "devDependencies": {
-    "typescript": "5.2.2"
-  }
+    "name": "web-audio-api-player_simple-player_example_client",
+    "version": "5.0.0",
+    "description": "web audio api player simple player example server client",
+    "keywords": [
+        "web",
+        "audio",
+        "api",
+        "javascript",
+        "typescript",
+        "player",
+        "promises",
+        "event-driven",
+        "play",
+        "sound",
+        "playlist"
+    ],
+    "homepage": "https://github.com/chrisweb/web-audio-api-player#readme",
+    "bugs": {
+        "url": "https://github.com/chrisweb/web-audio-api-player/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/chrisweb/web-audio-api-player.git"
+    },
+    "license": "MIT",
+    "author": "chrisweb <chris963@gmail.com> (https://chris.lu)",
+    "main": "build/bootstrap.js",
+    "scripts": {
+        "build": "tsc -p ./",
+        "build:debug": "tsc -p ./ --listFiles --traceResolution",
+        "watch": "tsc -w"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "typescript": "5.2.2"
+    }
 }
