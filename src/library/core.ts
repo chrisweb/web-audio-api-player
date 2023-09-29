@@ -398,21 +398,30 @@ export class PlayerCore {
                 // loading progress
                 // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
                 sound.audioElement.onprogress = () => {
+
                     if (sound.audioElement.buffered.length) {
+
                         const duration = sound.getDuration()
                         const buffered = sound.audioElement.buffered.end(0)
-                        const percentage = 100 / (duration / buffered);
-                        sound.loadingProgress = percentage;
+                        const loadingPercentageRaw = 100 / (duration / buffered);
+                        const loadingPercentage = Math.round(loadingPercentageRaw);
+
+                        sound.loadingProgress = loadingPercentage;
+
                         if (sound.onLoading !== null) {
-                            sound.onLoading(percentage, duration, buffered);
+                            sound.onLoading(loadingPercentage, duration, buffered);
                         }
+
                         sound.duration = sound.audioElement.duration;
-                        if (percentage === 100) {
+
+                        if (loadingPercentage === 100) {
                             sound.isBuffering = false;
                             sound.isBuffered = true;
                             sound.audioBufferDate = new Date();
                         }
+
                     }
+
                 }
 
                 // in chrome you will get this error message in the console:

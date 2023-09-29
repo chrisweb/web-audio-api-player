@@ -42,16 +42,16 @@ export class PlayerRequest {
 
             xhr.onprogress = function (event): void {
 
-                const percentage = 100 / (event.total / event.loaded);
+                const loadingPercentageRaw = 100 / (event.total / event.loaded);
 
                 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON
-                const percentageRounded = Math.round((percentage + Number.EPSILON) * 100) / 100;
+                const loadingPercentage = Math.round(loadingPercentageRaw);
 
                 // update value on sound object
-                requested.loadingProgress = percentageRounded;
+                requested.loadingProgress = loadingPercentage;
 
                 if (requested.onLoading !== null) {
-                    requested.onLoading(percentageRounded, event.total, event.loaded);
+                    requested.onLoading(loadingPercentage, event.total, event.loaded);
                 }
 
             };
