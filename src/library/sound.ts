@@ -1,19 +1,36 @@
 const SOUND_STATE_STOPPED = 'sound_state_stopped';
 const SOUND_STATE_PAUSED = 'sound_state_paused';
 const SOUND_STATE_PLAYING = 'sound_state_playing';
+const SOUND_STATE_SEEKING = 'sound_state_seeking';
 
-export type typeSoundStates = typeof SOUND_STATE_STOPPED | typeof SOUND_STATE_PAUSED | typeof SOUND_STATE_PLAYING;
+export type typeSoundStates = typeof SOUND_STATE_STOPPED | typeof SOUND_STATE_PAUSED | typeof SOUND_STATE_PLAYING | typeof SOUND_STATE_SEEKING;
 
 export interface IOnProgress {
-    (progress: number, maximumValue: number, currentValue: number): void;
+    (playingPercentage: number, duration: number, playTime: number): void;
 }
 
 export interface IOnEnded {
     (willPlayNext: boolean): void;
 }
 
-export interface IOnAnyAction {
+export interface IOnStarted {
     (playTimeOffset: number): void;
+}
+
+export interface IOnPaused {
+    (playTime: number): void;
+}
+
+export interface IOnResumed {
+    (playTime: number): void;
+}
+
+export interface IOnStopped {
+    (playTime: number): void;
+}
+
+export interface IOnSeeking {
+    (seekingPercentage: number, duration: number, playTime: number): void;
 }
 
 export interface ISoundSource {
@@ -36,10 +53,11 @@ export interface ISoundAttributes {
     onLoading?: IOnProgress;
     onPlaying?: IOnProgress;
     onEnded?: IOnEnded;
-    onStarted?: IOnAnyAction;
-    onStopped?: IOnAnyAction;
-    onPaused?: IOnAnyAction;
-    onResumed?: IOnAnyAction;
+    onStarted?: IOnStarted;
+    onStopped?: IOnStopped;
+    onPaused?: IOnPaused;
+    onResumed?: IOnResumed;
+    onSeeking?: IOnSeeking;
 }
 
 export interface ISound extends ISoundAttributes, ISoundSource {
@@ -53,10 +71,12 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     playTimeOffset: number;
     startTime: number;
     playTime: number;
+    elapsedPlayTime: number;
     playedTimePercentage: number;
     state: typeSoundStates;
     loadingProgress: number;
     firstTimePlayed: boolean;
+    isConnectToPlayerGain: boolean;
     getCurrentTime(): number;
     getDuration(): number;
 }
@@ -67,13 +87,14 @@ export class PlayerSound implements ISound {
     static readonly SOUND_STATE_STOPPED = 'sound_state_stopped';
     static readonly SOUND_STATE_PAUSED = 'sound_state_paused';
     static readonly SOUND_STATE_PLAYING = 'sound_state_playing';
+    static readonly SOUND_STATE_SEEKING = 'sound_state_seeking';
 
     // properties
     public source: (ISoundSource)[] | ISoundSource;
     public url: string = null;
     public codec: string = null;
     public id: number | string;
-    public loop: boolean;
+    public loop: boolean = false;
     public sourceNode: AudioBufferSourceNode | MediaElementAudioSourceNode = null;
     public gainNode: GainNode = null;
     public isReadyToPLay = false;
@@ -85,21 +106,28 @@ export class PlayerSound implements ISound {
     public audioBufferDate: Date = null;
     public playTimeOffset = 0;
     public startTime = 0;
+    // elapsedPlayTime is used to adjust the playtime
+    // when playing audio buffers
+    // on seek, pause or when there is a playTimeOffset
+    // see getCurrentTime function
+    public elapsedPlayTime = 0;
     public playTime = 0;
     public playedTimePercentage = 0;
     public state: typeSoundStates = SOUND_STATE_STOPPED;
     public loadingProgress = 0;
     public duration: number = null;
     public firstTimePlayed = true;
+    public isConnectToPlayerGain = false;
 
     // callbacks
     public onLoading: IOnProgress;
     public onPlaying: IOnProgress;
     public onEnded: IOnEnded;
-    public onStarted: IOnAnyAction;
-    public onStopped: IOnAnyAction;
-    public onPaused: IOnAnyAction;
-    public onResumed: IOnAnyAction;
+    public onStarted: IOnStarted;
+    public onStopped: IOnStopped;
+    public onPaused: IOnPaused;
+    public onResumed: IOnResumed;
+    public onSeeking?: IOnSeeking;
 
     constructor(soundAttributes: ISoundAttributes) {
 
@@ -165,6 +193,12 @@ export class PlayerSound implements ISound {
             this.onResumed = null;
         }
 
+        if (typeof soundAttributes.onSeeking === 'function') {
+            this.onSeeking = soundAttributes.onSeeking;
+        } else {
+            this.onSeeking = null;
+        }
+
         if (soundAttributes.arrayBuffer instanceof ArrayBuffer) {
             this.arrayBuffer = soundAttributes.arrayBuffer;
         }
@@ -185,13 +219,18 @@ export class PlayerSound implements ISound {
 
         if (this.sourceNode !== null) {
             if (this.sourceNode instanceof AudioBufferSourceNode) {
-                currentTime = this.sourceNode.context.currentTime;
+                currentTime = (this.sourceNode.context.currentTime - this.startTime) + this.elapsedPlayTime;
             } else if (this.sourceNode instanceof MediaElementAudioSourceNode) {
                 currentTime = this.audioElement.currentTime;
             }
         }
 
-        return currentTime;
+        
+
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON
+        const currentTimeRounded = Math.round((currentTime + Number.EPSILON) * 100) / 100;
+
+        return currentTimeRounded;
 
     }
 
@@ -201,13 +240,16 @@ export class PlayerSound implements ISound {
 
         if (this.sourceNode !== null) {
             if (this.sourceNode instanceof AudioBufferSourceNode) {
-                duration = this.sourceNode.buffer.duration;
+                duration = this.audioBuffer.duration;
             } else if (this.sourceNode instanceof MediaElementAudioSourceNode) {
                 duration = this.audioElement.duration;
             }
         }
 
-        return duration;
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON
+        const durationRounded = Math.round((duration + Number.EPSILON) * 100) / 100;
+
+        return durationRounded;
 
     }
 

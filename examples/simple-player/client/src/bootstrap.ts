@@ -2,7 +2,7 @@
 'use strict'
 
 // player build
-import { PlayerCore, ISoundAttributes, ICoreOptions, ISoundsQueueOptions } from '../../../../dist/index.js'
+import { PlayerCore/*, ISound*/, ISoundAttributes, ICoreOptions, ISoundsQueueOptions } from '../../../../dist/index.js'
 
 // library
 import { PlayerUI } from './library/player/ui.js'
@@ -12,9 +12,10 @@ import { PlayerUI } from './library/player/ui.js'
 // !!! for some details about the differencies of the two MODES
 // check out the documentation part of the readme
 const options: ICoreOptions = {
-    soundsBaseUrl: 'https://mp3l.jamendo.com/?trackid=',
+    soundsBaseUrl: 'https://prod-1.storage.jamendo.com/',
     loadPlayerMode: PlayerCore.PLAYER_MODE_AUDIO,
     loopQueue: true,
+    addAudioElementsToDom: true,
 }
 
 // create an instance of the player
@@ -29,32 +30,34 @@ const playerUI = new PlayerUI(player)
 // all you need is to define a source and give each source an ID
 // using any of the callbacks is optional
 const firstSoundAttributes: ISoundAttributes = {
-    source: [{ url: '1314412&format=mp31', codec: 'mp3' }, { url: '1314412&format=ogg1', codec: 'ogg', isPreferred: true }],
+    source: [{ url: '?trackid=1314412&format=mp31', codec: 'mp3' }, { url: '?trackid=1314412&format=ogg', codec: 'ogg' }],
     id: 1314412,
     onLoading: (loadingProgress, maximumValue, currentValue) => {
         console.log('SONG 1 - onLoading (loadingProgress, maximumValue, currentValue): ', loadingProgress, maximumValue, currentValue)
-        playerUI.changeLoadingProgress(loadingProgress)
+        playerUI.changeLoadingProgress(loadingProgress);
     },
-    onPlaying: (playingProgress/*, maximumValue, currentValue*/) => {
-        //console.log('SONG 1 - onPlaying (playingProgress, maximumValue, currentValue): ', playingProgress, maximumValue, currentValue)
-        playerUI.changePlayingProgress(playingProgress)
-        //console.log(firstSound)
-        //console.log('firstSound.duration: ', firstSound.duration)
+    onPlaying: (playingPercentage, duration, playTime) => {
+        //console.log('SONG 1 - onPlaying (playingPercentage, duration, playTime): ', playingPercentage, duration, playTime)
+        playerUI.changePlayingProgress(playingPercentage, playTime)
+    },
+    onSeeking: (seekingPercentage, duration, playTime) => {
+        console.log('SONG 1 - onSeeking (seekingPercentage, duration, playTime): ', seekingPercentage, duration, playTime)
+        playerUI.changePlayingProgress(seekingPercentage, playTime)
     },
     onStarted: (playTimeOffset) => {
         console.log('SONG 1 - onStarted (playTimeOffset): ', playTimeOffset)
-        playerUI.setToPlay()
+        playerUI.setToPlay(firstSound.duration)
     },
-    onPaused: (playTimeOffset) => {
-        console.log('SONG 1 - onPaused (playTimeOffset): ', playTimeOffset)
+    onPaused: (playTime) => {
+        console.log('SONG 1 - onPaused (playTime): ', playTime)
         playerUI.setToStop()
     },
-    onStopped: (playTimeOffset) => {
-        console.log('SONG 1 - onStopped (playTimeOffset): ', playTimeOffset)
+    onStopped: (playTime) => {
+        console.log('SONG 1 - onStopped (playTime): ', playTime)
         playerUI.setToStop()
     },
-    onResumed: (playTimeOffset) => {
-        console.log('SONG 1 - onResumed (playTimeOffset): ', playTimeOffset)
+    onResumed: (playTime) => {
+        console.log('SONG 1 - onResumed (playTime): ', playTime)
         playerUI.setToPlay()
     },
     onEnded: (willPlayNext) => {
@@ -77,32 +80,34 @@ console.log('firstSound: ', firstSound)
 
 // create a second sound
 const secondSoundAttributes: ISoundAttributes = {
-    source: [{ url: '1214935&format=mp31', codec: 'mp3' }, { url: '1214935&format=ogg1', codec: 'ogg', isPreferred: true }],
+    source: [{ url: '?trackid=1214935&format=mp31', codec: 'mp3' }, { url: '?trackid=1214935&format=ogg', codec: 'ogg' }],
     id: 1214935,
     onLoading: (loadingProgress, maximumValue, currentValue) => {
         console.log('SONG 2 - onLoading (loadingProgress, maximumValue, currentValue): ', loadingProgress, maximumValue, currentValue)
         playerUI.changeLoadingProgress(loadingProgress)
     },
-    onPlaying: (playingProgress/*, maximumValue, currentValue*/) => {
-        //console.log('SONG 2 - onPlaying (playingProgress, maximumValue, currentValue): ', playingProgress, maximumValue, currentValue)
-        playerUI.changePlayingProgress(playingProgress)
-        //console.log(firstSound)
-        //console.log('firstSound.duration: ', firstSound.duration)
+    onPlaying: (playingPercentage, duration, playTime) => {
+        //console.log('SONG 2 - onPlaying (playingPercentage, duration, playTime): ', playingPercentage, duration, playTime)
+        playerUI.changePlayingProgress(playingPercentage, playTime)
+    },
+    onSeeking: (seekingPercentage, duration, playTime) => {
+        console.log('SONG 2 - onSeeking (seekPercentage, duration, playTime): ', seekingPercentage, duration, playTime)
+        playerUI.changePlayingProgress(seekingPercentage, playTime)
     },
     onStarted: (playTimeOffset) => {
         console.log('SONG 2 - onStarted (playTimeOffset): ', playTimeOffset)
-        playerUI.setToPlay()
+        playerUI.setToPlay(secondSound.duration)
     },
-    onPaused: (playTimeOffset) => {
-        console.log('SONG 2 - onPaused (playTimeOffset): ', playTimeOffset)
+    onPaused: (playTime) => {
+        console.log('SONG 2 - onPaused (playTime): ', playTime)
         playerUI.setToStop()
     },
-    onStopped: (playTimeOffset) => {
-        console.log('SONG 2 - onStopped (playTimeOffset): ', playTimeOffset)
+    onStopped: (playTime) => {
+        console.log('SONG 2 - onStopped (playTime): ', playTime)
         playerUI.setToStop()
     },
-    onResumed: (playTimeOffset) => {
-        console.log('SONG 2 - onResumed (playTimeOffset): ', playTimeOffset)
+    onResumed: (playTime) => {
+        console.log('SONG 2 - onResumed (playTime): ', playTime)
         playerUI.setToPlay()
     },
     onEnded: (willPlayNext) => {
@@ -122,6 +127,27 @@ const secondSoundQueueOptions: ISoundsQueueOptions = {
 const secondSound = player.addSoundToQueue(secondSoundQueueOptions)
 
 console.log('secondSound: ', secondSound)
+
+/*const moreSoundsAttributes = [{
+    source: [{ url: '?trackid=1120088&format=ogg', codec: 'ogg' }],
+}, {
+    source: [{ url: '?trackid=1075892&format=ogg', codec: 'ogg' }],
+}, {
+    source: [{ url: '?trackid=1083756&format=ogg', codec: 'ogg' }],
+}, {
+    source: [{ url: '?trackid=1077679&format=ogg', codec: 'ogg' }],
+}, {
+    source: [{ url: '?trackid=1014955&format=ogg', codec: 'ogg' }],
+}];
+
+const moreSounds: ISound[] = []
+
+moreSoundsAttributes.forEach((mySoundAttributes) => {
+    const sound = player.addSoundToQueue({ soundAttributes: mySoundAttributes })
+    moreSounds.push(sound)
+})
+
+console.log('moreSounds: ', moreSounds)*/
 
 // turn the automute feature on/off: if page becomes invisible auto mute, unmute when page becomes visible again
 player.setVisibilityAutoMute(true)

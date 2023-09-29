@@ -2,11 +2,8 @@ import { PlayerSound, ISound, ISoundAttributes, ISoundSource, typeSoundStates } 
 import {
     PlayerAudio,
     IAudioOptions,
-    IAudioBufferSourceOptions,
-    IMediaElementAudioSourceOptions,
 } from './audio';
 import { PlayerRequest } from './request';
-import { PlayerError, IPlayerError } from './error';
 
 const PLAYER_MODE_AUDIO = 'player_mode_audio';
 const PLAYER_MODE_AJAX = 'player_mode_ajax';
@@ -31,6 +28,7 @@ export interface ICoreOptions {
     persistVolume?: boolean;
     loadPlayerMode?: typePlayerMode;
     audioContext?: AudioContext;
+    addAudioElementsToDom?: boolean;
 }
 
 export interface ISoundsQueueOptions {
@@ -70,16 +68,16 @@ export class PlayerCore {
 
     // the sounds queue
     protected _queue: ISound[];
-    // the current sound in queue index
+    // the queue index of the current sound
     protected _currentIndex: number;
     // instance of the audio library class
     protected _playerAudio: PlayerAudio;
     // playing progress animation frame request id
     protected _playingProgressRequestId: number = null;
-    // playing progress animation frame previous timestamp
-    protected _playingProgressPreviousTimestamp: DOMHighResTimeStamp = 0;
+    // time in milliseconds
+    protected _playingProgressPreviousTimestamp: DOMHighResTimeStamp;
     // value of the volume before we muted
-    protected _postMuteVolume: number
+    protected _postMuteVolume: number = null;
     // user player options
     protected _options: ICoreOptions;
 
@@ -113,13 +111,15 @@ export class PlayerCore {
             persistVolume: true,
             loadPlayerMode: PLAYER_MODE_AUDIO,
             audioContext: null,
+            addAudioElementsToDom: false,
         };
 
         const options = Object.assign({}, defaultOptions, playerOptions);
 
         this._queue = [];
-        this._currentIndex = null;
+        this._currentIndex = 0;
         this._options = options;
+        this._playingProgressPreviousTimestamp = 0;
 
         this._initialize();
 
@@ -135,15 +135,15 @@ export class PlayerCore {
         switch (this._options.loadPlayerMode) {
             case PlayerCore.PLAYER_MODE_AUDIO:
                 if (!this._playerAudio.detectAudioContextSupport()) {
-                    throw new PlayerError('audio context is not supported by this device');
+                    throw new Error('audio context is not supported by this device');
                 }
                 if (!this._playerAudio.detectAudioElementSupport()) {
-                    throw new PlayerError('audio element is not supported by this device');
+                    throw new Error('audio element is not supported by this device');
                 }
                 break;
             case PlayerCore.PLAYER_MODE_AJAX:
                 if (!this._playerAudio.detectAudioContextSupport()) {
-                    throw new PlayerError('audio context is not supported by this device');
+                    throw new Error('audio context is not supported by this device');
                 }
                 break;
         }
@@ -157,6 +157,8 @@ export class PlayerCore {
             createAudioContextOnFirstUserInteraction: this._options.createAudioContextOnFirstUserInteraction,
             volume: this._options.volume,
             persistVolume: this._options.persistVolume,
+            loadPlayerMode: this._options.loadPlayerMode,
+            addAudioElementsToDom: this._options.addAudioElementsToDom,
         };
 
         return audioOptions;
@@ -180,27 +182,28 @@ export class PlayerCore {
 
     }
 
-    public _appendSoundToQueue(sound: ISound): void {
+    protected _appendSoundToQueue(sound: ISound): void {
 
         this._queue.push(sound);
 
     }
 
-    public _prependSoundToQueue(sound: ISound): void {
+    protected _prependSoundToQueue(sound: ISound): void {
 
         this._queue.unshift(sound);
 
     }
 
-    public resetQueue(): void {
+    public async resetQueue(): Promise<void> {
 
         // check if sound should be stopped on reset
         if (this._options.stopOnReset) {
-            this.stop();
+            await this.stop();
         }
 
-        // TODO: destroy all the sounds or clear the cached buffers manually
-        // or will garbage collector do it?
+        this._queue.forEach((sound) => {
+            this._playerAudio.disconnectSound(sound);
+        });
 
         this._queue = [];
 
@@ -208,19 +211,23 @@ export class PlayerCore {
 
     public reset(): void {
 
-        this.resetQueue();
+        this.resetQueue().catch((error) => {
+            console.error(error);
+        });
 
     }
 
     public getQueue(): ISound[] {
-        
+
         return this._queue;
 
     }
 
     public setVolume(volume: number): void {
 
-        this._playerAudio.setVolume(volume)
+        this._playerAudio.setVolume(volume).catch((error) => {
+            console.error(error);
+        })
 
     }
 
@@ -246,15 +253,19 @@ export class PlayerCore {
 
         const currentVolume = this.getVolume();
 
-        this._postMuteVolume = currentVolume;
+        this._playerAudio.setVolume(0, false).catch((error) => {
+            console.error(error);
+        })
 
-        this._playerAudio.setVolume(0, false);
+        this._postMuteVolume = currentVolume;
 
     }
 
     public unMute(): void {
 
-        this._playerAudio.setVolume(this._postMuteVolume, false);
+        this._playerAudio.setVolume(this._postMuteVolume, false).catch((error) => {
+            console.error(error);
+        })
 
         this._postMuteVolume = null;
 
@@ -262,168 +273,163 @@ export class PlayerCore {
 
     public isMuted(): boolean {
 
-        return this._postMuteVolume === null ? true : false;
+        return this._postMuteVolume === null ? false : true;
 
     }
 
-    public setPosition(soundPositionInPercent: number): void {
+    public async setPosition(soundPositionInPercent: number): Promise<void> {
 
-        // get the current sound if any
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
-        // if there is a sound currently being played
         if (currentSound !== null) {
 
-            // if the duration did not get set manually
-            if (currentSound.duration === null || isNaN(currentSound.duration)) {
+            let duration = currentSound.getDuration();
 
-                // the user can set the sound duration manually but if he didn't the sound has to
-                // get loaded as the duration is a property of the audioBuffer
-                this._loadSound(currentSound)
-                    .then((sound: ISound) => {
+            // if the duration did not get set manually or is not a number
+            if (duration === null || isNaN(duration)) {
 
-                        // calculate the position in seconds
-                        const soundPositionInSeconds = (sound.duration / 100) * soundPositionInPercent;
+                // the user can set the sound duration manually but if he didn't the sound
+                // needs to get loaded first, to be able to know the duration it has
+                await this._loadSound(currentSound);
 
-                        this.setPositionInSeconds(soundPositionInSeconds);
-
-                    }).catch((error: PlayerError) => {
-
-                        throw error;
-
-                    });
-
-            } else {
-
-                // calculate the position in seconds
-                const soundPositionInSeconds = (currentSound.duration / 100) * soundPositionInPercent;
-
-                this.setPositionInSeconds(soundPositionInSeconds);
+                duration = currentSound.getDuration();
 
             }
+
+            // calculate the position in seconds
+            const soundPositionInSeconds = (duration / 100) * soundPositionInPercent;
+
+            this.setPositionInSeconds(soundPositionInSeconds);
 
         }
 
     }
 
-    public setPositionInSeconds(soundPositionInSeconds: number): void {
+    public async setPositionInSeconds(soundPositionInSeconds: number): Promise<void> {
 
-        // get the current sound if any
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         // if there is a sound currently being played
         if (currentSound !== null) {
+
+            if (currentSound.onSeeking !== null) {
+
+                const playTime = soundPositionInSeconds;
+                const duration = currentSound.getDuration();
+                const seekingPercentageRaw = (playTime / duration) * 100;
+                const seekingPercentage = Math.round(seekingPercentageRaw);
+
+                currentSound.onSeeking(seekingPercentage, duration, playTime);
+
+            }
 
             // is the sound is being played
             if (currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
-                // resume the playback at the given position
-                this.play({ whichSound: currentSound.id, playTimeOffset: soundPositionInSeconds });
+
+                currentSound.playTime = soundPositionInSeconds;
+
+                if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX) {
+                    currentSound.elapsedPlayTime = soundPositionInSeconds;
+                    await this._stop(currentSound, PlayerSound.SOUND_STATE_SEEKING);
+                } else if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AUDIO) {
+                    currentSound.state = PlayerSound.SOUND_STATE_SEEKING;
+                    await this._play(currentSound);
+                }
+
             } else {
+
                 // only set the sound position but don't play
-                currentSound.playTimeOffset = soundPositionInSeconds;
+                currentSound.playTime = soundPositionInSeconds;
+                currentSound.state = PlayerSound.SOUND_STATE_SEEKING;
+
             }
-
-        } else {
-
-            throw new PlayerError('position change called, but no current sound found');
 
         }
 
     }
 
-    protected _loadSound(sound: ISound): Promise<ISound | PlayerError> {
-
-        let loadSoundPromise;
-        let notImplementedError;
+    protected async _loadSound(sound: ISound): Promise<void> {
 
         switch (this._options.loadPlayerMode) {
             case PlayerCore.PLAYER_MODE_AUDIO:
-                loadSoundPromise = this._loadSoundUsingAudioElement(sound);
+                await this._loadSoundUsingAudioElement(sound);
                 break;
             case PlayerCore.PLAYER_MODE_AJAX:
-                loadSoundPromise = this._loadSoundUsingRequest(sound);
+                await this._loadSoundUsingRequest(sound);
                 break;
             case PlayerCore.PLAYER_MODE_FETCH:
-
-                // TODO: implement fetch
-
-                notImplementedError = new PlayerError(PlayerCore.PLAYER_MODE_FETCH + ' is not implemented yet', 1);
-
-                loadSoundPromise = Promise.reject(notImplementedError);
-
-                break;
+                // TODO: implement fetch (?)
+                console.warn(PlayerCore.PLAYER_MODE_FETCH + ' is not implemented yet');
         }
-
-        return loadSoundPromise;
 
     }
 
-    protected _loadSoundUsingAudioElement(sound: ISound): Promise<ISound | PlayerError> {
+    protected _loadSoundUsingAudioElement(sound: ISound): Promise<void> {
 
         return new Promise((resolve, reject) => {
-
-            // if the audio element has already been created
-            // we are ready to play
-            /*if (sound.audioElement !== null) {
-                sound.isReadyToPLay = true;
-                resolve(sound);
-            }*/
 
             // extract the url and codec from sources
             const { url, codec = null } = this._findBestSource(sound.source);
 
             sound.url = url;
             sound.codec = codec;
-            sound.arrayBuffer = null;
 
             if (sound.url !== null) {
 
-                const audioElement = new Audio();
+                sound.audioElement = this._playerAudio.getAudioElement();
+
+                const canPlayThroughHandler = async () => {
+
+                    // we don't need the listener anymore
+                    sound.audioElement.removeEventListener('canplaythrough', canPlayThroughHandler);
+                    // call onready callback
+                    sound.isReadyToPLay = true;
+                    // duration should now be available
+                    if (!isNaN(sound.audioElement.duration)) {
+                        sound.duration = sound.audioElement.duration;
+                    }
+
+                    resolve();
+
+                }
+
+                sound.audioElement.addEventListener('canplaythrough', canPlayThroughHandler);
+
+                // loading progress
+                // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
+                sound.audioElement.onprogress = () => {
+                    if (sound.audioElement.buffered.length) {
+                        const duration = sound.getDuration()
+                        const buffered = sound.audioElement.buffered.end(0)
+                        const percentage = 100 / (duration / buffered);
+                        sound.loadingProgress = percentage;
+                        if (sound.onLoading !== null) {
+                            sound.onLoading(percentage, duration, buffered);
+                        }
+                        sound.duration = sound.audioElement.duration;
+                        if (percentage === 100) {
+                            sound.isBuffering = false;
+                            sound.isBuffered = true;
+                            sound.audioBufferDate = new Date();
+                        }
+                    }
+                }
 
                 // in chrome you will get this error message in the console:
                 // "MediaElementAudioSource outputs zeroes due to CORS access restrictions"
                 // to fix this put crossOrigin to anonymous or change the cors
                 // Access-Control-Allow-Origin header of the server to *
                 // "crossOrigin" has to be set before "src"
-                audioElement.crossOrigin = 'anonymous';
+                sound.audioElement.crossOrigin = 'anonymous';
 
-                audioElement.src = sound.url;
-                audioElement.controls = false;
-                audioElement.autoplay = false;
-                audioElement.id = 'web_audio_api_player_sound_' + sound.id.toString();
+                sound.audioElement.src = sound.url;
 
-                document.body.appendChild(audioElement);
-
-                sound.audioElement = audioElement;
-                sound.isReadyToPLay = true;
-
-                this._initializeAudioElementListeners(sound);
-
-                const canplaythroughListener = () => {
-                    // we don't need the listener anymore
-                    sound.audioElement.removeEventListener('canplaythrough', canplaythroughListener);
-                    // duration should now be available as the sound has been fully loaded
-                    if (!isNaN(audioElement.duration)) {
-                        sound.duration = audioElement.duration;
-                    }
-                    resolve(sound);
-                };
-
-                sound.audioElement.addEventListener('canplaythrough', canplaythroughListener);
-
-                const errorListener = () => {
-                    sound.audioElement.removeEventListener('error', errorListener);
-                    const soundLoadingError = new PlayerError('loading sound failed');
-                    reject(soundLoadingError);
-                };
-
-                sound.audioElement.addEventListener('error', errorListener);
+                // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/load
+                sound.audioElement.load();
 
             } else {
 
-                const noUrlError = new PlayerError('sound has no url', 1);
-
-                reject(noUrlError);
+                reject(new Error('sound has no url'));
 
             }
 
@@ -431,229 +437,199 @@ export class PlayerCore {
 
     }
 
-    protected _loadSoundUsingRequest(sound: ISound): Promise<ISound | PlayerError> {
+    protected async _loadSoundUsingRequest(sound: ISound): Promise<void> {
 
-        return new Promise((resolve, reject) => {
 
-            // extract the url and codec from sources
-            const { url, codec = null } = this._findBestSource(sound.source);
+        // check for audio buffer before array buffer, because if one exist the other
+        // should exist too and is better for performance to reuse audio buffer then
+        // to redecode array buffer into an audio buffer
+        // user provided audio buffer
+        // decoding an array buffer is an expensive task even on modern hardware
+        // TODO: commented out for now, there is a weird bug when reusing the
+        // audio buffer, somehow the onended callback gets triggered in a loop
+        /*if (sound.audioBuffer !== null) {
+            return;
+        }*/
 
-            sound.url = url;
-            sound.codec = codec;
-
-            if (sound.url !== null) {
-
-                const request = new PlayerRequest();
-
-                // change buffering state
-                sound.isBuffering = true;
-
-                request.getArrayBuffer(sound).then((arrayBuffer) => {
-
-                    sound.arrayBuffer = arrayBuffer;
-
-                    this._decodeSound({ sound }).then((sound: ISound) => {
-                        resolve(sound);
-                    }).catch(reject)
-
-                }).catch((requestError) => {
-
-                    reject(requestError);
-
-                });
-
-            } else {
-
-                const noUrlError = new PlayerError('sound has no url', 1);
-
-                reject(noUrlError);
-
-            }
-
-        });
-
-    }
-
-    protected _initializeAudioElementListeners(sound: ISound): void {
-
-        sound.audioElement.addEventListener('progress', () => {
-            sound.loadingProgress = sound.audioElement.duration;
-        });
-
-        sound.audioElement.addEventListener('timeupdate', () => {
-            sound.duration = sound.audioElement.duration;
-        });
-
-    }
-
-    protected _decodeSound({ sound }: IDecodeSoundOptions): Promise<ISound> {
-
-        return this._playerAudio.decodeAudio(sound.arrayBuffer).then((audioBuffer) => {
-
-            sound.audioBuffer = audioBuffer;
-            sound.isBuffering = false;
-            sound.isBuffered = true;
-            sound.audioBufferDate = new Date();
-            sound.duration = audioBuffer.duration;
-            sound.isReadyToPLay = true;
-
-            return sound;
-
-        }).catch((decodeAudioError: IPlayerError) => {
-
-            throw decodeAudioError;
-
-        });
-
-    }
-
-    // source: https://stackoverflow.com/questions/43655953/web-audio-api-cloning-an-audiobuffer
-    protected _cloneAudioBuffer(fromAudioBuffer: AudioBuffer) {
-        const audioBuffer = new AudioBuffer({
-            length: fromAudioBuffer.length,
-            numberOfChannels: fromAudioBuffer.numberOfChannels,
-            sampleRate: fromAudioBuffer.sampleRate
-        });
-        for (let channelI = 0; channelI < audioBuffer.numberOfChannels; ++channelI) {
-            const samples = fromAudioBuffer.getChannelData(channelI);
-            audioBuffer.copyToChannel(samples, channelI);
+        // user provided array buffer
+        if (sound.arrayBuffer !== null) {
+            return await this._decodeSound({ sound });
         }
-        return audioBuffer;
+
+        // extract the url and codec from sources
+        const { url, codec = null } = this._findBestSource(sound.source);
+
+        sound.url = url;
+        sound.codec = codec;
+
+        if (sound.url !== null) {
+
+            const request = new PlayerRequest();
+
+            // change buffering state
+            sound.isBuffering = true;
+
+            const arrayBuffer = await request.getArrayBuffer(sound);
+
+            sound.arrayBuffer = arrayBuffer;
+
+            await this._decodeSound({ sound });
+
+        } else {
+
+            throw new Error('sound has no url');
+
+        }
+
     }
 
-    public play({ whichSound, playTimeOffset }: IPlayOptions = {}): Promise<void> {
+    protected async _decodeSound({ sound }: IDecodeSoundOptions): Promise<void> {
 
-        return new Promise((resolve, reject) => {
+        // make a copy of the array buffer first
+        // because the decoding will detach the array buffer
+        // https://github.com/WebAudio/web-audio-api/issues/1175
+        const arrayBufferCopy = sound.arrayBuffer.slice(0);
 
-            // get the current sound if any
-            const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+        const audioBuffer = await this._playerAudio.decodeAudio(arrayBufferCopy);
 
-            // whichSound is optional, if set it can be the sound id or if it's a string it can be next / previous / first / last
-            const sound = this._getSoundFromQueue({ whichSound, updateIndex: true });
+        sound.audioBuffer = audioBuffer;
+        sound.isBuffering = false;
+        sound.isBuffered = true;
+        sound.audioBufferDate = new Date();
+        sound.duration = audioBuffer.duration;
+        sound.isReadyToPLay = true;
 
-            // if there is no sound we could play, do nothing
-            if (sound === null) {
-                throw new Error('no more sounds in array');
-            }
+    }
 
-            // if there is a sound currently being played OR paused
-            // AND the current sound is NOT the same sound as the one that will now be played
-            // STOP the current sound
-            if (
-                currentSound !== null
-                && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING || currentSound.state === PlayerSound.SOUND_STATE_PAUSED)
-                && (currentSound.id !== sound.id)
-            ) {
-                this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
-            }
+    public async play({ whichSound, playTimeOffset }: IPlayOptions = {}): Promise<ISound> {
 
-            // if there is a sound currently being played
-            // AND the current sound is the same sound as the one that will now be played
-            // PAUSE the current sound
-            if (
-                currentSound !== null
-                && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING)
-                && (currentSound.id === sound.id)
-            ) {
-                this._stop(currentSound, PlayerSound.SOUND_STATE_PAUSED);
-            }
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
-            // if the current sound and the next one are not the same sound
-            // we set the firstTimePlayed to true to indicate it is a fresh start and not a resume after a pause
-            if (currentSound === null || (currentSound !== null && (currentSound.id !== sound.id))) {
-                sound.firstTimePlayed = true;
+        // whichSound is optional, if set it can be the sound id (string or number)
+        // or it can be these 4 constants: PLAY_SOUND_NEXT, PLAY_SOUND_PREVIOUS,
+        // PLAY_SOUND_FIRST, PLAY_SOUND_LAST
+        const sound = this._getSoundFromQueue({ whichSound, updateIndex: true });
+
+        // if there is no sound we could play, do nothing
+        if (sound === null) {
+            console.warn('no more sounds in array');
+            return sound;
+        }
+
+        // if there is a sound currently being played
+        // AND the current sound is the same sound as the one that will now be played
+        // PAUSE the current sound
+        if (
+            currentSound !== null
+            && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING)
+            && (currentSound.id === sound.id)
+        ) {
+            if (!isNaN(playTimeOffset)) {
+                // sound is already playing but a playTimeOffset got set
+                // so we just need to seek
+                this.setPositionInSeconds(playTimeOffset);
+                return sound;
             } else {
-                sound.firstTimePlayed = false;
+                // sound is already playing, do nothing
+                return sound;
             }
+        }
 
-            // if the user wants to play the sound from a certain position
-            if (playTimeOffset !== undefined) {
-                sound.playTimeOffset = playTimeOffset;
-            }
+        // if there is a sound currently being played OR paused
+        // AND the current sound is NOT the same sound as the one that will now be played
+        // STOP the current sound
+        if (
+            currentSound !== null
+            && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING || currentSound.state === PlayerSound.SOUND_STATE_PAUSED)
+            && (currentSound.id !== sound.id)
+        ) {
+            await this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
+        }
 
-            // has the sound already been loaded?
-            if (!sound.isReadyToPLay) {
+        // if the user wants to play the sound from a certain position
+        // then playTimeOffset should be a number and not undefined
+        if (!isNaN(playTimeOffset)) {
+            sound.playTimeOffset = playTimeOffset;
+        } else {
+            sound.playTimeOffset = 0;
+        }
 
-                this._loadSound(sound).then(() => {
+        if (sound.sourceNode === null) {
+            // connect the source to the graph node(s)
+            await this._playerAudio.connectSound(sound, () => {
+                this._onEnded();
+            });
+        }
 
-                    this._play(sound).then(resolve).catch(reject);
+        // has the sound already been loaded?
+        if (!sound.isReadyToPLay) {
 
-                }).catch(reject);
+            await this._loadSound(sound);
 
-            } else {
+            await this._play(sound);
 
-                // avoid refetching the sound (getting the array buffer)
-                // by using a clone we avoid having to do the decoding again
-                if (sound.audioBuffer !== null) {
-                    sound.audioBuffer = this._cloneAudioBuffer(sound.audioBuffer)
-                }
+        } else {
 
-                this._play(sound).then(resolve).catch(reject);
+            await this._play(sound);
 
-            }
+        }
 
-        });
+        return sound;
 
     }
 
     protected async _play(sound: ISound): Promise<void> {
 
+        if (this._playerAudio.isAudioContextFrozen()) {
+            await this._playerAudio.unfreezeAudioContext();
+        }
+
+        if (sound.playTimeOffset > 0) {
+            sound.playTime = sound.playTimeOffset;
+        }
+
         // start playing
-        if (sound.audioBuffer !== null) {
+        if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX) {
             await this._playAudioBuffer(sound);
-        } else {
+        } else if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AUDIO) {
             await this._playMediaElementAudio(sound);
         }
 
         // state is now playing
         sound.state = PlayerSound.SOUND_STATE_PLAYING;
 
-        // the audio context time right now (since the audiocontext got created)
-        sound.startTime = sound.getCurrentTime();
-
-        sound = this._triggerSoundCallbacks(sound);
+        this._triggerSoundCallbacks(sound);
 
     }
 
     protected async _playAudioBuffer(sound: ISound): Promise<void> {
 
-        if (sound.sourceNode === null) {
-
-            // source node options
-            const sourceOptions: IAudioBufferSourceOptions = {
-                loop: sound.loop,
-                onSourceNodeEnded: (/*event: Event*/) => {
-                    this._onEnded()
-                }
-            };
-
-            try {
-                await this._playerAudio.createAudioBufferSourceNode(sourceOptions, sound);
-            } catch (error) {
-                throw new PlayerError(error);
-            }
-
-        }
-
         // AudioBufferSourceNode type guard
         if (sound.sourceNode instanceof AudioBufferSourceNode) {
 
-            // add the buffer to the source node
-            sound.sourceNode.buffer = sound.audioBuffer;
+            // on play, seek, pause, always reset the sound startTime (current context time)
+            sound.startTime = sound.sourceNode.context.currentTime;
 
-            // connect the source to the graph node(s)
-            await this._playerAudio.connectSound(sound);
+            // add the audio buffer to the source node
+            sound.sourceNode.buffer = sound.audioBuffer;
 
             // start playback
             // start(when, offset, duration)
             try {
-                if (sound.playTimeOffset !== undefined) {
-                    sound.sourceNode.start(0, sound.playTimeOffset);
+                if (sound.state === PlayerSound.SOUND_STATE_SEEKING) {
+                    sound.sourceNode.start(0, sound.playTime);
+                } else if (sound.state === PlayerSound.SOUND_STATE_PAUSED && sound.playTimeOffset === 0) {
+                    sound.sourceNode.start(0, sound.playTime);
                 } else {
-                    sound.sourceNode.start();
+                    if (sound.playTimeOffset > 0) {
+                        sound.elapsedPlayTime = sound.playTimeOffset;
+                        sound.sourceNode.start(0, sound.playTimeOffset);
+                    } else {
+                        sound.sourceNode.start();
+                    }
                 }
             } catch (error) {
-                throw new PlayerError(error);
+                throw new Error(error);
             }
         }
 
@@ -661,148 +637,154 @@ export class PlayerCore {
 
     protected async _playMediaElementAudio(sound: ISound): Promise<void> {
 
-        if (sound.sourceNode === null) {
-
-            // source node options
-            const sourceOptions: IMediaElementAudioSourceOptions = {
-                loop: sound.loop,
-                onSourceNodeEnded: (/**event: Event*/) => {
-                    this._onEnded()
-                },
-                mediaElement: sound.audioElement
-            };
-
-            // create an media element audio source node
-            try {
-                await this._playerAudio.createMediaElementSourceNode(sourceOptions, sound);
-            } catch (error) {
-                throw new PlayerError(error);
-            }
-
-        }
-
         // MediaElementAudioSourceNode type guard
         if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
 
-            // connect the source to the graph node(s)
-            await this._playerAudio.connectSound(sound);
-
-            // if an offset is defined use to play from a defined position
-            if (sound.playTimeOffset !== undefined && !isNaN(sound.playTimeOffset)) {
-
-                // TODO: problem if sound has not loaded until for example 90% but position gets set to 90%
-                // the position will jump back
-                // need to wait for sound to have loaded that part, use events???
-
-                sound.audioElement.currentTime = sound.playTimeOffset;
+            if (sound.state === PlayerSound.SOUND_STATE_SEEKING) {
+                sound.audioElement.currentTime = sound.playTime;
+            } else if (sound.state === PlayerSound.SOUND_STATE_PAUSED && sound.playTimeOffset === 0) {
+                sound.audioElement.currentTime = sound.playTime;
+            } else {
+                // if an offset is defined use to play from a defined position
+                if (sound.playTimeOffset > 0) {
+                    sound.audioElement.currentTime = sound.playTimeOffset;
+                } else {
+                    sound.audioElement.currentTime = 0;
+                }
             }
 
-            try {
-                sound.sourceNode.mediaElement.play();
-            } catch (error) {
-                throw new PlayerError(error);
-            }
+            await sound.audioElement.play();
 
         }
 
     }
 
-    protected _triggerSoundCallbacks(sound: ISound): ISound {
+    protected _triggerSoundCallbacks(sound: ISound) {
 
         // if there is an onResumed callback for the sound, trigger it
         if (sound.onResumed !== null && !sound.firstTimePlayed) {
-            sound.onResumed(sound.playTimeOffset);
+            sound.onResumed(sound.playTime);
         }
 
         // if there is an onStarted callback for the sound, trigger it
         if (sound.onStarted !== null && sound.firstTimePlayed) {
+            sound.firstTimePlayed = false;
             sound.onStarted(sound.playTimeOffset);
         }
 
         // if there is an onPlaying callback for the sound, trigger it
         if (sound.onPlaying !== null) {
+            // reset progress timestamp
+            this._playingProgressPreviousTimestamp = 0;
             // on request animation frame callback set playing progress
             // request animation frame callback has a argument, which
             // is the timestamp when the callback gets called
-            this._playingProgressRequestId = window.requestAnimationFrame((timestamp) => {
-                this._progressTrigger(sound, timestamp)
-            });
+            this._progressTrigger(sound, 0);
         } else {
             this._playingProgressRequestId = null;
         }
 
-        return sound;
+        return;
 
     }
 
     protected _progressTrigger = (sound: ISound, timestamp: DOMHighResTimeStamp) => {
+
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+
+        // I had a lot of trouble cancelling the animation frame
+        // this is why I added this check
+        // often onended would get called by even though I do
+        // a cancel in _stop() the animation frame would still repeat
+        if (sound.id !== currentSound.id || currentSound.state !== PlayerSound.SOUND_STATE_PLAYING) {
+            return;
+        }
+
         // throttle requests to not more than once every 200ms 
         if ((timestamp - this._playingProgressPreviousTimestamp) >= this._options.playingProgressIntervalTime) {
-            // execute playing progress callback
-            this._playingProgress(sound);
-            this._playingProgressPreviousTimestamp = timestamp;
+
+            const currentTime = sound.getCurrentTime();
+            const duration = sound.getDuration();
+
+            if (!isNaN(currentTime) && !isNaN(duration)) {
+
+                let playingPercentage = 0;
+
+                if (currentTime !== 0) {
+                    const playingPercentageRaw = (currentTime / duration) * 100;
+                    playingPercentage = Math.round(playingPercentageRaw);
+                }
+
+                sound.playedTimePercentage = playingPercentage;
+                sound.playTime = currentTime;
+
+                // execute playing progress callback
+                sound.onPlaying(playingPercentage, duration, currentTime);
+
+                this._playingProgressPreviousTimestamp = timestamp;
+            }
+
         }
+
         // request animation frame loop
         this._playingProgressRequestId = window.requestAnimationFrame((timestamp) => {
             this._progressTrigger(sound, timestamp);
         });
-    };
 
-    protected _onEnded(): void {
+    }
 
-        // get the current sound if any
-        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+    protected async _onEnded(): Promise<void> {
 
-        // if there is a sound currently being played
-        if (currentSound !== null && currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
+        if (this._options.playNextOnEnded) {
 
-            const nextSound = this._getSoundFromQueue({ whichSound: PlayerCore.PLAY_SOUND_NEXT, updateIndex: false });
+            const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
-            if (currentSound.onEnded !== null) {
+            if (currentSound !== null) {
 
-                let willPlayNext = false;
+                // when we set the sound to paused...
+                // audio buffer will trigger onEnded because we actually stop the song
+                // audio element will not trigger onEnded as we pause the song
+                // this is why, for audio buffer (ajax) sounds we check if they have
+                // the playing state before triggering the next sound
+                // if stopped, seeking or pause we do nothing
+                if (
+                    this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AUDIO ||
+                    (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX && currentSound.state === PlayerSound.SOUND_STATE_PLAYING)
+                ) {
 
-                // check if there is another sound in the queue and if playing
-                // the next one on ended is activated
-                if (nextSound !== null && this._options.playNextOnEnded) {
-                    willPlayNext = true;
+                    const nextSound = this._getSoundFromQueue({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
+
+                    let willPlayNext = false;
+
+                    // check if there is another sound in the queue
+                    if (nextSound !== null) {
+                        willPlayNext = true;
+                    }
+
+                    if (!willPlayNext) {
+                        await this._playerAudio.freezeAudioContext();
+                    }
+
+                    if (currentSound.onEnded !== null) {
+                        currentSound.onEnded(willPlayNext);
+                    }
+
+                    try {
+                        await this.next();
+                    } catch (error) {
+                        console.error(error)
+                    }
+
                 }
 
-                // if loopQueue is enabled then willPlayNext is always true
-                if (this._options.loopQueue) {
-                    willPlayNext = true;
-                }
-
-                if (!willPlayNext) {
-                    this._playerAudio.freezeAudioContext();
-                }
-
-                currentSound.onEnded(willPlayNext);
-
-            }
-
-            // reset "first time played"
-            currentSound.firstTimePlayed = true;
-
-            // reset the "play time offset"
-            currentSound.playTimeOffset = 0;
-
-            this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
-
-            if (nextSound !== null) {
-
-                if (this._options.playNextOnEnded) {
-                    this.play({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
-                }
-
-            } else {
-
-                // we reached the end of the queue set the currentIndex back to zero
-                this._currentIndex = 0;
-
-                // if queue loop is active then play
-                if (this._options.loopQueue) {
-                    this.play();
+                if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX && currentSound.state === PlayerSound.SOUND_STATE_SEEKING) {
+                    try {
+                        // audio buffer source nodes get destroyed on stop
+                        // this is why in ajax mode we need to do a fresh start when seeking
+                        await this.play(currentSound);
+                    } catch (error) {
+                        console.error(error)
+                    }
                 }
 
             }
@@ -811,10 +793,6 @@ export class PlayerCore {
 
     }
 
-    /**
-     * whichSound is optional, if set it can be the sound id or if it's
-     * a string it can be next / previous / first / last
-     */
     protected _getSoundFromQueue({ whichSound, updateIndex = false }: IGetSoundFromQueue = {}): ISound {
 
         let sound = null;
@@ -826,63 +804,54 @@ export class PlayerCore {
         }
 
         // if which sound to play did not get specified
-        if (whichSound === undefined) {
-            // if whichSound is not defined
-            // AND the currentIndex is null
-            // we set it to first sound in queue
-            soundIndex = 0
+        // we set it to the current sound by default
+        if (typeof whichSound === 'undefined') {
+            whichSound = PlayerCore.CURRENT_SOUND;
+        }
 
-            // else we use currentIndex (so the current sound)
-            if (this._currentIndex !== null) {
+        // if which sound to play is a constant
+        switch (whichSound) {
+            case PlayerCore.CURRENT_SOUND:
                 soundIndex = this._currentIndex
-            }
-            sound = this._queue[soundIndex];
-        } else {
-            // if which sound to play is a constant
-            switch (whichSound) {
-                case PlayerCore.CURRENT_SOUND:
-                    if (this._currentIndex !== null) {
-                        sound = this._queue[this._currentIndex];
-                    }
-                    break;
-                case PlayerCore.PLAY_SOUND_NEXT:
-                    if (this._queue[this._currentIndex + 1] !== undefined) {
-                        soundIndex = this._currentIndex + 1;
-                        sound = this._queue[soundIndex];
-                    } else if (this._options.loopQueue) {
-                        // if last sound is playing and loop is enabled
-                        // on next we jump to first sound
-                        soundIndex = 0;
-                        sound = this._queue[soundIndex];
-                    }
-                    break;
-                case PlayerCore.PLAY_SOUND_PREVIOUS:
-                    if (this._queue[this._currentIndex - 1] !== undefined) {
-                        soundIndex = this._currentIndex - 1;
-                        sound = this._queue[soundIndex];
-                    } else if (this._options.loopQueue) {
-                        // if first sound is playing and loop is enabled
-                        // on previous we jump to last sound
-                        soundIndex = this._queue.length - 1;
-                        sound = this._queue[soundIndex];
-                    }
-                    break;
-                case PlayerCore.PLAY_SOUND_FIRST:
-                    if (this._queue.length > 0) {
-                        soundIndex = 0;
-                        sound = this._queue[soundIndex];
-                    }
-                    break;
-                case PlayerCore.PLAY_SOUND_LAST:
-                    if (this._queue.length > 0) {
-                        soundIndex = this._queue.length - 1;
-                        sound = this._queue[soundIndex];
-                    }
-                    break;
-                default:
-                    // if "which sound to play" (soundId) is a string or number
-                    [sound, soundIndex] = this._findSoundById({ soundId: whichSound });
-            }
+                sound = this._queue[soundIndex];
+                break;
+            case PlayerCore.PLAY_SOUND_NEXT:
+                if (this._queue[this._currentIndex + 1] !== undefined) {
+                    soundIndex = this._currentIndex + 1;
+                    sound = this._queue[soundIndex];
+                } else if (this._options.loopQueue) {
+                    // if last sound is playing and loop is enabled
+                    // on next we jump to first sound
+                    soundIndex = 0;
+                    sound = this._queue[soundIndex];
+                }
+                break;
+            case PlayerCore.PLAY_SOUND_PREVIOUS:
+                if (this._queue[this._currentIndex - 1] !== undefined) {
+                    soundIndex = this._currentIndex - 1;
+                    sound = this._queue[soundIndex];
+                } else if (this._options.loopQueue) {
+                    // if first sound is playing and loop is enabled
+                    // on previous we jump to last sound
+                    soundIndex = this._queue.length - 1;
+                    sound = this._queue[soundIndex];
+                }
+                break;
+            case PlayerCore.PLAY_SOUND_FIRST:
+                if (this._queue.length > 0) {
+                    soundIndex = 0;
+                    sound = this._queue[soundIndex];
+                }
+                break;
+            case PlayerCore.PLAY_SOUND_LAST:
+                if (this._queue.length > 0) {
+                    soundIndex = this._queue.length - 1;
+                    sound = this._queue[soundIndex];
+                }
+                break;
+            default:
+                // if "which sound to play" (soundId) is a string or number
+                [sound, soundIndex] = this._findSoundById({ soundId: whichSound });
         }
 
         if (soundIndex !== null && updateIndex) {
@@ -1028,7 +997,7 @@ export class PlayerCore {
         }
 
         if (error) {
-            throw new PlayerError(error);
+            throw new Error(error);
         }
 
         return this._checkMimeTypesSupport(mediaMimeTypes);
@@ -1055,9 +1024,8 @@ export class PlayerCore {
 
     }
 
-    public pause(): void {
+    public async pause(): Promise<ISound> {
 
-        // get the current sound
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         if (currentSound === null) {
@@ -1065,26 +1033,30 @@ export class PlayerCore {
         }
 
         if (currentSound.state === PlayerSound.SOUND_STATE_PAUSED) {
-            // TODO: just return or throw an error
             return;
         }
 
-        const timeAtPause = currentSound.getCurrentTime();
+        const currentTime = currentSound.getCurrentTime();
 
-        currentSound.playTimeOffset += timeAtPause - currentSound.startTime;
+        currentSound.playTime = currentTime;
 
-        // trigger paused event
-        if (currentSound.onPaused !== null) {
-            currentSound.onPaused(currentSound.playTimeOffset);
+        if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX) {
+            currentSound.elapsedPlayTime = currentTime;
         }
 
-        this._stop(currentSound, PlayerSound.SOUND_STATE_PAUSED);
+        // trigger onpaused callback
+        if (currentSound.onPaused !== null) {
+            currentSound.onPaused(currentSound.playTime);
+        }
+
+        await this._stop(currentSound, PlayerSound.SOUND_STATE_PAUSED);
+
+        return currentSound;
 
     }
 
-    public stop(): void {
+    public async stop(): Promise<ISound> {
 
-        // get the current sound
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         if (currentSound === null) {
@@ -1093,102 +1065,89 @@ export class PlayerCore {
 
         // check if sound is already stopped
         if (currentSound.state === PlayerSound.SOUND_STATE_STOPPED) {
-            // TODO: just return or throw an error
             return;
         }
 
         // freeze the audio context
-        this._playerAudio.freezeAudioContext();
+        await this._playerAudio.freezeAudioContext();
 
-        const timeAtStop = currentSound.getCurrentTime();
-
-        currentSound.playTimeOffset += timeAtStop - currentSound.startTime;
-
-        // trigger stopped event
+        // trigger stopped callback
         if (currentSound.onStopped !== null) {
-            currentSound.onStopped(currentSound.playTimeOffset);
+            currentSound.onStopped(currentSound.playTime);
         }
 
-        this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
+        await this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
+
+        return currentSound;
 
     }
 
-    protected _stop(sound: ISound, soundState: typeSoundStates): void {
+    protected async _stop(sound: ISound, soundState: typeSoundStates): Promise<void> {
 
-        // if it is fully stopped, not just paused
-        if (soundState === PlayerSound.SOUND_STATE_STOPPED) {
-            // reset the playTimeOffset
-            sound.playTimeOffset = 0;
-            // reset the "is ready to pLay"
-            //sound.isReadyToPLay = false;
-            // reset "first time played"
-            sound.firstTimePlayed = true;
+        if (this._playingProgressRequestId !== null) {
+            cancelAnimationFrame(this._playingProgressRequestId);
+            this._playingProgressRequestId = null;
         }
+
+        sound.state = soundState;
 
         if (sound.sourceNode !== null) {
 
             if (sound.sourceNode instanceof AudioBufferSourceNode) {
-                // to stop playing if using the AudioBufferSourceNode use the stop method
+                // if using the AudioBufferSourceNode use the stop method
                 sound.sourceNode.stop(0);
-            } else if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
-                // to stop playing if using the MediaElementAudioSourceNode use the pause method
-                sound.sourceNode.mediaElement.pause();
+                // the audio buffer can be reused for multiple plays
+                // however the audio buffer source can not
+                await this._playerAudio.disconnectSound(sound);
             }
 
-            this._playerAudio.cleanUpAudiBufferSourceNode(sound);
-
-            // state is now stopped
-            sound.state = soundState;
-
-            if (this._playingProgressRequestId !== null) {
-                cancelAnimationFrame(this._playingProgressRequestId);
-                this._playingProgressPreviousTimestamp = 0;
+            if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
+                // if using the MediaElementAudioSourceNode use the pause method
+                sound.audioElement.pause();
             }
 
         }
 
+        // if it is fully stopped, not just paused
+        if (soundState === PlayerSound.SOUND_STATE_STOPPED) {
+            // reset sound values
+            sound.isReadyToPLay = false;
+            sound.firstTimePlayed = true;
+            sound.startTime = 0;
+            sound.elapsedPlayTime = 0;
+            sound.playTime = 0;
+            sound.playedTimePercentage = 0;
+            // disconnect the sound
+            await this._playerAudio.disconnectSound(sound);
+        }
+
     }
 
-    public next(): void {
+    public async next(): Promise<ISound> {
 
         // alias for play next
-        this.play({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
+        return await this.play({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
 
     }
 
-    public previous(): void {
+    public async previous(): Promise<ISound> {
 
         // alias for play previous
-        this.play({ whichSound: PlayerCore.PLAY_SOUND_PREVIOUS });
+        return await this.play({ whichSound: PlayerCore.PLAY_SOUND_PREVIOUS });
 
     }
 
-    public first(): void {
+    public async first(): Promise<ISound> {
 
         // alias for play first
-        this.play({ whichSound: PlayerCore.PLAY_SOUND_FIRST });
+        return await this.play({ whichSound: PlayerCore.PLAY_SOUND_FIRST });
 
     }
 
-    public last(): void {
+    public async last(): Promise<ISound> {
 
         // alias for play last
-        this.play({ whichSound: PlayerCore.PLAY_SOUND_LAST });
-
-    }
-
-    protected _playingProgress(sound: ISound): void {
-
-        const timeNow = sound.getCurrentTime();
-
-        sound.playTime = (timeNow - sound.startTime) + sound.playTimeOffset;
-
-        const duration = sound.getDuration();
-        const playingPercentage = (sound.playTime / duration) * 100;
-
-        sound.playedTimePercentage = playingPercentage;
-
-        sound.onPlaying(playingPercentage, duration, sound.playTime);
+        return await this.play({ whichSound: PlayerCore.PLAY_SOUND_LAST });
 
     }
 
@@ -1239,6 +1198,7 @@ export class PlayerCore {
         // which means the cancelAnimationFrame in _stop would never get triggered
         if (this._playingProgressRequestId !== null) {
             cancelAnimationFrame(this._playingProgressRequestId);
+            this._playingProgressRequestId = null;
         }
 
         await this._playerAudio.shutDown(this._queue);

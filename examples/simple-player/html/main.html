@@ -45,15 +45,19 @@
                 <span id="js-pause" class="hidden">⏸️</span>
             </button>
             <button id="js-next-button" class="button">⏭️</button>
+            <button id="js-mute-toggle-button" class="button">
+                <span id="js-mute">🔇</span>
+                <span id="js-unmute" class="hidden">🔊</span>
+            </button>
             <!--button id="js-loop-playlist-button" class="button">Loop playlist</button>-->
         </div>
 
-        <progress max="100" value="0" id="js-player-loading-progress"></progress>
+        <span>Loading progress: </span><progress max="100" value="0" id="js-player-loading-progress"></progress><br />
 
         <!-- NOTE TO SELF: I use the range element instead of progress to allow the user to interact with it -->
-        <input type="range" min="0" max="100" value="0" step="1" id="js-player-playing-progress" />
+        <span>Playing progress: </span><span id="js-play-time">-:--</span><input type="range" min="0" max="100" value="0" step="1" id="js-player-playing-progress" /><span id="js-duration-time">-:--</span><br />
 
-        <input type="range" min="0" max="100" value="0" step="1" id="js-player-volume" />
+        <span>Volume: </span><input type="range" min="0" max="100" value="0" step="1" id="js-player-volume" /><span id="js-volume-number">0</span><br />
 
     </section>
 
@@ -63,6 +67,8 @@
         <button id="js-byId-1" class="button" data-song-id="1314412">Song by ID: 1314412 (= 1st song in queue)</button>
         <button id="js-byId-2" class="button" data-song-id="1214935">Song by ID: 1214935 (= 2nd / last song in
             queue)</button>
+        <button id="js-byId-2" class="button" data-song-id="1214935" data-song-play-time-offset="10">Song by ID: 1214935
+            & start at (playTimeOffset) 10 seconds</button>
         <button id="pause" class="button">Pause</button>
         <button id="stop" class="button">Stop</button>
         <button id="disconnect" class="button">Disconnect player</button>
