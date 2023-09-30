@@ -114,9 +114,9 @@ export class PlayerAudio {
     protected _addFirstUserInteractionEventListeners(): void {
 
         if (this._options.createAudioContextOnFirstUserInteraction) {
-            document.addEventListener('touchstart', this._unlockAudio.bind(this));
-            document.addEventListener('touchend', this._unlockAudio.bind(this));
-            document.addEventListener('mousedown', this._unlockAudio.bind(this));
+            document.addEventListener('touchstart', this.unlockAudio.bind(this));
+            document.addEventListener('touchend', this.unlockAudio.bind(this));
+            document.addEventListener('mousedown', this.unlockAudio.bind(this));
         }
 
     }
@@ -124,60 +124,78 @@ export class PlayerAudio {
     protected _removeFirstUserInteractionEventListeners(): void {
 
         if (this._options.createAudioContextOnFirstUserInteraction) {
-            document.removeEventListener('touchstart', this._unlockAudio.bind(this));
-            document.removeEventListener('touchend', this._unlockAudio.bind(this));
-            document.removeEventListener('mousedown', this._unlockAudio.bind(this));
+            document.removeEventListener('touchstart', this.unlockAudio.bind(this));
+            document.removeEventListener('touchend', this.unlockAudio.bind(this));
+            document.removeEventListener('mousedown', this.unlockAudio.bind(this));
         }
 
     }
 
-    protected async _unlockAudio() {
+    public unlockAudio(): Promise<void> {
 
-        if (this._isAudioUnlocked) {
-            return;
-        }
+        return new Promise((resolve, reject) => {
 
-        // make sure the audio context is not suspended
-        // on android this is what unlocks audio
-        await this.getAudioContext();
+            if (this._isAudioUnlocked) {
+                resolve();
+            }
 
-        // create an (empty) buffer
-        const placeholderBuffer = this._audioContext.createBuffer(1, 1, 22050);
+            // make sure the audio context is not suspended
+            // on android this is what unlocks audio
+            this.getAudioContext().then(() => {
 
-        // https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createBufferSource
-        let bufferSource = this._audioContext.createBufferSource();
+                // create an (empty) buffer
+                const placeholderBuffer = this._audioContext.createBuffer(1, 1, 22050);
 
-        bufferSource.onended = () => {
+                // https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createBufferSource
+                let bufferSource = this._audioContext.createBufferSource();
 
-            bufferSource.disconnect(0);
+                bufferSource.onended = () => {
 
-            this._isAudioUnlocked = true;
+                    bufferSource.disconnect(0);
 
-            this._removeFirstUserInteractionEventListeners();
+                    this._removeFirstUserInteractionEventListeners();
 
-            bufferSource.disconnect(0);
+                    bufferSource.disconnect(0);
 
-            bufferSource.buffer = null;
-            bufferSource = null;
+                    bufferSource.buffer = null;
+                    bufferSource = null;
 
-        };
+                    if (this._options.loadPlayerMode === 'player_mode_audio') {
 
-        bufferSource.buffer = placeholderBuffer;
-        bufferSource.connect(this._audioContext.destination);
-        bufferSource.start(0);
+                        // on iOS (mobile) the audio element you want to use needs to have been created
+                        // as a direct result of an user interaction
+                        // after it got unlocked we re-use that element for all sounds
+                        this._createAudioElementAndSource().then(() => {
+                            this._isAudioUnlocked = true;
+                            resolve();
+                        }).catch(reject);
 
-        if (this._options.loadPlayerMode === 'player_mode_audio') {
+                    } else if (this._options.loadPlayerMode === 'player_mode_ajax') {
+                        this._isAudioUnlocked = true;
+                        resolve();
+                    }
 
-            // on iOS (mobile) the audio element you want to use needs to have been created
-            // as a direct result of an user interaction
-            // after it got unlocked we re-use that element for all sounds
-            this._createAudioElement();
-            this._createMediaElementAudioSourceNode();
-        }
+                };
+
+                bufferSource.buffer = placeholderBuffer;
+                bufferSource.connect(this._audioContext.destination);
+                bufferSource.start(0);
+
+            }).catch(reject);
+
+        });
 
     }
 
-    protected async _createAudioElement() {
+    protected async _createAudioElementAndSource(): Promise<void> {
+
+        await this._createAudioElement();
+
+        await this._createMediaElementAudioSourceNode();
+
+    }
+
+    protected async _createAudioElement(): Promise<void> {
 
         if (this._audioElement === null) {
 

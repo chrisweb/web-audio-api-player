@@ -512,6 +512,8 @@ export class PlayerCore {
 
     public async play({ whichSound, playTimeOffset }: IPlayOptions = {}): Promise<ISound> {
 
+        await this._playerAudio.unlockAudio();
+
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         // whichSound is optional, if set it can be the sound id (string or number)
