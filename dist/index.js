@@ -204,41 +204,53 @@ class PlayerAudio {
     }
     _addFirstUserInteractionEventListeners() {
         if (this._options.createAudioContextOnFirstUserInteraction) {
-            document.addEventListener('touchstart', this._unlockAudio.bind(this));
-            document.addEventListener('touchend', this._unlockAudio.bind(this));
-            document.addEventListener('mousedown', this._unlockAudio.bind(this));
+            document.addEventListener('touchstart', this.unlockAudio.bind(this));
+            document.addEventListener('touchend', this.unlockAudio.bind(this));
+            document.addEventListener('mousedown', this.unlockAudio.bind(this));
         }
     }
     _removeFirstUserInteractionEventListeners() {
         if (this._options.createAudioContextOnFirstUserInteraction) {
-            document.removeEventListener('touchstart', this._unlockAudio.bind(this));
-            document.removeEventListener('touchend', this._unlockAudio.bind(this));
-            document.removeEventListener('mousedown', this._unlockAudio.bind(this));
+            document.removeEventListener('touchstart', this.unlockAudio.bind(this));
+            document.removeEventListener('touchend', this.unlockAudio.bind(this));
+            document.removeEventListener('mousedown', this.unlockAudio.bind(this));
         }
     }
-    _unlockAudio() {
-        return __awaiter(this, void 0, void 0, function* () {
+    unlockAudio() {
+        return new Promise((resolve, reject) => {
             if (this._isAudioUnlocked) {
-                return;
+                resolve();
             }
-            yield this.getAudioContext();
-            const placeholderBuffer = this._audioContext.createBuffer(1, 1, 22050);
-            let bufferSource = this._audioContext.createBufferSource();
-            bufferSource.onended = () => {
-                bufferSource.disconnect(0);
-                this._isAudioUnlocked = true;
-                this._removeFirstUserInteractionEventListeners();
-                bufferSource.disconnect(0);
-                bufferSource.buffer = null;
-                bufferSource = null;
-            };
-            bufferSource.buffer = placeholderBuffer;
-            bufferSource.connect(this._audioContext.destination);
-            bufferSource.start(0);
-            if (this._options.loadPlayerMode === 'player_mode_audio') {
-                this._createAudioElement();
-                this._createMediaElementAudioSourceNode();
-            }
+            this.getAudioContext().then(() => {
+                const placeholderBuffer = this._audioContext.createBuffer(1, 1, 22050);
+                let bufferSource = this._audioContext.createBufferSource();
+                bufferSource.onended = () => {
+                    bufferSource.disconnect(0);
+                    this._removeFirstUserInteractionEventListeners();
+                    bufferSource.disconnect(0);
+                    bufferSource.buffer = null;
+                    bufferSource = null;
+                    if (this._options.loadPlayerMode === 'player_mode_audio') {
+                        this._createAudioElementAndSource().then(() => {
+                            this._isAudioUnlocked = true;
+                            resolve();
+                        }).catch(reject);
+                    }
+                    else if (this._options.loadPlayerMode === 'player_mode_ajax') {
+                        this._isAudioUnlocked = true;
+                        resolve();
+                    }
+                };
+                bufferSource.buffer = placeholderBuffer;
+                bufferSource.connect(this._audioContext.destination);
+                bufferSource.start(0);
+            }).catch(reject);
+        });
+    }
+    _createAudioElementAndSource() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this._createAudioElement();
+            yield this._createMediaElementAudioSourceNode();
         });
     }
     _createAudioElement() {
@@ -791,6 +803,7 @@ class PlayerCore {
     }
     play({ whichSound, playTimeOffset } = {}) {
         return __awaiter(this, void 0, void 0, function* () {
+            yield this._playerAudio.unlockAudio();
             const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
             const sound = this._getSoundFromQueue({ whichSound, updateIndex: true });
             if (sound === null) {
