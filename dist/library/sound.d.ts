@@ -1,15 +1,28 @@
 declare const SOUND_STATE_STOPPED = "sound_state_stopped";
 declare const SOUND_STATE_PAUSED = "sound_state_paused";
 declare const SOUND_STATE_PLAYING = "sound_state_playing";
-export type typeSoundStates = typeof SOUND_STATE_STOPPED | typeof SOUND_STATE_PAUSED | typeof SOUND_STATE_PLAYING;
+declare const SOUND_STATE_SEEKING = "sound_state_seeking";
+export type typeSoundStates = typeof SOUND_STATE_STOPPED | typeof SOUND_STATE_PAUSED | typeof SOUND_STATE_PLAYING | typeof SOUND_STATE_SEEKING;
 export interface IOnProgress {
-    (progress: number, maximumValue: number, currentValue: number): void;
+    (playingPercentage: number, duration: number, playTime: number): void;
 }
 export interface IOnEnded {
     (willPlayNext: boolean): void;
 }
-export interface IOnAnyAction {
+export interface IOnStarted {
     (playTimeOffset: number): void;
+}
+export interface IOnPaused {
+    (playTime: number): void;
+}
+export interface IOnResumed {
+    (playTime: number): void;
+}
+export interface IOnStopped {
+    (playTime: number): void;
+}
+export interface IOnSeeking {
+    (seekingPercentage: number, duration: number, playTime: number): void;
 }
 export interface ISoundSource {
     url: string;
@@ -26,10 +39,11 @@ export interface ISoundAttributes {
     onLoading?: IOnProgress;
     onPlaying?: IOnProgress;
     onEnded?: IOnEnded;
-    onStarted?: IOnAnyAction;
-    onStopped?: IOnAnyAction;
-    onPaused?: IOnAnyAction;
-    onResumed?: IOnAnyAction;
+    onStarted?: IOnStarted;
+    onStopped?: IOnStopped;
+    onPaused?: IOnPaused;
+    onResumed?: IOnResumed;
+    onSeeking?: IOnSeeking;
 }
 export interface ISound extends ISoundAttributes, ISoundSource {
     sourceNode: AudioBufferSourceNode | MediaElementAudioSourceNode;
@@ -42,10 +56,12 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     playTimeOffset: number;
     startTime: number;
     playTime: number;
+    elapsedPlayTime: number;
     playedTimePercentage: number;
     state: typeSoundStates;
     loadingProgress: number;
     firstTimePlayed: boolean;
+    isConnectToPlayerGain: boolean;
     getCurrentTime(): number;
     getDuration(): number;
 }
@@ -53,6 +69,7 @@ export declare class PlayerSound implements ISound {
     static readonly SOUND_STATE_STOPPED = "sound_state_stopped";
     static readonly SOUND_STATE_PAUSED = "sound_state_paused";
     static readonly SOUND_STATE_PLAYING = "sound_state_playing";
+    static readonly SOUND_STATE_SEEKING = "sound_state_seeking";
     source: (ISoundSource)[] | ISoundSource;
     url: string;
     codec: string;
@@ -69,19 +86,22 @@ export declare class PlayerSound implements ISound {
     audioBufferDate: Date;
     playTimeOffset: number;
     startTime: number;
+    elapsedPlayTime: number;
     playTime: number;
     playedTimePercentage: number;
     state: typeSoundStates;
     loadingProgress: number;
     duration: number;
     firstTimePlayed: boolean;
+    isConnectToPlayerGain: boolean;
     onLoading: IOnProgress;
     onPlaying: IOnProgress;
     onEnded: IOnEnded;
-    onStarted: IOnAnyAction;
-    onStopped: IOnAnyAction;
-    onPaused: IOnAnyAction;
-    onResumed: IOnAnyAction;
+    onStarted: IOnStarted;
+    onStopped: IOnStopped;
+    onPaused: IOnPaused;
+    onResumed: IOnResumed;
+    onSeeking?: IOnSeeking;
     constructor(soundAttributes: ISoundAttributes);
     getCurrentTime(): number;
     getDuration(): number;

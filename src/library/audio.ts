@@ -1,11 +1,14 @@
 import { ISound } from './sound';
-import { PlayerError } from './error';
+
+type OnEndedCallbackType = (event: Event) => void
 
 export interface IAudioOptions {
     audioContext: AudioContext;
     createAudioContextOnFirstUserInteraction: boolean;
     volume: number;
     persistVolume: boolean;
+    loadPlayerMode: string;
+    addAudioElementsToDom: boolean;
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/API/AudioNode
@@ -38,20 +41,6 @@ export interface IAudioNodes {
     waveShaperNode?: WaveShaperNode;
 }
 
-interface IOnSourceNodeEnded {
-    (event?: Event): void
-}
-
-export interface IAudioBufferSourceOptions extends AudioBufferSourceOptions {
-    onSourceNodeEnded: IOnSourceNodeEnded;
-}
-
-export interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions {
-    onSourceNodeEnded: IOnSourceNodeEnded;
-    // add a loop here to match AudioBufferSourceOptions which has a loop
-    loop: boolean;
-}
-
 export class PlayerAudio {
 
     protected _options;
@@ -60,6 +49,9 @@ export class PlayerAudio {
     protected _audioNodes: IAudioNodes = {
         gainNode: null,
     };
+    protected _audioElement: HTMLAudioElement = null;
+    protected _mediaElementAudioSourceNode: MediaElementAudioSourceNode = null;
+    protected _isAudioUnlocked: boolean = false;
 
     constructor(options: IAudioOptions) {
 
@@ -71,10 +63,20 @@ export class PlayerAudio {
 
     protected _initialize(): void {
 
+        // I was planning on using the "first user interaction hack" only (on mobile)
+        // for this I would have checked the if the autoplay policy prevents me
+        // from playing a sound programmatically (without user click)
+        // https://developer.mozilla.org/en-US/docs/Web/API/Navigator/getAutoplayPolicy
+        // but this feature is only implemented on firefox (as of 19.09.2023)
+
         if (this._options.createAudioContextOnFirstUserInteraction) {
-            this._addAutoCreateAudioContextOnFirstUserInteractionEventListeners();
+            this._addFirstUserInteractionEventListeners();
         }
 
+    }
+
+    public getAudioNodes() {
+        return this._audioNodes;
     }
 
     public async decodeAudio(arrayBuffer: ArrayBuffer): Promise<AudioBuffer> {
@@ -82,83 +84,143 @@ export class PlayerAudio {
         const audioContext = await this.getAudioContext();
 
         // Note to self:
-        // newer decodeAudioData returns promise, older accept as second
-        // and third parameter a success and an error callback funtion
+        // the new decodeAudioData returns a promise, older versions accept as second
+        // and third parameter, which are a success and an error callback funtion
         // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/decodeAudioData
 
-        const audioBufferPromise = await audioContext.decodeAudioData(arrayBuffer);
-
-        // decodeAudioData returns a promise of type PromiseLike
-        // using resolve to return a promise of type Promise
-        return Promise.resolve(audioBufferPromise);
+        return await audioContext.decodeAudioData(arrayBuffer);
 
     }
 
     protected _createAudioContext(): Promise<void> {
 
-        return new Promise((resolve, reject) => {
+        if (this._audioContext instanceof AudioContext) {
+            // if already created, no need to create a new one
+            return;
+        }
 
-            // check if we already have an audio context
-            if (this._audioContext instanceof AudioContext) {
-                // if we do, no need to create a new one
-                resolve();
-            }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const WebAudioContext: typeof AudioContext = window.AudioContext || (window as any).webkitAudioContext;
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const WebAudioContext: typeof AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-
-            // initialize the audio context
-            try {
-                if (this._options.audioContext !== null) {
-                    this._audioContext = this._options.audioContext;
-                } else {
-                    this._audioContext = new WebAudioContext();
-                }
-                resolve();
-            } catch (error) {
-                reject(error);
-            }
-
-        });
-
-    }
-
-    protected _addAutoCreateAudioContextOnFirstUserInteractionEventListeners(): void {
-
-        if (this._options.createAudioContextOnFirstUserInteraction) {
-            document.addEventListener('touchstart', this.getAudioContext.bind(this));
-            document.addEventListener('touchend', this.getAudioContext.bind(this));
-            document.addEventListener('mousedown', this.getAudioContext.bind(this));
+        // initialize the audio context
+        if (this._options.audioContext !== null) {
+            this._audioContext = this._options.audioContext;
+        } else {
+            this._audioContext = new WebAudioContext();
         }
 
     }
 
-    protected _removeAutoCreateAudioContextOnFirstUserInteractionEventListeners(): void {
+    protected _addFirstUserInteractionEventListeners(): void {
 
         if (this._options.createAudioContextOnFirstUserInteraction) {
-            document.removeEventListener('touchstart', this.getAudioContext.bind(this));
-            document.removeEventListener('touchend', this.getAudioContext.bind(this));
-            document.removeEventListener('mousedown', this.getAudioContext.bind(this));
+            document.addEventListener('touchstart', this._unlockAudio.bind(this));
+            document.addEventListener('touchend', this._unlockAudio.bind(this));
+            document.addEventListener('mousedown', this._unlockAudio.bind(this));
         }
+
+    }
+
+    protected _removeFirstUserInteractionEventListeners(): void {
+
+        if (this._options.createAudioContextOnFirstUserInteraction) {
+            document.removeEventListener('touchstart', this._unlockAudio.bind(this));
+            document.removeEventListener('touchend', this._unlockAudio.bind(this));
+            document.removeEventListener('mousedown', this._unlockAudio.bind(this));
+        }
+
+    }
+
+    protected async _unlockAudio() {
+
+        if (this._isAudioUnlocked) {
+            return;
+        }
+
+        // make sure the audio context is not suspended
+        // on android this is what unlocks audio
+        await this.getAudioContext();
+
+        // create an (empty) buffer
+        const placeholderBuffer = this._audioContext.createBuffer(1, 1, 22050);
+
+        // https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createBufferSource
+        let bufferSource = this._audioContext.createBufferSource();
+
+        bufferSource.onended = () => {
+
+            bufferSource.disconnect(0);
+
+            this._isAudioUnlocked = true;
+
+            this._removeFirstUserInteractionEventListeners();
+
+            bufferSource.disconnect(0);
+
+            bufferSource.buffer = null;
+            bufferSource = null;
+
+        };
+
+        bufferSource.buffer = placeholderBuffer;
+        bufferSource.connect(this._audioContext.destination);
+        bufferSource.start(0);
+
+        if (this._options.loadPlayerMode === 'player_mode_audio') {
+
+            // on iOS (mobile) the audio element you want to use needs to have been created
+            // as a direct result of an user interaction
+            // after it got unlocked we re-use that element for all sounds
+            this._createAudioElement();
+            this._createMediaElementAudioSourceNode();
+        }
+
+    }
+
+    protected async _createAudioElement() {
+
+        if (this._audioElement === null) {
+
+            const audioElement = new Audio();
+
+            audioElement.controls = false;
+            audioElement.autoplay = false;
+            audioElement.preload = 'metadata';
+            audioElement.volume = 1;
+            audioElement.id = 'web-audio-api-player';
+
+            this._audioElement = audioElement;
+
+            if (this._options.addAudioElementsToDom) {
+                document.body.appendChild(audioElement);
+            }
+
+        }
+
+    }
+
+    public getAudioElement(): HTMLAudioElement {
+
+        return this._audioElement;
 
     }
 
     public async getAudioContext(): Promise<AudioContext> {
 
-        if (this._audioContext === null) {
+        if (this._audioContext === null || this._audioContext.state === 'closed') {
             await this._createAudioContext();
         } else if (this._audioContext.state === 'suspended') {
-            await this._unfreezeAudioContext();
+            await this.unfreezeAudioContext();
         }
 
         return this._audioContext;
 
     }
 
-    protected _unfreezeAudioContext(): Promise<void> {
+    public unfreezeAudioContext(): Promise<void> {
 
         // did resume get implemented
-        if (typeof this._audioContext.suspend === 'undefined') {
+        if (typeof this._audioContext.resume === 'undefined') {
 
             // this browser does not support resume
             // just send back a promise as resume would do
@@ -191,6 +253,12 @@ export class PlayerAudio {
 
     }
 
+    public isAudioContextFrozen(): boolean {
+
+        return this._audioContext.state === 'suspended' ? true : false;
+
+    }
+
     public detectAudioContextSupport(): boolean {
 
         // basic audio context detection
@@ -214,24 +282,70 @@ export class PlayerAudio {
 
     }
 
+    protected async _createAudioBufferSourceNode(): Promise<AudioBufferSourceNode> {
+
+        const audioContext = await this.getAudioContext();
+
+        return audioContext.createBufferSource();
+
+    }
+
+    protected async _createMediaElementAudioSourceNode(): Promise<void> {
+
+        if (this._mediaElementAudioSourceNode === null) {
+
+            const audioContext = await this.getAudioContext();
+
+            // createMediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaElementSource
+            this._mediaElementAudioSourceNode = audioContext.createMediaElementSource(this._audioElement);
+
+        }
+
+    }
+
+    protected _destroyMediaElementAudioSourceNode(): void {
+
+        if (this._mediaElementAudioSourceNode !== null) {
+
+            if (typeof this._mediaElementAudioSourceNode.mediaElement !== 'undefined') {
+                this._mediaElementAudioSourceNode.mediaElement.remove();
+            }
+
+            this._mediaElementAudioSourceNode.disconnect();
+            this._mediaElementAudioSourceNode = null;
+        }
+
+    }
+
+    protected _destroyAudioBufferSourceNode(): void {
+
+        if (this._mediaElementAudioSourceNode !== null) {
+
+            this._mediaElementAudioSourceNode.disconnect();
+
+        }
+
+    }
+
+    protected async _destroyAudioContext(): Promise<void> {
+
+        if (this._audioContext !== null && this._audioContext.state !== 'closed') {
+            await this._audioContext.close();
+            this._audioContext = null;
+        }
+
+    }
+
     public async shutDown(songsQueue: ISound[]): Promise<void> {
 
-        // I know, this is probably the longest function name you have ever seen ;)
-        this._removeAutoCreateAudioContextOnFirstUserInteractionEventListeners();
+        this._removeFirstUserInteractionEventListeners();
 
-        // if media element source also destroy the media element? (for each song?)
         songsQueue.forEach((sound) => {
-            if (sound.sourceNode !== null) {
-                if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
-                    if (typeof sound.sourceNode.mediaElement !== 'undefined') {
-                        sound.sourceNode.mediaElement.remove();
-                    }
-                }
-                // disconnect no matter if AudioBufferSourceNode
-                // or MediaElementAudioSourceNode
-                sound.sourceNode.disconnect();
-            }
+            this.disconnectSound(sound);
         });
+
+        this._destroyMediaElementAudioSourceNode();
+        this._destroyAudioBufferSourceNode();
 
         this._disconnectPlayerGainNode();
 
@@ -239,88 +353,6 @@ export class PlayerAudio {
 
     }
 
-    protected async _destroyAudioContext(): Promise<void> {
-
-        if (this._audioContext !== null) {
-            await this._audioContext.close();
-            this._audioContext = null;
-        }
-
-    }
-
-    public async createAudioBufferSourceNode(audioBufferSourceOptions: IAudioBufferSourceOptions, sound: ISound): Promise<void> {
-
-        const audioContext = await this.getAudioContext();
-
-        const audioBufferSourceNode: AudioBufferSourceNode = audioContext.createBufferSource();
-
-        sound.sourceNode = audioBufferSourceNode;
-
-        // do we loop this song
-        audioBufferSourceNode.loop = audioBufferSourceOptions.loop;
-
-        // create the sound gain node
-        sound.gainNode = audioBufferSourceNode.context.createGain();
-
-        // set the gain by default always to 1
-        // TODO: allow user to define a gain value for each sound via sound options
-        // TODO: future allow a sound gain to be faded out at end
-        // (faded in at start) without changing the main player gain
-        sound.gainNode.gain.value = 1;
-
-        // connect the source to the sound gain node
-        audioBufferSourceNode.connect(sound.gainNode);
-
-        // if the song ends destroy it's audioGraph as the source can't be reused anyway
-        // NOTE: the source nodes onended handler won't have any effect if the loop property is set to
-        // true, as the audio won't stop playing. To see the effect in this case you'd
-        // have to use AudioBufferSourceNode.stop()
-        audioBufferSourceNode.onended = (event: Event): void => {
-            audioBufferSourceOptions.onSourceNodeEnded(event);
-        };
-
-    }
-
-    public async createMediaElementSourceNode(sourceNodeOptions: IMediaElementAudioSourceOptions, sound: ISound): Promise<void> {
-
-        let mediaElementAudioSourceNode: MediaElementAudioSourceNode;
-
-        if (sound.sourceNode === null) {
-
-            const audioContext = await this.getAudioContext();
-
-            try {
-                // createMediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaElementSource
-                mediaElementAudioSourceNode = audioContext.createMediaElementSource(sourceNodeOptions.mediaElement) as MediaElementAudioSourceNode;
-            } catch (error) {
-                throw new PlayerError(error);
-            }
-
-            // do we loop this song
-            mediaElementAudioSourceNode.mediaElement.loop = sourceNodeOptions.loop;
-
-            // create the sound gain node
-            sound.gainNode = mediaElementAudioSourceNode.context.createGain();
-
-            sound.gainNode.gain.value = 1;
-
-            // connect the source to the sound gain node
-            mediaElementAudioSourceNode.connect(sound.gainNode);
-
-            // MediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/MediaElementAudioSourceNode/mediaElement
-
-            // NOTE: the source nodes onended handler won't have any effect if the loop property is set to
-            // true, as the audio won't stop playing. To see the effect in this case you'd
-            // have to use AudioBufferSourceNode.stop()
-            mediaElementAudioSourceNode.mediaElement.onended = async (): Promise<void> => {
-                sourceNodeOptions.onSourceNodeEnded();
-            };
-
-            sound.sourceNode = mediaElementAudioSourceNode;
-
-        }
-
-    }
 
     protected async _getPlayerGainNode(): Promise<GainNode> {
 
@@ -340,14 +372,14 @@ export class PlayerAudio {
             // so that volume changes take immediate effect
             gainNode = audioContext.createGain();
 
+            this._initializeVolume(gainNode);
+
             // final step: connect the gain node to the audio destination node
             gainNode.connect(audioContext.destination);
 
             this._audioNodes.gainNode = gainNode;
 
         }
-
-        this._initializeVolume()
 
         return gainNode;
 
@@ -357,50 +389,108 @@ export class PlayerAudio {
 
         if (this._audioNodes.gainNode !== null) {
             this._audioNodes.gainNode.disconnect();
+            this._audioNodes.gainNode = null;
         }
-        
-        this._audioNodes.gainNode = null;
 
     }
 
-    public async connectSound(sound: ISound): Promise<void> {
+    public async connectSound(sound: ISound, onEndedCallback: OnEndedCallbackType): Promise<void> {
+
+        if (sound.isConnectToPlayerGain) {
+            return;
+        }
+
+        if (this._options.loadPlayerMode === 'player_mode_ajax') {
+
+            // get a new audio buffer source node
+            // Note: remember these are one use only
+            // https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode
+            const audioBufferSourceNode = await this._createAudioBufferSourceNode();
+
+            // create the sound gain node
+            sound.gainNode = audioBufferSourceNode.context.createGain();
+
+            // connect the source to the sound gain node
+            audioBufferSourceNode.connect(sound.gainNode);
+
+            // do we loop this song
+            audioBufferSourceNode.loop = sound.loop;
+
+            // NOTE: the source nodes onended handler won't have any effect if the loop property
+            // is set to true, as the audio won't stop playing
+            audioBufferSourceNode.onended = onEndedCallback;
+
+            sound.sourceNode = audioBufferSourceNode;
+
+        } else if (this._options.loadPlayerMode === 'player_mode_audio') {
+
+            // create the sound gain node
+            sound.gainNode = this._mediaElementAudioSourceNode.context.createGain();
+
+            // connect the source to the sound gain node
+            this._mediaElementAudioSourceNode.connect(sound.gainNode);
+
+            // do we loop this song
+            this._mediaElementAudioSourceNode.mediaElement.loop = sound.loop;
+
+            // NOTE: the source nodes onended handler won't have any effect if the loop property
+            // is set to true, as the audio won't stop playing
+            this._mediaElementAudioSourceNode.mediaElement.onended = onEndedCallback;
+
+            sound.sourceNode = this._mediaElementAudioSourceNode;
+
+        }
+
+        // set the gain by default always to 1
+        // TODO: allow user to define a gain value for each sound via sound options
+        // this allows to normalize the gain of all sounds in a playlist
+        // TODO: in future allow a sound gain to be faded in or out
+        // without having to change the main player gain
+        sound.gainNode.gain.value = 1;
 
         const playerGainNode = await this._getPlayerGainNode();
-        const soundGainNode = sound.gainNode;
 
-        if (soundGainNode !== null) {
-            soundGainNode.connect(playerGainNode);
-        }
+        sound.gainNode.connect(playerGainNode);
+        sound.isConnectToPlayerGain = true;
 
     }
 
-    public async cleanUpAudiBufferSourceNode(sound: ISound): Promise<void> {
+    public async disconnectSound(sound: ISound): Promise<void> {
 
-        if (sound.sourceNode instanceof AudioBufferSourceNode) {
-            // the audio buffer source node we set it to null, so that it gets destroyed
-            // by the garbage collector (as you can't reuse an audio buffer source node,
-            // after it got stopped) as specified in the specs
+        if (!sound.isConnectToPlayerGain) {
+            return;
+        }
+
+        if (sound.sourceNode !== null) {
+            sound.sourceNode.disconnect();
+            // we set the source node to null, so that it can get garbage collected
+            // as specified in the specs: you can't reuse an audio buffer source node,
+            // after it got stopped
             sound.sourceNode = null;
         }
 
-    }
+        if (sound.gainNode !== null) {
+            sound.gainNode.disconnect();
+            sound.gainNode = null;
+            sound.isConnectToPlayerGain = false;
+        }
 
-    protected _changePlayerGainValue(gainValue: number): void {
-
-        if (this._audioNodes.gainNode instanceof GainNode) {
-            this._audioNodes.gainNode.gain.value = gainValue;
+        if (sound.audioElement !== null) {
+            sound.audioElement = null;
         }
 
     }
 
-    protected _roundGainTwoDecimals(rawGainValue: number): number {
+    protected async _changePlayerGainValue(gainValue: number): Promise<void> {
 
-        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON
-        return Math.round((rawGainValue + Number.EPSILON) * 100) / 100
+        if (this._audioNodes.gainNode instanceof GainNode) {
+            const audioContext = await this.getAudioContext();
+            this._audioNodes.gainNode.gain.setTargetAtTime(gainValue, audioContext.currentTime, 0.1);
+        }
 
     }
 
-    public setVolume(volume: number, forceUpdateUserVolume = true) {
+    public async setVolume(volume: number, forceUpdateUserVolume = true): Promise<number> {
 
         // we sometimes change the volume, for a fade in/out or when muting, but
         // in this cases we don't want to update the user's persisted volume, in
@@ -411,20 +501,21 @@ export class PlayerAudio {
 
         // the gain values we use range from 0 to 1
         // so we need to divide the volume (in percent) by 100 to get the gain value
-        const gainValue = volume / 100;
+        const newGainValue = volume / 100;
 
         if (this._audioNodes.gainNode instanceof GainNode) {
 
-            const roundedGain = this._roundGainTwoDecimals(this._audioNodes.gainNode.gain.value)
+            // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON
+            const currentGainRounded = Math.round((this._audioNodes.gainNode.gain.value + Number.EPSILON) * 100) / 100;
 
             // check if the volume changed
-            if (roundedGain !== this._volume) {
+            if (newGainValue !== currentGainRounded) {
 
                 // the gain value changes the amplitude of the sound wave
                 // a gain value of one does nothing
                 // values between 0 and 1 reduce the loudness, above one they amplify the loudness
                 // negative values work too, but they invert the waveform, so -1 is as loud as 1
-                this._changePlayerGainValue(gainValue);
+                await this._changePlayerGainValue(newGainValue);
 
             }
 
@@ -432,49 +523,58 @@ export class PlayerAudio {
 
         this._volume = volume;
 
+        return volume;
+
     }
 
     public getVolume(): number {
 
-        let volume: number
+        let volume: number;
 
         // check if volume has already been set
         if (this._volume !== null) {
-            volume = this._volume
+            volume = this._volume;
         } else {
             if (this._options.persistVolume) {
                 // if persist volume is enabled, check if there is a user volume in localstorage
                 const userVolumeInPercent = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
-    
+
                 if (!isNaN(userVolumeInPercent)) {
-                    volume = userVolumeInPercent
+                    volume = userVolumeInPercent;
                 }
             }
 
             // if volume is not persisted or persited value not yet set
             if (typeof volume === 'undefined') {
-                volume = this._options.volume
+                volume = this._options.volume;
             }
+            this._volume = volume;
         }
 
-        return volume
+        return volume;
 
     }
 
-    protected _initializeVolume(): void {
+    protected _initializeVolume(gainNode: GainNode): void {
 
         if (this._options.persistVolume) {
             // if persist volume is enabled, check if there is a user volume in localstorage
             const userVolumeInPercent = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
+            const gainValue = userVolumeInPercent / 100;
 
             if (!isNaN(userVolumeInPercent)) {
-                this.setVolume(userVolumeInPercent, false);
+                gainNode.gain.value = gainValue;
             }
+
+            this._volume = userVolumeInPercent;
         }
+
 
         // if no user volume take the default options volume
         if (this._volume === null) {
-            this.setVolume(this._options.volume, false);
+            const gainValue = this._options.volume / 100;
+            gainNode.gain.value = gainValue;
+            this._volume = this._options.volume;
         }
 
     }

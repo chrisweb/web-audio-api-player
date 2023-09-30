@@ -1,9 +1,12 @@
 import { ISound } from './sound';
+type OnEndedCallbackType = (event: Event) => void;
 export interface IAudioOptions {
     audioContext: AudioContext;
     createAudioContextOnFirstUserInteraction: boolean;
     volume: number;
     persistVolume: boolean;
+    loadPlayerMode: string;
+    addAudioElementsToDom: boolean;
 }
 export interface IAudioNodes {
     gainNode: GainNode;
@@ -20,44 +23,43 @@ export interface IAudioNodes {
     oscillatorNode?: OscillatorNode;
     waveShaperNode?: WaveShaperNode;
 }
-interface IOnSourceNodeEnded {
-    (event?: Event): void;
-}
-export interface IAudioBufferSourceOptions extends AudioBufferSourceOptions {
-    onSourceNodeEnded: IOnSourceNodeEnded;
-}
-export interface IMediaElementAudioSourceOptions extends MediaElementAudioSourceOptions {
-    onSourceNodeEnded: IOnSourceNodeEnded;
-    loop: boolean;
-}
 export declare class PlayerAudio {
     protected _options: IAudioOptions;
     protected _audioContext: AudioContext;
     protected _volume: number;
     protected _audioNodes: IAudioNodes;
+    protected _audioElement: HTMLAudioElement;
+    protected _mediaElementAudioSourceNode: MediaElementAudioSourceNode;
+    protected _isAudioUnlocked: boolean;
     constructor(options: IAudioOptions);
     protected _initialize(): void;
+    getAudioNodes(): IAudioNodes;
     decodeAudio(arrayBuffer: ArrayBuffer): Promise<AudioBuffer>;
     protected _createAudioContext(): Promise<void>;
-    protected _addAutoCreateAudioContextOnFirstUserInteractionEventListeners(): void;
-    protected _removeAutoCreateAudioContextOnFirstUserInteractionEventListeners(): void;
+    protected _addFirstUserInteractionEventListeners(): void;
+    protected _removeFirstUserInteractionEventListeners(): void;
+    protected _unlockAudio(): Promise<void>;
+    protected _createAudioElement(): Promise<void>;
+    getAudioElement(): HTMLAudioElement;
     getAudioContext(): Promise<AudioContext>;
-    protected _unfreezeAudioContext(): Promise<void>;
+    unfreezeAudioContext(): Promise<void>;
     freezeAudioContext(): Promise<void>;
+    isAudioContextFrozen(): boolean;
     detectAudioContextSupport(): boolean;
     detectAudioElementSupport(): boolean;
-    shutDown(songsQueue: ISound[]): Promise<void>;
+    protected _createAudioBufferSourceNode(): Promise<AudioBufferSourceNode>;
+    protected _createMediaElementAudioSourceNode(): Promise<void>;
+    protected _destroyMediaElementAudioSourceNode(): void;
+    protected _destroyAudioBufferSourceNode(): void;
     protected _destroyAudioContext(): Promise<void>;
-    createAudioBufferSourceNode(audioBufferSourceOptions: IAudioBufferSourceOptions, sound: ISound): Promise<void>;
-    createMediaElementSourceNode(sourceNodeOptions: IMediaElementAudioSourceOptions, sound: ISound): Promise<void>;
+    shutDown(songsQueue: ISound[]): Promise<void>;
     protected _getPlayerGainNode(): Promise<GainNode>;
     protected _disconnectPlayerGainNode(): void;
-    connectSound(sound: ISound): Promise<void>;
-    cleanUpAudiBufferSourceNode(sound: ISound): Promise<void>;
-    protected _changePlayerGainValue(gainValue: number): void;
-    protected _roundGainTwoDecimals(rawGainValue: number): number;
-    setVolume(volume: number, forceUpdateUserVolume?: boolean): void;
+    connectSound(sound: ISound, onEndedCallback: OnEndedCallbackType): Promise<void>;
+    disconnectSound(sound: ISound): Promise<void>;
+    protected _changePlayerGainValue(gainValue: number): Promise<void>;
+    setVolume(volume: number, forceUpdateUserVolume?: boolean): Promise<number>;
     getVolume(): number;
-    protected _initializeVolume(): void;
+    protected _initializeVolume(gainNode: GainNode): void;
 }
 export {};

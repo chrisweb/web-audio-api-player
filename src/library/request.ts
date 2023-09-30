@@ -1,4 +1,3 @@
-import { PlayerError } from './error';
 import { IOnProgress } from './sound';
 
 export interface IRequested {
@@ -8,8 +7,6 @@ export interface IRequested {
 }
 
 export class PlayerRequest {
-
-    // TODO: add possibility to abort http request
 
     public getArrayBuffer(requested: IRequested): Promise<ArrayBuffer> {
 
@@ -37,7 +34,7 @@ export class PlayerRequest {
                 } else {
 
                     // something went wrong so we reject with an error
-                    reject(new PlayerError(xhr.statusText, xhr.status));
+                    reject(new Error(xhr.statusText + '(status:' + xhr.status + ')'));
 
                 }
 
@@ -45,21 +42,24 @@ export class PlayerRequest {
 
             xhr.onprogress = function (event): void {
 
-                const percentage = 100 / (event.total / event.loaded);
+                const loadingPercentageRaw = 100 / (event.total / event.loaded);
+
+                // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON
+                const loadingPercentage = Math.round(loadingPercentageRaw);
 
                 // update value on sound object
-                requested.loadingProgress = percentage;
+                requested.loadingProgress = loadingPercentage;
 
                 if (requested.onLoading !== null) {
-                    requested.onLoading(percentage, event.total, event.loaded);
+                    requested.onLoading(loadingPercentage, event.total, event.loaded);
                 }
 
             };
 
             // also reject for any kind of network errors
-            xhr.onerror = function (): void {
+            xhr.onerror = function (error): void {
 
-                reject(new PlayerError('xhr network error'));
+                reject(error);
 
             };
 

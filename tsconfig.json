@@ -1,32 +1,29 @@
 {
-  "compilerOptions": {
-    "declaration": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "module": "es6",
-    "moduleResolution": "node",
-    "rootDir": "./src",
-    "outDir": "dist",
-    "sourceMap": true,
-    "declarationDir": "dist",
-    "noImplicitAny": true,
-    "noFallthroughCasesInSwitch": true,
-    "skipDefaultLibCheck": true,
-    "removeComments": true,
-    "skipLibCheck": true,
-    "lib": [
-      "es5",
-      "es6",
-      "es7",
-      "esnext",
-      "dom"
-    ],
-    "target": "es5"
-  },
-  "exclude": [
-    "node_modules",
-    "examples",
-    "scripts",
-    "dist"
-  ]
+    "compilerOptions": {
+        "declaration": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "module": "esnext",
+        "moduleResolution": "node",
+        "rootDir": "./src",
+        "outDir": "dist",
+        "sourceMap": true,
+        "declarationDir": "dist",
+        "noImplicitAny": true,
+        "noFallthroughCasesInSwitch": true,
+        "skipDefaultLibCheck": true,
+        "removeComments": true,
+        "skipLibCheck": true,
+        "lib": [
+            "esnext",
+            "dom"
+        ],
+        "target": "es2016"
+    },
+    "exclude": [
+        "node_modules",
+        "examples",
+        "scripts",
+        "dist"
+    ]
 }
