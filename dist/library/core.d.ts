@@ -21,6 +21,7 @@ export interface ICoreOptions {
     loadPlayerMode?: typePlayerMode;
     audioContext?: AudioContext;
     addAudioElementsToDom?: boolean;
+    unLockAudioOnFirstPlay?: boolean;
 }
 export interface ISoundsQueueOptions {
     soundAttributes: ISoundAttributes;

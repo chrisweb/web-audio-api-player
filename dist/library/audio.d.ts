@@ -41,7 +41,7 @@ export declare class PlayerAudio {
     unlockAudio(): Promise<void>;
     protected _createAudioElementAndSource(): Promise<void>;
     protected _createAudioElement(): Promise<void>;
-    getAudioElement(): HTMLAudioElement;
+    getAudioElement(): Promise<HTMLAudioElement>;
     getAudioContext(): Promise<AudioContext>;
     unfreezeAudioContext(): Promise<void>;
     freezeAudioContext(): Promise<void>;
