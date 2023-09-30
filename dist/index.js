@@ -493,11 +493,11 @@ class PlayerRequest {
                 }
             };
             xhr.onprogress = function (event) {
-                const percentage = 100 / (event.total / event.loaded);
-                const percentageRounded = Math.round((percentage + Number.EPSILON) * 100) / 100;
-                requested.loadingProgress = percentageRounded;
+                const loadingPercentageRaw = 100 / (event.total / event.loaded);
+                const loadingPercentage = Math.round(loadingPercentageRaw);
+                requested.loadingProgress = loadingPercentage;
                 if (requested.onLoading !== null) {
-                    requested.onLoading(percentageRounded, event.total, event.loaded);
+                    requested.onLoading(loadingPercentage, event.total, event.loaded);
                 }
             };
             xhr.onerror = function (error) {
@@ -734,13 +734,14 @@ class PlayerCore {
                     if (sound.audioElement.buffered.length) {
                         const duration = sound.getDuration();
                         const buffered = sound.audioElement.buffered.end(0);
-                        const percentage = 100 / (duration / buffered);
-                        sound.loadingProgress = percentage;
+                        const loadingPercentageRaw = 100 / (duration / buffered);
+                        const loadingPercentage = Math.round(loadingPercentageRaw);
+                        sound.loadingProgress = loadingPercentage;
                         if (sound.onLoading !== null) {
-                            sound.onLoading(percentage, duration, buffered);
+                            sound.onLoading(loadingPercentage, duration, buffered);
                         }
                         sound.duration = sound.audioElement.duration;
-                        if (percentage === 100) {
+                        if (loadingPercentage === 100) {
                             sound.isBuffering = false;
                             sound.isBuffered = true;
                             sound.audioBufferDate = new Date();
