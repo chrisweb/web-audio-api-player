@@ -222,7 +222,7 @@ class PlayerAudio {
             console.log('>>> unlockAudio()');
             console.log('this._isAudioUnlocked: ', this._isAudioUnlocked);
             if (this._isAudioUnlocked) {
-                resolve();
+                return resolve();
             }
             this.getAudioContext().then(() => {
                 console.log('### this.getAudioContext().then()');
@@ -239,12 +239,12 @@ class PlayerAudio {
                         this._createAudioElementAndSource().then(() => {
                             console.log('### this._createAudioElementAndSource().then()');
                             this._isAudioUnlocked = true;
-                            resolve();
+                            return resolve();
                         }).catch(reject);
                     }
                     else if (this._options.loadPlayerMode === 'player_mode_ajax') {
                         this._isAudioUnlocked = true;
-                        resolve();
+                        return resolve();
                     }
                 };
                 bufferSource.buffer = placeholderBuffer;

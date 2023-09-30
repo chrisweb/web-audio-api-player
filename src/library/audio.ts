@@ -142,7 +142,7 @@ export class PlayerAudio {
             console.log('this._isAudioUnlocked: ', this._isAudioUnlocked)
 
             if (this._isAudioUnlocked) {
-                resolve();
+                return resolve();
             }
 
             // make sure the audio context is not suspended
@@ -180,12 +180,12 @@ export class PlayerAudio {
                             console.log('### this._createAudioElementAndSource().then()')
 
                             this._isAudioUnlocked = true;
-                            resolve();
+                            return resolve();
                         }).catch(reject);
 
                     } else if (this._options.loadPlayerMode === 'player_mode_ajax') {
                         this._isAudioUnlocked = true;
-                        resolve();
+                        return resolve();
                     }
 
                 };
