@@ -94,6 +94,8 @@ export class PlayerAudio {
 
     protected _createAudioContext(): Promise<void> {
 
+        console.log('>>> _createAudioContext()')
+
         if (this._audioContext instanceof AudioContext) {
             // if already created, no need to create a new one
             return;
@@ -135,6 +137,10 @@ export class PlayerAudio {
 
         return new Promise((resolve, reject) => {
 
+            console.log('>>> unlockAudio()')
+
+            console.log('this._isAudioUnlocked: ', this._isAudioUnlocked)
+
             if (this._isAudioUnlocked) {
                 resolve();
             }
@@ -143,6 +149,8 @@ export class PlayerAudio {
             // on android this is what unlocks audio
             this.getAudioContext().then(() => {
 
+                console.log('### this.getAudioContext().then()')
+
                 // create an (empty) buffer
                 const placeholderBuffer = this._audioContext.createBuffer(1, 1, 22050);
 
@@ -150,6 +158,8 @@ export class PlayerAudio {
                 let bufferSource = this._audioContext.createBufferSource();
 
                 bufferSource.onended = () => {
+
+                    console.log('### bufferSource.onended()')
 
                     bufferSource.disconnect(0);
 
@@ -166,6 +176,9 @@ export class PlayerAudio {
                         // as a direct result of an user interaction
                         // after it got unlocked we re-use that element for all sounds
                         this._createAudioElementAndSource().then(() => {
+
+                            console.log('### this._createAudioElementAndSource().then()')
+
                             this._isAudioUnlocked = true;
                             resolve();
                         }).catch(reject);
@@ -180,6 +193,8 @@ export class PlayerAudio {
                 bufferSource.buffer = placeholderBuffer;
                 bufferSource.connect(this._audioContext.destination);
                 bufferSource.start(0);
+
+                console.log('### bufferSource.start(0)')
 
             }).catch(reject);
 
@@ -225,6 +240,8 @@ export class PlayerAudio {
 
     public async getAudioContext(): Promise<AudioContext> {
 
+        console.log('>>> getAudioContext()')
+
         if (this._audioContext === null || this._audioContext.state === 'closed') {
             await this._createAudioContext();
         } else if (this._audioContext.state === 'suspended') {
@@ -236,6 +253,8 @@ export class PlayerAudio {
     }
 
     public unfreezeAudioContext(): Promise<void> {
+
+        console.log('>>> unfreezeAudioContext()')
 
         // did resume get implemented
         if (typeof this._audioContext.resume === 'undefined') {

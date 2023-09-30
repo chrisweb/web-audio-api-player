@@ -512,7 +512,13 @@ export class PlayerCore {
 
     public async play({ whichSound, playTimeOffset }: IPlayOptions = {}): Promise<ISound> {
 
+        console.log('>>> play()')
+
+        console.log('### before this._playerAudio.unlockAudio()')
+
         await this._playerAudio.unlockAudio();
+
+        console.log('### after this._playerAudio.unlockAudio()')
 
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
@@ -591,6 +597,8 @@ export class PlayerCore {
 
     protected async _play(sound: ISound): Promise<void> {
 
+        console.log('>>> _play()')
+
         if (this._playerAudio.isAudioContextFrozen()) {
             await this._playerAudio.unfreezeAudioContext();
         }
@@ -648,6 +656,8 @@ export class PlayerCore {
 
     protected async _playMediaElementAudio(sound: ISound): Promise<void> {
 
+        console.log('>>> _playMediaElementAudio()')
+
         // MediaElementAudioSourceNode type guard
         if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
 
@@ -671,6 +681,8 @@ export class PlayerCore {
     }
 
     protected _triggerSoundCallbacks(sound: ISound) {
+
+        console.log('>>> _triggerSoundCallbacks()')
 
         // if there is an onResumed callback for the sound, trigger it
         if (sound.onResumed !== null && !sound.firstTimePlayed) {

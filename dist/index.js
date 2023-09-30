@@ -191,6 +191,7 @@ class PlayerAudio {
         });
     }
     _createAudioContext() {
+        console.log('>>> _createAudioContext()');
         if (this._audioContext instanceof AudioContext) {
             return;
         }
@@ -218,13 +219,17 @@ class PlayerAudio {
     }
     unlockAudio() {
         return new Promise((resolve, reject) => {
+            console.log('>>> unlockAudio()');
+            console.log('this._isAudioUnlocked: ', this._isAudioUnlocked);
             if (this._isAudioUnlocked) {
                 resolve();
             }
             this.getAudioContext().then(() => {
+                console.log('### this.getAudioContext().then()');
                 const placeholderBuffer = this._audioContext.createBuffer(1, 1, 22050);
                 let bufferSource = this._audioContext.createBufferSource();
                 bufferSource.onended = () => {
+                    console.log('### bufferSource.onended()');
                     bufferSource.disconnect(0);
                     this._removeFirstUserInteractionEventListeners();
                     bufferSource.disconnect(0);
@@ -232,6 +237,7 @@ class PlayerAudio {
                     bufferSource = null;
                     if (this._options.loadPlayerMode === 'player_mode_audio') {
                         this._createAudioElementAndSource().then(() => {
+                            console.log('### this._createAudioElementAndSource().then()');
                             this._isAudioUnlocked = true;
                             resolve();
                         }).catch(reject);
@@ -244,6 +250,7 @@ class PlayerAudio {
                 bufferSource.buffer = placeholderBuffer;
                 bufferSource.connect(this._audioContext.destination);
                 bufferSource.start(0);
+                console.log('### bufferSource.start(0)');
             }).catch(reject);
         });
     }
@@ -274,6 +281,7 @@ class PlayerAudio {
     }
     getAudioContext() {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log('>>> getAudioContext()');
             if (this._audioContext === null || this._audioContext.state === 'closed') {
                 yield this._createAudioContext();
             }
@@ -284,6 +292,7 @@ class PlayerAudio {
         });
     }
     unfreezeAudioContext() {
+        console.log('>>> unfreezeAudioContext()');
         if (typeof this._audioContext.resume === 'undefined') {
             return Promise.resolve();
         }
@@ -803,7 +812,10 @@ class PlayerCore {
     }
     play({ whichSound, playTimeOffset } = {}) {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log('>>> play()');
+            console.log('### before this._playerAudio.unlockAudio()');
             yield this._playerAudio.unlockAudio();
+            console.log('### after this._playerAudio.unlockAudio()');
             const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
             const sound = this._getSoundFromQueue({ whichSound, updateIndex: true });
             if (sound === null) {
@@ -849,6 +861,7 @@ class PlayerCore {
     }
     _play(sound) {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log('>>> _play()');
             if (this._playerAudio.isAudioContextFrozen()) {
                 yield this._playerAudio.unfreezeAudioContext();
             }
@@ -895,6 +908,7 @@ class PlayerCore {
     }
     _playMediaElementAudio(sound) {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log('>>> _playMediaElementAudio()');
             if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
                 if (sound.state === PlayerSound.SOUND_STATE_SEEKING) {
                     sound.audioElement.currentTime = sound.playTime;
@@ -915,6 +929,7 @@ class PlayerCore {
         });
     }
     _triggerSoundCallbacks(sound) {
+        console.log('>>> _triggerSoundCallbacks()');
         if (sound.onResumed !== null && !sound.firstTimePlayed) {
             sound.onResumed(sound.playTime);
         }
