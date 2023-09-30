@@ -225,6 +225,9 @@ class PlayerAudio {
                 return resolve();
             }
             this.getAudioContext().then(() => {
+                if (this._isAudioUnlocked) {
+                    return resolve();
+                }
                 console.log('### this.getAudioContext().then()');
                 const placeholderBuffer = this._audioContext.createBuffer(1, 1, 22050);
                 let bufferSource = this._audioContext.createBufferSource();

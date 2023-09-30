@@ -149,6 +149,10 @@ export class PlayerAudio {
             // on android this is what unlocks audio
             this.getAudioContext().then(() => {
 
+                if (this._isAudioUnlocked) {
+                    return resolve();
+                }
+
                 console.log('### this.getAudioContext().then()')
 
                 // create an (empty) buffer
