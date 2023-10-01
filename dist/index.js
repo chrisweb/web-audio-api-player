@@ -173,6 +173,7 @@ class PlayerAudio {
         this._audioElement = null;
         this._mediaElementAudioSourceNode = null;
         this._isAudioUnlocked = false;
+        this._isAudioUnlocking = false;
         this._options = options;
         this._initialize();
     }
@@ -204,23 +205,31 @@ class PlayerAudio {
     }
     _addFirstUserInteractionEventListeners() {
         if (this._options.createAudioContextOnFirstUserInteraction) {
-            document.addEventListener('touchstart', this.unlockAudio.bind(this));
-            document.addEventListener('touchend', this.unlockAudio.bind(this));
+            document.addEventListener('keydown', this.unlockAudio.bind(this));
             document.addEventListener('mousedown', this.unlockAudio.bind(this));
+            document.addEventListener('pointerdown', this.unlockAudio.bind(this));
+            document.addEventListener('pointerup', this.unlockAudio.bind(this));
+            document.addEventListener('touchend', this.unlockAudio.bind(this));
         }
     }
     _removeFirstUserInteractionEventListeners() {
         if (this._options.createAudioContextOnFirstUserInteraction) {
-            document.removeEventListener('touchstart', this.unlockAudio.bind(this));
-            document.removeEventListener('touchend', this.unlockAudio.bind(this));
+            document.removeEventListener('keydown', this.unlockAudio.bind(this));
             document.removeEventListener('mousedown', this.unlockAudio.bind(this));
+            document.removeEventListener('pointerdown', this.unlockAudio.bind(this));
+            document.removeEventListener('pointerup', this.unlockAudio.bind(this));
+            document.removeEventListener('touchend', this.unlockAudio.bind(this));
         }
     }
     unlockAudio() {
         return new Promise((resolve, reject) => {
-            if (this._isAudioUnlocked) {
+            if (this._isAudioUnlocked || this._isAudioUnlocking) {
                 return resolve();
             }
+            if (typeof navigator.userActivation !== 'undefined' && navigator.userActivation.isActive) {
+                return resolve();
+            }
+            this._isAudioUnlocking = true;
             this.getAudioContext().then(() => {
                 const placeholderBuffer = this._audioContext.createBuffer(1, 1, 22050);
                 let bufferSource = this._audioContext.createBufferSource();
@@ -233,19 +242,32 @@ class PlayerAudio {
                     if (this._options.loadPlayerMode === 'player_mode_audio') {
                         this._createAudioElementAndSource().then(() => {
                             this._isAudioUnlocked = true;
+                            this._isAudioUnlocking = false;
                             return resolve();
-                        }).catch(reject);
+                        }).catch((error) => {
+                            console.error(error);
+                            this._isAudioUnlocking = false;
+                            return reject();
+                        });
                     }
                     else if (this._options.loadPlayerMode === 'player_mode_ajax') {
                         this._isAudioUnlocked = true;
+                        this._isAudioUnlocking = false;
                         return resolve();
                     }
                 };
                 bufferSource.buffer = placeholderBuffer;
                 bufferSource.connect(this._audioContext.destination);
                 bufferSource.start(0);
-            }).catch(reject);
+            }).catch((error) => {
+                console.error(error);
+                this._isAudioUnlocking = false;
+                return reject();
+            });
         });
+    }
+    isAudioUnlocked() {
+        return (this._isAudioUnlocked || (typeof navigator.userActivation !== 'undefined' && navigator.userActivation.isActive)) ? true : false;
     }
     _createAudioElementAndSource() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -404,6 +426,7 @@ class PlayerAudio {
                 sound.sourceNode = audioBufferSourceNode;
             }
             else if (this._options.loadPlayerMode === 'player_mode_audio') {
+                yield this._createAudioElementAndSource();
                 sound.gainNode = this._mediaElementAudioSourceNode.context.createGain();
                 this._mediaElementAudioSourceNode.connect(sound.gainNode);
                 this._mediaElementAudioSourceNode.mediaElement.loop = sound.loop;
@@ -569,7 +592,6 @@ class PlayerCore {
             loadPlayerMode: PLAYER_MODE_AUDIO,
             audioContext: null,
             addAudioElementsToDom: false,
-            unLockAudioOnFirstPlay: true,
         };
         const options = Object.assign({}, defaultOptions, playerOptions);
         this._queue = [];
@@ -809,11 +831,18 @@ class PlayerCore {
             sound.isReadyToPLay = true;
         });
     }
+    manuallyUnlockAudio() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this._playerAudio.unlockAudio();
+        });
+    }
+    checkIfAudioIsUnlocked() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this._playerAudio.isAudioUnlocked();
+        });
+    }
     play({ whichSound, playTimeOffset } = {}) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (this._options.unLockAudioOnFirstPlay) {
-                yield this._playerAudio.unlockAudio();
-            }
             const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
             const sound = this._getSoundFromQueue({ whichSound, updateIndex: true });
             if (sound === null) {
@@ -920,7 +949,7 @@ class PlayerCore {
                         sound.audioElement.currentTime = 0;
                     }
                 }
-                yield sound.audioElement.play();
+                return yield sound.audioElement.play();
             }
         });
     }

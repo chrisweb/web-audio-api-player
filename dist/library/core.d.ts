@@ -21,7 +21,6 @@ export interface ICoreOptions {
     loadPlayerMode?: typePlayerMode;
     audioContext?: AudioContext;
     addAudioElementsToDom?: boolean;
-    unLockAudioOnFirstPlay?: boolean;
 }
 export interface ISoundsQueueOptions {
     soundAttributes: ISoundAttributes;
@@ -85,6 +84,8 @@ export declare class PlayerCore {
     protected _loadSoundUsingAudioElement(sound: ISound): Promise<void>;
     protected _loadSoundUsingRequest(sound: ISound): Promise<void>;
     protected _decodeSound({ sound }: IDecodeSoundOptions): Promise<void>;
+    manuallyUnlockAudio(): Promise<void>;
+    checkIfAudioIsUnlocked(): Promise<boolean>;
     play({ whichSound, playTimeOffset }?: IPlayOptions): Promise<ISound>;
     protected _play(sound: ISound): Promise<void>;
     protected _playAudioBuffer(sound: ISound): Promise<void>;

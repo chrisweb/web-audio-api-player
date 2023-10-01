@@ -52,6 +52,7 @@ export class PlayerAudio {
     protected _audioElement: HTMLAudioElement = null;
     protected _mediaElementAudioSourceNode: MediaElementAudioSourceNode = null;
     protected _isAudioUnlocked: boolean = false;
+    protected _isAudioUnlocking: boolean = false;
 
     constructor(options: IAudioOptions) {
 
@@ -114,9 +115,11 @@ export class PlayerAudio {
     protected _addFirstUserInteractionEventListeners(): void {
 
         if (this._options.createAudioContextOnFirstUserInteraction) {
-            document.addEventListener('touchstart', this.unlockAudio.bind(this));
-            document.addEventListener('touchend', this.unlockAudio.bind(this));
+            document.addEventListener('keydown', this.unlockAudio.bind(this));
             document.addEventListener('mousedown', this.unlockAudio.bind(this));
+            document.addEventListener('pointerdown', this.unlockAudio.bind(this));
+            document.addEventListener('pointerup', this.unlockAudio.bind(this));
+            document.addEventListener('touchend', this.unlockAudio.bind(this));
         }
 
     }
@@ -124,9 +127,11 @@ export class PlayerAudio {
     protected _removeFirstUserInteractionEventListeners(): void {
 
         if (this._options.createAudioContextOnFirstUserInteraction) {
-            document.removeEventListener('touchstart', this.unlockAudio.bind(this));
-            document.removeEventListener('touchend', this.unlockAudio.bind(this));
+            document.removeEventListener('keydown', this.unlockAudio.bind(this));
             document.removeEventListener('mousedown', this.unlockAudio.bind(this));
+            document.removeEventListener('pointerdown', this.unlockAudio.bind(this));
+            document.removeEventListener('pointerup', this.unlockAudio.bind(this));
+            document.removeEventListener('touchend', this.unlockAudio.bind(this));
         }
 
     }
@@ -135,9 +140,16 @@ export class PlayerAudio {
 
         return new Promise((resolve, reject) => {
 
-            if (this._isAudioUnlocked) {
+            if (this._isAudioUnlocked || this._isAudioUnlocking) {
                 return resolve();
             }
+
+            // https://webkit.org/blog/13862/the-user-activation-api/
+            if (typeof navigator.userActivation !== 'undefined' && navigator.userActivation.isActive) {
+                return resolve();
+            }
+
+            this._isAudioUnlocking = true;
 
             // make sure the audio context is not suspended
             // on android this is what unlocks audio
@@ -166,13 +178,18 @@ export class PlayerAudio {
                         // as a direct result of an user interaction
                         // after it got unlocked we re-use that element for all sounds
                         this._createAudioElementAndSource().then(() => {
-
                             this._isAudioUnlocked = true;
+                            this._isAudioUnlocking = false;
                             return resolve();
-                        }).catch(reject);
+                        }).catch((error) => {
+                            console.error(error);
+                            this._isAudioUnlocking = false;
+                            return reject();
+                        });
 
                     } else if (this._options.loadPlayerMode === 'player_mode_ajax') {
                         this._isAudioUnlocked = true;
+                        this._isAudioUnlocking = false;
                         return resolve();
                     }
 
@@ -180,12 +197,22 @@ export class PlayerAudio {
 
                 bufferSource.buffer = placeholderBuffer;
                 bufferSource.connect(this._audioContext.destination);
+                // attempt to play the empty buffer to check if there is an error
+                // or if it can be played, in which case audio is unlocked
                 bufferSource.start(0);
 
-            }).catch(reject);
+            }).catch((error) => {
+                console.error(error);
+                this._isAudioUnlocking = false;
+                return reject();
+            });
 
         });
 
+    }
+
+    public isAudioUnlocked() {
+        return (this._isAudioUnlocked || (typeof navigator.userActivation !== 'undefined' && navigator.userActivation.isActive)) ? true : false;
     }
 
     protected async _createAudioElementAndSource(): Promise<void> {
@@ -446,6 +473,8 @@ export class PlayerAudio {
             sound.sourceNode = audioBufferSourceNode;
 
         } else if (this._options.loadPlayerMode === 'player_mode_audio') {
+
+            await this._createAudioElementAndSource();
 
             // create the sound gain node
             sound.gainNode = this._mediaElementAudioSourceNode.context.createGain();

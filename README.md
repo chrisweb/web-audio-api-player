@@ -222,7 +222,7 @@ Note: if you use typescript, import the **ICoreOptions** interface along with th
 * playNextOnEnded: [boolean] (default: true) when a sound or song finishes playing should the player play the next sound that is in the queue or just stop playing
 * stopOnReset: [boolean] (default: true) when the queue gets reset and a sound is currently being played, should the player stop or continue playing that sound
 * visibilityAutoMute: [boolean] (default: false) tells the player if a sound is playing and the visibility API triggers a visibility change event, if the currently playing sound should get muted or not, uses the [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) internally
-* createAudioContextOnFirstUserInteraction: [boolean] (default: false) for a sound to be played the player needs to have an audiocontext, on mobile you can NOT play sounds / songs until the user has interacted in some way with your UI, this means autoplay with no user interaction will get prevented by the mobile browser (iOS (iPhone) and android mobile devices, today iPad is considered a desktop device and does not need this), when this option is set to true the player will try to catch the very first user interaction and initialize and audiocontext so that when a sound needs to be played the context will be available, there is a second option called "unLockAudioOnFirstPlay" which will do the same thing but instead of doing it on the first user interaction it will do it on the first call to play(), this is the preferred method as it keeps the audioContext turned of until it is really needed, which is preferrable to save resources on mobile
+* unlockAudioOnFirstUserInteraction: [boolean] (default: false) this tells the player to attempt to unlock audio as soon as possible, so that you can call the player play() method programmatically at any time, for more about this check out the chapter ["locked audio on mobile"](#locked-audio-on-mobile), if you don't want to the player to handle this part and prefer to do it manually then you can use the [player function](#player-functions) called **manuallyUnlockAudio()**
 * persistVolume: [boolean] (default: true) if this value is set to true the player will use the localstorage of the browser and save the value of the volume (localstorage entry key is **WebAudioAPIPlayerVolume**), if the page gets reloaded or the user comes back later the player will check if there is a value in the localstorage and automatically set the player volume to that value
 * loadPlayerMode: [typePlayerModes] (default: PLAYER_MODE_AUDIO) this is a constant you can import from player, currently you can chose between two modes, [PLAYER_MODE_AUDIO](#player_mode_audio) which uses the audio element to load sounds via the audio element and [PLAYER_MODE_AJAX](#player_mode_ajax) to load sounds via the web audio API, for more info about the modes read the [modes extended knowledge](#modes-extended-knowledge) chapter
 * audioContext: [AudioContext] (default: null) a custom [audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext) you inject to replace the default audiocontext of the player
@@ -330,6 +330,37 @@ player.addSoundToQueue({ soundAttributes: mySoundAttributes })
 * getVisibilityAutoMute() get the current boolean value that is set for the **visibilityAutoMute** option
 * disconnect() disconnects the player and destroys all songs in the queue, this function should get called for example in react when a component unmounts, call this function when you don't need the player anymore to free memory
 * getAudioContext() get the current audioContext that is being used by the player [MDN audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext)
+* manuallyUnlockAudio() this method can be used on mobile to unlock audio, because by default audio won't play on mobile if the code that triggers the player play() method is not a user interaction, for example a user pressing a play button works fine, but if you want to play a sound programmatically without any user interaction then the mobile browser will throw a notallowed error, this method can be used to unlock audio on a user interaction, after audio is unlocked you can use the play() method programmatically, an alternative if you don't want to implement this yourself is to enable the [player option](#player-options) called **unlockAudioOnFirstUserInteraction**, for more about this check out the chapter ["locked audio on mobile"](#locked-audio-on-mobile)
+* checkIfAudioIsUnlocked() function you can use to check if audio is unlocked on mobile, for example after calling manuallyUnlockAudio()
+
+### locked audio on mobile
+
+On mobile you can NOT play sounds (songs) programmatically until the user has interacted with the website / webapp
+
+If the user clicks on a play button and in your event handler you call the play method of the player then everything is fine as it is a user interaction that triggered the play method
+
+However if you want to play music programmatically on mobile, then the page / app needs to be "user activated", in other words on mobile when a page has finished loading audio is still locked you will not be able to programmatically play a sound (song), the play method will return a **NotAllowedError** error:
+
+> The request is not allowed by the user agent or the platform in the current context, possibly because the user denied permission (No legacy code value and constant name).
+
+This means that autoplay without a prior user interaction will get prevented by the mobile browsers
+
+iOS (iPhone) and android mobile devices will throw an error, in the past iPad tablets would throw an error too, however newer versions are considered a desktop device and do not need throw an error
+
+The process of unlocking audio on a mobile browser is called "Transient activation" and the player can help you achieve this if you don't want to write your own code
+
+* solution 1: there is a [player option](#player-options) called **unlockAudioOnFirstUserInteraction**, set it to true when initializing the player and the player will add user interaction listeners to the html document, on the first user interaction the player will attempt to unlock audio, after audio is unlocked you will be able to call player play() function programmatically and it will not throw an error anywore
+
+* solution 2: there is a [player function](#player-functions) called **manuallyUnlockAudio()** that you can use to attempt to unlock audio on mobile, this function MUST be played inside an event handler for a user interaction like "keydown" (excluding the Escape key and possibly some keys reserved by the browser or OS), "mousedown", "pointerdown" or "pointerup" (but only if the pointerType is "mouse") and "touchend"
+
+After audio got unlocked, you can use the [player function](#player-functions) called **checkIfAudioIsUnlocked()** to check if now audio is unlocked, this is also useful because the browsers have an internal timer that starts running after "Transient activation" happend, so if the website (app) is idle for a while the browser might lock audio again, meaning you need to re-unlock it again, what the exact duration of that timer is depends on the browser and is not something browser vendors make public (in might also be different depending on the version of the browser)
+
+Read more:
+
+* [MDN: Features gated by user activation & Transient activation](https://developer.mozilla.org/en-US/docs/Web/Security/User_activation)
+* [WebKit: The User Activation API](https://webkit.org/blog/13862/the-user-activation-api/)
+* [MDN: Navigator: userActivation property](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/userActivation)
+* [caniuse: Navigator API: userActivation](https://caniuse.com/mdn-api_navigator_useractivation)
 
 ### modes extended knowledge
 

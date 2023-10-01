@@ -29,7 +29,6 @@ export interface ICoreOptions {
     loadPlayerMode?: typePlayerMode;
     audioContext?: AudioContext;
     addAudioElementsToDom?: boolean;
-    unLockAudioOnFirstPlay?: boolean;
 }
 
 export interface ISoundsQueueOptions {
@@ -113,7 +112,6 @@ export class PlayerCore {
             loadPlayerMode: PLAYER_MODE_AUDIO,
             audioContext: null,
             addAudioElementsToDom: false,
-            unLockAudioOnFirstPlay: true,
         };
 
         const options = Object.assign({}, defaultOptions, playerOptions);
@@ -454,7 +452,6 @@ export class PlayerCore {
 
     protected async _loadSoundUsingRequest(sound: ISound): Promise<void> {
 
-
         // check for audio buffer before array buffer, because if one exist the other
         // should exist too and is better for performance to reuse audio buffer then
         // to redecode array buffer into an audio buffer
@@ -480,12 +477,9 @@ export class PlayerCore {
         if (sound.url !== null) {
 
             const request = new PlayerRequest();
-
             // change buffering state
             sound.isBuffering = true;
-
             const arrayBuffer = await request.getArrayBuffer(sound);
-
             sound.arrayBuffer = arrayBuffer;
 
             await this._decodeSound({ sound });
@@ -516,11 +510,15 @@ export class PlayerCore {
 
     }
 
-    public async play({ whichSound, playTimeOffset }: IPlayOptions = {}): Promise<ISound> {
+    public async manuallyUnlockAudio() {
+        await this._playerAudio.unlockAudio();
+    }
 
-        if (this._options.unLockAudioOnFirstPlay) {
-            await this._playerAudio.unlockAudio();
-        }
+    public async checkIfAudioIsUnlocked() {
+        return this._playerAudio.isAudioUnlocked();
+    }
+
+    public async play({ whichSound, playTimeOffset }: IPlayOptions = {}): Promise<ISound> {
 
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
@@ -672,7 +670,7 @@ export class PlayerCore {
                 }
             }
 
-            await sound.audioElement.play();
+            return await sound.audioElement.play();
 
         }
 

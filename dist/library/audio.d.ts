@@ -31,6 +31,7 @@ export declare class PlayerAudio {
     protected _audioElement: HTMLAudioElement;
     protected _mediaElementAudioSourceNode: MediaElementAudioSourceNode;
     protected _isAudioUnlocked: boolean;
+    protected _isAudioUnlocking: boolean;
     constructor(options: IAudioOptions);
     protected _initialize(): void;
     getAudioNodes(): IAudioNodes;
@@ -39,6 +40,7 @@ export declare class PlayerAudio {
     protected _addFirstUserInteractionEventListeners(): void;
     protected _removeFirstUserInteractionEventListeners(): void;
     unlockAudio(): Promise<void>;
+    isAudioUnlocked(): boolean;
     protected _createAudioElementAndSource(): Promise<void>;
     protected _createAudioElement(): Promise<void>;
     getAudioElement(): Promise<HTMLAudioElement>;
