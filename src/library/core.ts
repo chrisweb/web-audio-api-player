@@ -514,10 +514,6 @@ export class PlayerCore {
         await this._playerAudio.unlockAudio();
     }
 
-    public async checkIfAudioIsUnlocked() {
-        return this._playerAudio.verifyIfAudioIsUnlocked();
-    }
-
     public async play({ whichSound, playTimeOffset }: IPlayOptions = {}): Promise<ISound> {
 
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
