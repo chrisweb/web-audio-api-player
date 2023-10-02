@@ -40,8 +40,8 @@
     },
     "devDependencies": {
         "@rollup/plugin-terser": "0.4.3",
-        "@typescript-eslint/eslint-plugin": "6.7.3",
-        "@typescript-eslint/parser": "6.7.3",
+        "@typescript-eslint/eslint-plugin": "6.7.4",
+        "@typescript-eslint/parser": "6.7.4",
         "eslint": "8.50.0",
         "eslint-plugin-import": "2.28.1",
         "rollup": "3.29.4",
