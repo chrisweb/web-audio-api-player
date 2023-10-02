@@ -26,16 +26,11 @@ export class PlayerRequest {
             xhr.onload = function (): void {
 
                 // gets called even on for example 404, so check the status
-                if (xhr.status === 200) {
-
-                    // successful request so now we can resolve the promise
+                if (xhr.status >= 200 && xhr.status <= 299) {
                     resolve(xhr.response);
-
                 } else {
-
-                    // something went wrong so we reject with an error
+                    // status code is not 2xx, reject with an error
                     reject(new Error(xhr.statusText + '(status:' + xhr.status + ')'));
-
                 }
 
             };
