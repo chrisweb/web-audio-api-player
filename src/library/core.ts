@@ -24,7 +24,7 @@ export interface ICoreOptions {
     playNextOnEnded?: boolean;
     stopOnReset?: boolean;
     visibilityAutoMute?: boolean;
-    createAudioContextOnFirstUserInteraction?: boolean;
+    unlockAudioOnFirstUserInteraction?: boolean;
     persistVolume?: boolean;
     loadPlayerMode?: typePlayerMode;
     audioContext?: AudioContext;
@@ -107,7 +107,7 @@ export class PlayerCore {
             playNextOnEnded: true,
             stopOnReset: true,
             visibilityAutoMute: false,
-            createAudioContextOnFirstUserInteraction: false,
+            unlockAudioOnFirstUserInteraction: false,
             persistVolume: true,
             loadPlayerMode: PLAYER_MODE_AUDIO,
             audioContext: null,
@@ -154,7 +154,7 @@ export class PlayerCore {
 
         const audioOptions: IAudioOptions = {
             audioContext: this._options.audioContext,
-            createAudioContextOnFirstUserInteraction: this._options.createAudioContextOnFirstUserInteraction,
+            unlockAudioOnFirstUserInteraction: this._options.unlockAudioOnFirstUserInteraction,
             volume: this._options.volume,
             persistVolume: this._options.persistVolume,
             loadPlayerMode: this._options.loadPlayerMode,
@@ -515,7 +515,7 @@ export class PlayerCore {
     }
 
     public async checkIfAudioIsUnlocked() {
-        return this._playerAudio.isAudioUnlocked();
+        return this._playerAudio.verifyIfAudioIsUnlocked();
     }
 
     public async play({ whichSound, playTimeOffset }: IPlayOptions = {}): Promise<ISound> {

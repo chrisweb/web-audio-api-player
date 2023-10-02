@@ -4,7 +4,7 @@ type OnEndedCallbackType = (event: Event) => void
 
 export interface IAudioOptions {
     audioContext: AudioContext;
-    createAudioContextOnFirstUserInteraction: boolean;
+    unlockAudioOnFirstUserInteraction: boolean;
     volume: number;
     persistVolume: boolean;
     loadPlayerMode: string;
@@ -70,7 +70,7 @@ export class PlayerAudio {
         // https://developer.mozilla.org/en-US/docs/Web/API/Navigator/getAutoplayPolicy
         // but this feature is only implemented on firefox (as of 19.09.2023)
 
-        if (this._options.createAudioContextOnFirstUserInteraction) {
+        if (this._options.unlockAudioOnFirstUserInteraction) {
             this._addFirstUserInteractionEventListeners();
         }
 
@@ -114,7 +114,7 @@ export class PlayerAudio {
 
     protected _addFirstUserInteractionEventListeners(): void {
 
-        if (this._options.createAudioContextOnFirstUserInteraction) {
+        if (this._options.unlockAudioOnFirstUserInteraction) {
             document.addEventListener('keydown', this.unlockAudio.bind(this));
             document.addEventListener('mousedown', this.unlockAudio.bind(this));
             document.addEventListener('pointerdown', this.unlockAudio.bind(this));
@@ -126,7 +126,7 @@ export class PlayerAudio {
 
     protected _removeFirstUserInteractionEventListeners(): void {
 
-        if (this._options.createAudioContextOnFirstUserInteraction) {
+        if (this._options.unlockAudioOnFirstUserInteraction) {
             document.removeEventListener('keydown', this.unlockAudio.bind(this));
             document.removeEventListener('mousedown', this.unlockAudio.bind(this));
             document.removeEventListener('pointerdown', this.unlockAudio.bind(this));
@@ -140,12 +140,12 @@ export class PlayerAudio {
 
         return new Promise((resolve, reject) => {
 
-            if (this._isAudioUnlocked || this._isAudioUnlocking) {
+            if (this._isAudioUnlocking) {
                 return resolve();
             }
 
             // https://webkit.org/blog/13862/the-user-activation-api/
-            if (typeof navigator.userActivation !== 'undefined' && navigator.userActivation.isActive) {
+            if (this._isAudioUnlocked) {
                 return resolve();
             }
 
@@ -211,8 +211,19 @@ export class PlayerAudio {
 
     }
 
-    public isAudioUnlocked() {
-        return (this._isAudioUnlocked || (typeof navigator.userActivation !== 'undefined' && navigator.userActivation.isActive)) ? true : false;
+    public verifyIfAudioIsUnlocked() {
+        let isUnlocked = false;
+        // use the navigator.userActivation if available
+        if (typeof navigator.userActivation !== 'undefined') {
+            if (navigator.userActivation.isActive) {
+                isUnlocked = true;
+            }
+        } else {
+            if (this._isAudioUnlocked) {
+                isUnlocked = true;
+            }
+        }
+        return isUnlocked;
     }
 
     protected async _createAudioElementAndSource(): Promise<void> {
