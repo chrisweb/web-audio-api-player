@@ -13,9 +13,9 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 //declare global  {
-    interface IImportMeta extends ImportMeta {
-        url: string;
-    }
+interface IImportMeta extends ImportMeta {
+    url: string;
+}
 //}
 
 export class Server {
@@ -39,7 +39,7 @@ export class Server {
         this.application.use('/dist', express.static(ROOTPATH + '/../../../dist'));
 
         // streaming songs
-        this.application.get('/music/:song', (request: express.Request, response: express.Response) => {
+        this.application.get('/streaming/music/:song', (request: express.Request, response: express.Response) => {
 
             const range = request.headers.range || '0'
             const path = ROOTPATH + '/../../../assets/music/' + request.params.song
@@ -47,23 +47,26 @@ export class Server {
             const chunkSize = 1 * 1e6  //  1MB
             const start = Number(range.replace(/\D/g, ''))
             const end = Math.min(start + chunkSize, size - 1)
-          
+
             const contentLength = end - start + 1
-          
+
             const headers = {
-              'Content-Range': `bytes ${start}-${end}/${size}`,
-              'Accept-Ranges': "bytes",
-              'Content-Length': contentLength,
-              'Content-Type': "audio/mp3",
+                'Content-Range': `bytes ${start}-${end}/${size}`,
+                'Accept-Ranges': "bytes",
+                'Content-Length': contentLength,
+                'Content-Type': "audio/mp3",
             }
 
             response.writeHead(206, headers)
-          
+
             const stream = fs.createReadStream(path, { start, end })
 
             stream.pipe(response);
 
-          })
+        })
+
+        // static songs
+        this.application.use('/static/music', express.static(ROOTPATH + '/../../../assets/music'));
 
         this.application.get('/', (request: express.Request, response: express.Response) => {
 

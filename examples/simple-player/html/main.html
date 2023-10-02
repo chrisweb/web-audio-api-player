@@ -28,7 +28,7 @@
             font-size: 16px;
         }
 
-        .button, .info {
+        .button {
             padding: .75rem 1.5rem;
             font-size: 1.25rem;
             border-radius: .3rem;
@@ -43,6 +43,26 @@
             margin: 0.2rem;
         }
 
+        .album_cover {
+            height: 100px;
+            width: auto;
+        }
+
+        .left-side {
+            display: inline-block;
+            width: 100px;
+        }
+
+        .right-side {
+            display: inline-block;
+            padding-right: 16px;
+            vertical-align: top;
+        }
+
+        .song-details {
+            font-size: 1.2rem;
+        }
+
         .hidden {
             display: none;
         }
@@ -53,6 +73,18 @@
 <body>
 
     <h1>web audio api player - simple example</h1>
+
+    <section id="js-song-info">
+        <div class="left-side">
+            <img src="" id="js-album_cover" class="album_cover" />
+        </div>
+        <div class="right-side">
+            <div id="js-song-details" class="song-details"></div>
+            <a href="" id="js-song-web"></a>
+            <br>
+            <a href="" id="js-song-license"></a>
+        </div>
+    </section>
 
     <section id="js-player">
 
@@ -89,17 +121,13 @@
     <section id="js-extra-buttons">
         <button id="js-first" class="button">First</button>
         <button id="js-last" class="button">Last</button>
-        <button id="js-byId-1" class="button" data-song-id="1314412">Song by ID: 1314412 (= 1st song in queue)</button>
-        <button id="js-byId-2" class="button" data-song-id="1214935">Song by ID: 1214935 (= 2nd / last song in
-            queue)</button>
-        <button id="js-byId-2" class="button" data-song-id="1214935" data-song-play-time-offset="10">Song by ID: 1214935
-            & start at (playTimeOffset) 10 seconds</button>
+        <button id="js-byId-1" class="button" data-song-id="song1">Play song by ID (song 1)</button>
+        <button id="js-byId-2" class="button" data-song-id="song2">Play song by ID (song 2)</button>
+        <button id="js-byId-3" class="button" data-song-id="song3" data-song-play-time-offset="10">Play song by ID (song
+            3) & start at (playTimeOffset) 10 seconds</button>
         <button id="pause" class="button">Pause</button>
         <button id="stop" class="button">Stop</button>
         <br>
-        <div id="checkLock" class="info">Check if audio is unlocked (mobile)</div>
-        <div id="checkPlay" class="info"></div>
-        <button id="unLock" class="button">Unlock audio</button>
         <button id="disconnect" class="button">Disconnect player</button>
     </section>
 

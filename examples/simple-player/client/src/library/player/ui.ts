@@ -1,8 +1,21 @@
 ﻿import { PlayerCore, IPlayOptions } from '../../../../../../dist/index.js'
 
+interface IPlaylistTrack {
+    song_title: string,
+    album_name: string,
+    artist_name: string,
+    web: string,
+    license: string,
+    ogg: string,
+    mp3: string,
+    album_cover: string,
+    id: string,
+}
+
 class PlayerUI {
 
     public player: PlayerCore
+    public playlist: IPlaylistTrack[]
 
     protected _buttonsBox: HTMLElement
     protected _volumeSlider: HTMLInputElement
@@ -13,8 +26,9 @@ class PlayerUI {
     protected _durationTime: HTMLElement
     protected _volumeNumber: HTMLElement
 
-    constructor(player: PlayerCore) {
+    constructor(player: PlayerCore, playlist: IPlaylistTrack[]) {
         this.player = player
+        this.playlist = playlist
         this._prepareUI()
     }
 
@@ -45,29 +59,32 @@ class PlayerUI {
         this._volumeSlider.value = volume
         this._volumeNumber.textContent = volume
 
-        const $isAudioLockedButton = document.getElementById('checkLock')
-        //const $isAudioPlayingInfo = document.getElementById('checkPlay')
+        // show first song data even though it is not yet loaded
+        this.updateSongInfo('song1')
 
-        setInterval(() => {
-            this.player.checkIfAudioIsUnlocked().then((isUnlocked) => {
-                if (isUnlocked) {
-                    $isAudioLockedButton.style.backgroundColor = 'green'
-                } else {
-                    $isAudioLockedButton.style.backgroundColor = 'red'
-                }
-            }).catch((error) => {
-                console.error(error)
-            })
-            /*this.player.play().then(() => {
-                this.player.pause();
-                $isAudioPlayingInfo.style.backgroundColor = 'green'
-                $isAudioPlayingInfo.textContent = 'playing song OK'
-            }).catch((error) => {
-                console.error(error)
-                $isAudioPlayingInfo.style.backgroundColor = 'red'
-                $isAudioPlayingInfo.textContent = error.message
-            })*/
-        }, 500)
+    }
+
+    public updateSongInfo(songId: string) {
+
+        const playlistTrackInfo = this.playlist.find((songData) => {
+            return songId === songData.id
+        });
+
+        const albumCoverElement = document.getElementById('js-album_cover') as HTMLImageElement
+
+        albumCoverElement.src = 'http://127.0.0.1:35000/static/music/' + playlistTrackInfo.album_cover
+
+        const songDetailsElement = document.getElementById('js-song-details') as HTMLDivElement
+        const songWebElement = document.getElementById('js-song-web') as HTMLAnchorElement
+        const songLicenseElement = document.getElementById('js-song-license') as HTMLAnchorElement
+
+        songDetailsElement.textContent = `Current song: ${playlistTrackInfo.song_title} by ${playlistTrackInfo.artist_name}`
+
+        songWebElement.href = playlistTrackInfo.web
+        songWebElement.textContent = playlistTrackInfo.web
+
+        songLicenseElement.href = playlistTrackInfo.license
+        songLicenseElement.textContent = playlistTrackInfo.license
 
     }
 
@@ -201,9 +218,9 @@ class PlayerUI {
             const songId = $button.getAttribute('data-song-id');
             const songPlayTimeOffset = $button.getAttribute('data-song-play-time-offset');
             if (songPlayTimeOffset !== null) {
-                this.player.play({ whichSound: parseInt(songId), playTimeOffset: parseInt(songPlayTimeOffset) });
+                this.player.play({ whichSound: songId, playTimeOffset: parseInt(songPlayTimeOffset) });
             } else {
-                this.player.play({ whichSound: parseInt(songId) });
+                this.player.play({ whichSound: songId });
             }
         }
 
@@ -213,10 +230,6 @@ class PlayerUI {
 
         if ($button.id === 'stop') {
             this.player.stop()
-        }
-
-        if ($button.id === 'unLock') {
-            this.player.manuallyUnlockAudio()
         }
 
         if ($button.id === 'disconnect') {

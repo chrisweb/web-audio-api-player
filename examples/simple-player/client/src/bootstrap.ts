@@ -12,11 +12,16 @@ import { PlayerUI } from './library/player/ui.js'
 // !!! for some details about the differencies of the two MODES
 // check out the documentation part of the readme
 const options: ICoreOptions = {
-    soundsBaseUrl: 'http://127.0.0.1:35000/music/',
+    soundsBaseUrl: 'http://127.0.0.1:35000/streaming/music/',
     loadPlayerMode: PlayerCore.PLAYER_MODE_AUDIO,
     loopQueue: true,
     addAudioElementsToDom: true,
 }
+/*const options: ICoreOptions = {
+    soundsBaseUrl: 'http://127.0.0.1:35000/static/music/',
+    loadPlayerMode: PlayerCore.PLAYER_MODE_AJAX,
+    loopQueue: true,
+}*/
 
 // create an instance of the player
 const player = new PlayerCore(options)
@@ -64,7 +69,7 @@ const myPlaylist = [
 
 // create an instance of a basic UI we created for this example
 // the player does not come with an UI so you are free to create your own to match your needs and style taste
-const playerUI = new PlayerUI(player)
+const playerUI = new PlayerUI(player, myPlaylist)
 
 // create the sound attributes object
 // check the main project README for a list of all available attributes
@@ -88,6 +93,7 @@ myPlaylist.forEach((song) => {
         onStarted: (playTimeOffset) => {
             console.log(`SONG: ${sound.id} - onStarted (playTimeOffset): `, playTimeOffset)
             playerUI.setToPlay(sound.duration)
+            playerUI.updateSongInfo(sound.id.toString())
         },
         onPaused: (playTime) => {
             console.log(`SONG: ${sound.id} - onPaused (playTime): `, playTime)
