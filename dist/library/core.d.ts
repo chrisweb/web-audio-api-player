@@ -85,7 +85,6 @@ export declare class PlayerCore {
     protected _loadSoundUsingRequest(sound: ISound): Promise<void>;
     protected _decodeSound({ sound }: IDecodeSoundOptions): Promise<void>;
     manuallyUnlockAudio(): Promise<void>;
-    checkIfAudioIsUnlocked(): Promise<boolean>;
     play({ whichSound, playTimeOffset }?: IPlayOptions): Promise<ISound>;
     protected _play(sound: ISound): Promise<void>;
     protected _playAudioBuffer(sound: ISound): Promise<void>;

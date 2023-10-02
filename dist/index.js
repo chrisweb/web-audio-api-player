@@ -230,6 +230,14 @@ class PlayerAudio {
                 return resolve();
             }
             this._isAudioUnlocking = true;
+            if (this._options.loadPlayerMode === 'player_mode_audio') {
+                const forceCreate = true;
+                this._createAudioElement(forceCreate).catch((error) => {
+                    console.error(error);
+                    this._isAudioUnlocking = false;
+                    return reject();
+                });
+            }
             this.getAudioContext().then(() => {
                 const placeholderBuffer = this._audioContext.createBuffer(1, 1, 22050);
                 let bufferSource = this._audioContext.createBufferSource();
@@ -239,22 +247,9 @@ class PlayerAudio {
                     bufferSource.disconnect(0);
                     bufferSource.buffer = null;
                     bufferSource = null;
-                    if (this._options.loadPlayerMode === 'player_mode_audio') {
-                        this._createAudioElementAndSource().then(() => {
-                            this._isAudioUnlocked = true;
-                            this._isAudioUnlocking = false;
-                            return resolve();
-                        }).catch((error) => {
-                            console.error(error);
-                            this._isAudioUnlocking = false;
-                            return reject();
-                        });
-                    }
-                    else if (this._options.loadPlayerMode === 'player_mode_ajax') {
-                        this._isAudioUnlocked = true;
-                        this._isAudioUnlocking = false;
-                        return resolve();
-                    }
+                    this._isAudioUnlocked = true;
+                    this._isAudioUnlocking = false;
+                    return resolve();
                 };
                 bufferSource.buffer = placeholderBuffer;
                 bufferSource.connect(this._audioContext.destination);
@@ -266,29 +261,15 @@ class PlayerAudio {
             });
         });
     }
-    verifyIfAudioIsUnlocked() {
-        let isUnlocked = false;
-        if (typeof navigator.userActivation !== 'undefined') {
-            if (navigator.userActivation.isActive) {
-                isUnlocked = true;
-            }
-        }
-        else {
-            if (this._isAudioUnlocked) {
-                isUnlocked = true;
-            }
-        }
-        return isUnlocked;
-    }
     _createAudioElementAndSource() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this._createAudioElement();
             yield this._createMediaElementAudioSourceNode();
         });
     }
-    _createAudioElement() {
+    _createAudioElement(forceCreate) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (this._audioElement === null) {
+            if (this._audioElement === null || forceCreate === true) {
                 const audioElement = new Audio();
                 audioElement.controls = false;
                 audioElement.autoplay = false;
@@ -361,7 +342,7 @@ class PlayerAudio {
     }
     _createMediaElementAudioSourceNode() {
         return __awaiter(this, void 0, void 0, function* () {
-            if (this._mediaElementAudioSourceNode === null) {
+            if (this._mediaElementAudioSourceNode === null && this._audioElement !== null) {
                 const audioContext = yield this.getAudioContext();
                 this._mediaElementAudioSourceNode = audioContext.createMediaElementSource(this._audioElement);
             }
@@ -536,7 +517,7 @@ class PlayerRequest {
             xhr.open('GET', requested.url, true);
             xhr.responseType = 'arraybuffer';
             xhr.onload = function () {
-                if (xhr.status === 200) {
+                if (xhr.status >= 200 && xhr.status <= 299) {
                     resolve(xhr.response);
                 }
                 else {
@@ -845,11 +826,6 @@ class PlayerCore {
     manuallyUnlockAudio() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this._playerAudio.unlockAudio();
-        });
-    }
-    checkIfAudioIsUnlocked() {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this._playerAudio.verifyIfAudioIsUnlocked();
         });
     }
     play({ whichSound, playTimeOffset } = {}) {

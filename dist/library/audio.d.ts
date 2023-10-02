@@ -40,9 +40,8 @@ export declare class PlayerAudio {
     protected _addFirstUserInteractionEventListeners(): void;
     protected _removeFirstUserInteractionEventListeners(): void;
     unlockAudio(): Promise<void>;
-    verifyIfAudioIsUnlocked(): boolean;
     protected _createAudioElementAndSource(): Promise<void>;
-    protected _createAudioElement(): Promise<void>;
+    protected _createAudioElement(forceCreate?: boolean): Promise<void>;
     getAudioElement(): Promise<HTMLAudioElement>;
     getAudioContext(): Promise<AudioContext>;
     unfreezeAudioContext(): Promise<void>;
