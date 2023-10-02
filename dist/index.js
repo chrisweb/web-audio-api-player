@@ -178,7 +178,7 @@ class PlayerAudio {
         this._initialize();
     }
     _initialize() {
-        if (this._options.createAudioContextOnFirstUserInteraction) {
+        if (this._options.unlockAudioOnFirstUserInteraction) {
             this._addFirstUserInteractionEventListeners();
         }
     }
@@ -204,7 +204,7 @@ class PlayerAudio {
         }
     }
     _addFirstUserInteractionEventListeners() {
-        if (this._options.createAudioContextOnFirstUserInteraction) {
+        if (this._options.unlockAudioOnFirstUserInteraction) {
             document.addEventListener('keydown', this.unlockAudio.bind(this));
             document.addEventListener('mousedown', this.unlockAudio.bind(this));
             document.addEventListener('pointerdown', this.unlockAudio.bind(this));
@@ -213,7 +213,7 @@ class PlayerAudio {
         }
     }
     _removeFirstUserInteractionEventListeners() {
-        if (this._options.createAudioContextOnFirstUserInteraction) {
+        if (this._options.unlockAudioOnFirstUserInteraction) {
             document.removeEventListener('keydown', this.unlockAudio.bind(this));
             document.removeEventListener('mousedown', this.unlockAudio.bind(this));
             document.removeEventListener('pointerdown', this.unlockAudio.bind(this));
@@ -223,10 +223,10 @@ class PlayerAudio {
     }
     unlockAudio() {
         return new Promise((resolve, reject) => {
-            if (this._isAudioUnlocked || this._isAudioUnlocking) {
+            if (this._isAudioUnlocking) {
                 return resolve();
             }
-            if (typeof navigator.userActivation !== 'undefined' && navigator.userActivation.isActive) {
+            if (this._isAudioUnlocked) {
                 return resolve();
             }
             this._isAudioUnlocking = true;
@@ -266,8 +266,19 @@ class PlayerAudio {
             });
         });
     }
-    isAudioUnlocked() {
-        return (this._isAudioUnlocked || (typeof navigator.userActivation !== 'undefined' && navigator.userActivation.isActive)) ? true : false;
+    verifyIfAudioIsUnlocked() {
+        let isUnlocked = false;
+        if (typeof navigator.userActivation !== 'undefined') {
+            if (navigator.userActivation.isActive) {
+                isUnlocked = true;
+            }
+        }
+        else {
+            if (this._isAudioUnlocked) {
+                isUnlocked = true;
+            }
+        }
+        return isUnlocked;
     }
     _createAudioElementAndSource() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -587,7 +598,7 @@ class PlayerCore {
             playNextOnEnded: true,
             stopOnReset: true,
             visibilityAutoMute: false,
-            createAudioContextOnFirstUserInteraction: false,
+            unlockAudioOnFirstUserInteraction: false,
             persistVolume: true,
             loadPlayerMode: PLAYER_MODE_AUDIO,
             audioContext: null,
@@ -622,7 +633,7 @@ class PlayerCore {
     _audioOptions() {
         const audioOptions = {
             audioContext: this._options.audioContext,
-            createAudioContextOnFirstUserInteraction: this._options.createAudioContextOnFirstUserInteraction,
+            unlockAudioOnFirstUserInteraction: this._options.unlockAudioOnFirstUserInteraction,
             volume: this._options.volume,
             persistVolume: this._options.persistVolume,
             loadPlayerMode: this._options.loadPlayerMode,
@@ -838,7 +849,7 @@ class PlayerCore {
     }
     checkIfAudioIsUnlocked() {
         return __awaiter(this, void 0, void 0, function* () {
-            return this._playerAudio.isAudioUnlocked();
+            return this._playerAudio.verifyIfAudioIsUnlocked();
         });
     }
     play({ whichSound, playTimeOffset } = {}) {
