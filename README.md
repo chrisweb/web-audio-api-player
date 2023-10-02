@@ -222,12 +222,11 @@ Note: if you use typescript, import the **ICoreOptions** interface along with th
 * playNextOnEnded: [boolean] (default: true) when a sound or song finishes playing should the player play the next sound that is in the queue or just stop playing
 * stopOnReset: [boolean] (default: true) when the queue gets reset and a sound is currently being played, should the player stop or continue playing that sound
 * visibilityAutoMute: [boolean] (default: false) tells the player if a sound is playing and the visibility API triggers a visibility change event, if the currently playing sound should get muted or not, uses the [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) internally
-* unlockAudioOnFirstUserInteraction: [boolean] (default: false) this tells the player to attempt to unlock audio as soon as possible, so that you can call the player play() method programmatically at any time, for more about this check out the chapter ["locked audio on mobile"](#locked-audio-on-mobile), if you don't want to the player to handle this part and prefer to do it manually then you can use the [player function](#player-functions) called **manuallyUnlockAudio()**
+* unlockAudioOnFirstUserInteraction: [boolean] (default: false) this tells the player to attempt to unlock audio as soon as possible, so that you can call the player play() method programmatically at any time, if you don't want to the player to handle this part and prefer to do it manually then you can use the [player function](#player-functions) called **manuallyUnlockAudio()**, for more info about this check out the chapter ["locked audio on mobile"](#locked-audio-on-mobile)
 * persistVolume: [boolean] (default: true) if this value is set to true the player will use the localstorage of the browser and save the value of the volume (localstorage entry key is **WebAudioAPIPlayerVolume**), if the page gets reloaded or the user comes back later the player will check if there is a value in the localstorage and automatically set the player volume to that value
 * loadPlayerMode: [typePlayerModes] (default: PLAYER_MODE_AUDIO) this is a constant you can import from player, currently you can chose between two modes, [PLAYER_MODE_AUDIO](#player_mode_audio) which uses the audio element to load sounds via the audio element and [PLAYER_MODE_AJAX](#player_mode_ajax) to load sounds via the web audio API, for more info about the modes read the [modes extended knowledge](#modes-extended-knowledge) chapter
 * audioContext: [AudioContext] (default: null) a custom [audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext) you inject to replace the default audiocontext of the player
 * addAudioElementsToDom: [boolean] (default: false) when audio elements get created, they are by default offscreen (not added to the DOM), if you want the audio elements to be added to the DOM set this option to true
-* unLockAudioOnFirstPlay: [boolean] (default: true) will unlock audio on mobile devices on the first call to play(), if this is turned off and you intend to support mobile devices you should enables this or consider the alternative option that is called "unlockAudioOnFirstUserInteraction" and which will attempt to unlock audio on mobile on any first user interaction it catches, you could also add your own custom code to detect mobile devices and only enable this feature on mobile but it can be tricky to create a reliable code that detects all mobile devices with 100% accurancy, this is why this option is enabled by default (the player does not make differentiate between mobile and desktop browsers)
 
 ### sound attributes
 
@@ -330,37 +329,27 @@ player.addSoundToQueue({ soundAttributes: mySoundAttributes })
 * getVisibilityAutoMute() get the current boolean value that is set for the **visibilityAutoMute** option
 * disconnect() disconnects the player and destroys all songs in the queue, this function should get called for example in react when a component unmounts, call this function when you don't need the player anymore to free memory
 * getAudioContext() get the current audioContext that is being used by the player [MDN audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext)
-* manuallyUnlockAudio() this method can be used on mobile to unlock audio, because by default audio won't play on mobile if the code that triggers the player play() method is not a user interaction, for example a user pressing a play button works fine, but if you want to play a sound programmatically without any user interaction then the mobile browser will throw a notallowed error, this method can be used to unlock audio on a user interaction, after audio is unlocked you can use the play() method programmatically, an alternative if you don't want to implement this yourself is to enable the [player option](#player-options) called **unlockAudioOnFirstUserInteraction**, for more about this check out the chapter ["locked audio on mobile"](#locked-audio-on-mobile)
-* checkIfAudioIsUnlocked() function you can use to check if audio is unlocked on mobile, for example after calling manuallyUnlockAudio()
+* manuallyUnlockAudio() this method can be used on mobile to unlock audio, you need to call this function inside an event handler that got triggered by the user, so for example an "onClick" event could call this function to unlock audio, calling this function programmatically without any user interaction will not unlock audio, an alternative if you don't want to implement this yourself is to enable the [player option](#player-options) called **unlockAudioOnFirstUserInteraction**, for more info about this check out the chapter ["locked audio on mobile"](#locked-audio-on-mobile)
 
 ### locked audio on mobile
 
-On mobile you can NOT play sounds (songs) programmatically until the user has interacted with the website / webapp
+All mobile browsers prevent playing sounds (songs) if no user gesture has happend yet. This means that on mobile you can NOT play sounds (songs) programmatically (this is also the reason why the autoplay attribute on an audio element does not auto play a song on mobile and also the reason videos will only autoplay if they are muted)
 
-If the user clicks on a play button and in your event handler you call the play method of the player then everything is fine as it is a user interaction that triggered the play method
+Note: If the user clicks on a play button and call player.play() then audio will play just fine, this chapter is about audio not playing when calling player.play() before the user interacted with the page (app)
 
-However if you want to play music programmatically on mobile, then the page / app needs to be "user activated", in other words on mobile when a page has finished loading audio is still locked you will not be able to programmatically play a sound (song), the play method will return a **NotAllowedError** error:
+If you attempt play a sound (song) on mobile programmatically (before a user interaction) then the mobile browser will throw a **NotAllowedError** error:
 
 > The request is not allowed by the user agent or the platform in the current context, possibly because the user denied permission (No legacy code value and constant name).
 
-This means that autoplay without a prior user interaction will get prevented by the mobile browsers
+Note: iOS (iPhone) and android mobile devices will throw that error, in the past iPad tablets would throw an error too, however newer versions are considered a desktop device and do not need throw an error
 
-iOS (iPhone) and android mobile devices will throw an error, in the past iPad tablets would throw an error too, however newer versions are considered a desktop device and do not need throw an error
+There is however a trick to unlock audio on mobile, the trick is to listen for events like a user clicking on something in your page and use that interaction to play a silent sound for a brief moment, after that audio will be unlocked and you will be able to trigger the play function at any time programmatically to play the song you want (even if it is not a direct action initiated by the user)
 
-The process of unlocking audio on a mobile browser is called "Transient activation" and the player can help you achieve this if you don't want to write your own code
+the web-audio-player has two options to unlock audio on mobile:
 
-* solution 1: there is a [player option](#player-options) called **unlockAudioOnFirstUserInteraction**, set it to true when initializing the player and the player will add user interaction listeners to the html document, on the first user interaction the player will attempt to unlock audio, after audio is unlocked you will be able to call player play() function programmatically and it will not throw an error anywore
+* solution 1: there is a [player option](#player-options) called **unlockAudioOnFirstUserInteraction**, set it to true when initializing the player and the player will add user interaction listeners to the html document, on the first user interaction the player catches, it will attempt to unlock audio, after audio is unlocked you will be able to call the players play() function programmatically and it will not throw an error anywore
 
-* solution 2: there is a [player function](#player-functions) called **manuallyUnlockAudio()** that you can use to attempt to unlock audio on mobile, this function MUST be played inside an event handler for a user interaction like "keydown" (excluding the Escape key and possibly some keys reserved by the browser or OS), "mousedown", "pointerdown" or "pointerup" (but only if the pointerType is "mouse") and "touchend"
-
-After audio got unlocked, you can use the [player function](#player-functions) called **checkIfAudioIsUnlocked()** to check if now audio is unlocked, this is also useful because the browsers have an internal timer that starts running after "Transient activation" happend, so if the website (app) is idle for a while the browser might lock audio again, meaning you need to re-unlock it again, what the exact duration of that timer is depends on the browser and is not something browser vendors make public (in might also be different depending on the version of the browser)
-
-Read more:
-
-* [MDN: Features gated by user activation & Transient activation](https://developer.mozilla.org/en-US/docs/Web/Security/User_activation)
-* [WebKit: The User Activation API](https://webkit.org/blog/13862/the-user-activation-api/)
-* [MDN: Navigator: userActivation property](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/userActivation)
-* [caniuse: Navigator API: userActivation](https://caniuse.com/mdn-api_navigator_useractivation)
+* solution 2: there is a [player function](#player-functions) called **manuallyUnlockAudio()** that you can use to attempt to unlock audio on mobile, this function MUST be played inside an event handler that got triggered by a user interaction, events that you can use are for example "keydown" (excluding the Escape key and possibly some keys reserved by the browser or OS), "mousedown", "pointerdown" or "pointerup" (but only if the pointerType is "mouse") and "touchend"
 
 ### modes extended knowledge
 
@@ -368,7 +357,7 @@ Read more:
 
 Note: You might have read (like I did) a lot of outdated web audio articles which stated the web audio element lacks a lot of features the web audio API and that hence it is not suited to create complex audio software or for example be used in games where you might want to add effects and filters to sounds. This is not true anymore and especially not true for this library. Yes the audio element if used as a standalone lacks a lot of features. But this library does combine the web audio element with the web audio API, meaning that no matter what mode you chose the sound will be converted to an AudioSourceNode.
 
-If you use this library, the difference is only how the sound (song) gets retrieved:
+If you use this library, the difference is only how the sound (song) gets loaded:
 
 ##### PLAYER_MODE_AJAX
 
@@ -382,9 +371,9 @@ will use the HTML [audio element](https://developer.mozilla.org/en-US/docs/Web/H
 
 It depends on what you intend to build.
 
-If you build something like a music player, it is probably best to use the PLAYER_MODE_AUDIO as you might to want to start playing the sound (song) as quickly as possible and don't care if it has fully loaded, because in this mode the song will start playing as soon as enough data has been buffered even though the song has not been fully loaded yet (it will get the rest of it from the server in the background while playing). To display the time range(s) that have been loaded you could for example use a [2D canvas element](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D).
+If you build something like a music player, it is probably best to use the PLAYER_MODE_AUDIO as you might to want to start playing the sound (song) as quickly as possible and don't care if it has fully loaded. This mode is ideal for big files that don't get loaded all at once (streaming). The audio mode (via the audio element) has support for partial content (http code 206) this means with this mode the song will start playing as soon as enough data has been buffered even though the song has not been fully loaded yet (it will load more data from the server in the background as the song progresses). The loading progress callback will return a percentage, which represents the amount of data that got loaded so far, which means it might not represent the loading state of the full song. If you want to display what parts of the song have been loaded more accuratly (display the time range(s) that got loaded) I recommend using a [2D canvas element](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D) and to get the ranges that have been loaded, I recommend you use the **audioElement** property of a song to get the audioElement that is loading the song and then read the [audioElement.buffered](https://developer.mozilla.org/en-US/docs/Web/Guide/Audio_and_video_delivery/buffering_seeking_time_ranges) value(s).
 
-If you build something that has a lot (of small sounds) that get (pre-)loaded and maybe cached, but played later at some time after they finished loading, use PLAYER_MODE_AJAX. Its progress is easier to understand, because when the loading progress of the sound has reached 100% you know it can be played. To display the loading progress a simple [HTML progress element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) is enough.
+You can use the PLAYER_MODE_AJAX if for example you want to build something that has a lot (of small sounds that get loaded all at once) and eventually get (pre-)loaded and maybe cached by you (you can inject an array buffer that you loaded yourself or even a audio buffer you already decoded to the player via the sound attributes). Use this mode if you prefer to wait until the song has fully loaded and then gets played. Its progress callback is straight forward, when the loading progress callback gets triggered by the player, you can use the percentage value and pass it to a progress bar. To display the loading progress you could for example use a [HTML progress element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress), you can find a such example in the .
 
 ### advanced usage
 
