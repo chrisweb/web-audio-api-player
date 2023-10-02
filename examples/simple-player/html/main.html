@@ -6,7 +6,29 @@
     <meta charset="utf-8" />
     <title>web audio api player - simple example</title>
     <style>
-        .button {
+        *,
+        *::after,
+        *::before {
+            box-sizing: border-box;
+        }
+
+        html {
+            line-height: 1.15;
+            /* https://developer.mozilla.org/en-US/docs/Web/CSS/font-smooth */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            /* https://developer.mozilla.org/en-US/docs/Web/CSS/text-size-adjust */
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            /* https://developer.mozilla.org/en-US/docs/Web/CSS/tab-size */
+            tab-size: 4;
+        }
+
+        body {
+            font-size: 16px;
+        }
+
+        .button, .info {
             padding: .75rem 1.5rem;
             font-size: 1.25rem;
             border-radius: .3rem;
@@ -18,6 +40,7 @@
             font-weight: 400;
             border: 0px;
             cursor: pointer;
+            margin: 0.2rem;
         }
 
         .hidden {
@@ -55,9 +78,11 @@
         <span>Loading progress: </span><progress max="100" value="0" id="js-player-loading-progress"></progress><br />
 
         <!-- NOTE TO SELF: I use the range element instead of progress to allow the user to interact with it -->
-        <span>Playing progress: </span><span id="js-play-time">-:--</span><input type="range" min="0" max="100" value="0" step="1" id="js-player-playing-progress" /><span id="js-duration-time">-:--</span><br />
+        <span>Playing progress: </span><span id="js-play-time">-:--</span><input type="range" min="0" max="100"
+            value="0" step="1" id="js-player-playing-progress" /><span id="js-duration-time">-:--</span><br />
 
-        <span>Volume: </span><input type="range" min="0" max="100" value="0" step="1" id="js-player-volume" /><span id="js-volume-number">0</span><br />
+        <span>Volume: </span><input type="range" min="0" max="100" value="0" step="1" id="js-player-volume" /><span
+            id="js-volume-number">0</span><br />
 
     </section>
 
@@ -71,6 +96,10 @@
             & start at (playTimeOffset) 10 seconds</button>
         <button id="pause" class="button">Pause</button>
         <button id="stop" class="button">Stop</button>
+        <br>
+        <div id="checkLock" class="info">Check if audio is unlocked (mobile)</div>
+        <div id="checkPlay" class="info"></div>
+        <button id="unLock" class="button">Unlock audio</button>
         <button id="disconnect" class="button">Disconnect player</button>
     </section>
 

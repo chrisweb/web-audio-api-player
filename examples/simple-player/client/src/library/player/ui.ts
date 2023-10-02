@@ -45,6 +45,30 @@ class PlayerUI {
         this._volumeSlider.value = volume
         this._volumeNumber.textContent = volume
 
+        const $isAudioLockedButton = document.getElementById('checkLock')
+        //const $isAudioPlayingInfo = document.getElementById('checkPlay')
+
+        setInterval(() => {
+            this.player.checkIfAudioIsUnlocked().then((isUnlocked) => {
+                if (isUnlocked) {
+                    $isAudioLockedButton.style.backgroundColor = 'green'
+                } else {
+                    $isAudioLockedButton.style.backgroundColor = 'red'
+                }
+            }).catch((error) => {
+                console.error(error)
+            })
+            /*this.player.play().then(() => {
+                this.player.pause();
+                $isAudioPlayingInfo.style.backgroundColor = 'green'
+                $isAudioPlayingInfo.textContent = 'playing song OK'
+            }).catch((error) => {
+                console.error(error)
+                $isAudioPlayingInfo.style.backgroundColor = 'red'
+                $isAudioPlayingInfo.textContent = error.message
+            })*/
+        }, 500)
+
     }
 
     protected _createListeners(): void {
@@ -191,9 +215,14 @@ class PlayerUI {
             this.player.stop()
         }
 
+        if ($button.id === 'unLock') {
+            this.player.manuallyUnlockAudio()
+        }
+
         if ($button.id === 'disconnect') {
             this.player.disconnect()
         }
+
     }
 
     public changePlayingProgress(percentage: number, currentValue: number): void {
@@ -231,7 +260,7 @@ class PlayerUI {
     }
 
     protected _switchMuteIcon(mutedState: boolean): void {
-        
+
         const $muteIcon = document.getElementById('js-mute')
         const $unMuteIcon = document.getElementById('js-unmute')
 
