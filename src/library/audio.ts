@@ -144,12 +144,34 @@ export class PlayerAudio {
                 return resolve();
             }
 
-            // https://webkit.org/blog/13862/the-user-activation-api/
             if (this._isAudioUnlocked) {
                 return resolve();
             }
 
             this._isAudioUnlocking = true;
+
+            // it is important to create the audio element before attempting
+            // to play the empty buffer, if creation is done after the
+            // element will get created but as no sound has been played
+            // it will not get unlocked
+            // meaning to unlock an audio element it is not enough to create
+            // one on user interaction but you also need to play a sound
+            if (this._options.loadPlayerMode === 'player_mode_audio') {
+
+                // force the creation to be sure we have a new audio element
+                // and don't use one that got created previously
+                const forceCreate = true;
+
+                // on iOS (mobile) the audio element you want to use needs to have been created
+                // as a direct result of an user interaction
+                // after it got unlocked we re-use that element for all sounds
+                this._createAudioElement(forceCreate).catch((error) => {
+                    console.error(error);
+                    this._isAudioUnlocking = false;
+                    return reject();
+                });
+
+            }
 
             // make sure the audio context is not suspended
             // on android this is what unlocks audio
@@ -172,26 +194,9 @@ export class PlayerAudio {
                     bufferSource.buffer = null;
                     bufferSource = null;
 
-                    if (this._options.loadPlayerMode === 'player_mode_audio') {
-
-                        // on iOS (mobile) the audio element you want to use needs to have been created
-                        // as a direct result of an user interaction
-                        // after it got unlocked we re-use that element for all sounds
-                        this._createAudioElementAndSource().then(() => {
-                            this._isAudioUnlocked = true;
-                            this._isAudioUnlocking = false;
-                            return resolve();
-                        }).catch((error) => {
-                            console.error(error);
-                            this._isAudioUnlocking = false;
-                            return reject();
-                        });
-
-                    } else if (this._options.loadPlayerMode === 'player_mode_ajax') {
-                        this._isAudioUnlocked = true;
-                        this._isAudioUnlocking = false;
-                        return resolve();
-                    }
+                    this._isAudioUnlocked = true;
+                    this._isAudioUnlocking = false;
+                    return resolve();
 
                 };
 
@@ -211,21 +216,6 @@ export class PlayerAudio {
 
     }
 
-    public verifyIfAudioIsUnlocked() {
-        let isUnlocked = false;
-        // use the navigator.userActivation if available
-        if (typeof navigator.userActivation !== 'undefined') {
-            if (navigator.userActivation.isActive) {
-                isUnlocked = true;
-            }
-        } else {
-            if (this._isAudioUnlocked) {
-                isUnlocked = true;
-            }
-        }
-        return isUnlocked;
-    }
-
     protected async _createAudioElementAndSource(): Promise<void> {
 
         await this._createAudioElement();
@@ -234,9 +224,9 @@ export class PlayerAudio {
 
     }
 
-    protected async _createAudioElement(): Promise<void> {
+    protected async _createAudioElement(forceCreate?: boolean): Promise<void> {
 
-        if (this._audioElement === null) {
+        if (this._audioElement === null || forceCreate === true) {
 
             const audioElement = new Audio();
 
@@ -353,7 +343,7 @@ export class PlayerAudio {
 
     protected async _createMediaElementAudioSourceNode(): Promise<void> {
 
-        if (this._mediaElementAudioSourceNode === null) {
+        if (this._mediaElementAudioSourceNode === null && this._audioElement !== null) {
 
             const audioContext = await this.getAudioContext();
 
