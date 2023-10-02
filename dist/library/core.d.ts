@@ -16,7 +16,7 @@ export interface ICoreOptions {
     playNextOnEnded?: boolean;
     stopOnReset?: boolean;
     visibilityAutoMute?: boolean;
-    createAudioContextOnFirstUserInteraction?: boolean;
+    unlockAudioOnFirstUserInteraction?: boolean;
     persistVolume?: boolean;
     loadPlayerMode?: typePlayerMode;
     audioContext?: AudioContext;

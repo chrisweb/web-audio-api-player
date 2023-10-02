@@ -2,7 +2,7 @@ import { ISound } from './sound';
 type OnEndedCallbackType = (event: Event) => void;
 export interface IAudioOptions {
     audioContext: AudioContext;
-    createAudioContextOnFirstUserInteraction: boolean;
+    unlockAudioOnFirstUserInteraction: boolean;
     volume: number;
     persistVolume: boolean;
     loadPlayerMode: string;
@@ -40,7 +40,7 @@ export declare class PlayerAudio {
     protected _addFirstUserInteractionEventListeners(): void;
     protected _removeFirstUserInteractionEventListeners(): void;
     unlockAudio(): Promise<void>;
-    isAudioUnlocked(): boolean;
+    verifyIfAudioIsUnlocked(): boolean;
     protected _createAudioElementAndSource(): Promise<void>;
     protected _createAudioElement(): Promise<void>;
     getAudioElement(): Promise<HTMLAudioElement>;
