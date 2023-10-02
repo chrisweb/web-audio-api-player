@@ -5,6 +5,7 @@ import express from 'express';
 
 // nodejs
 import path from 'path';
+import fs from 'fs';
 
 // hack because __dirname is not defined
 // https://github.com/nodejs/node/issues/16844
@@ -20,7 +21,6 @@ import { fileURLToPath } from 'url';
 export class Server {
 
     private application: express.Application;
-    private env: string;
 
     constructor() {
 
@@ -37,6 +37,33 @@ export class Server {
 
         this.application.use('/client', express.static(ROOTPATH + '/../client/build'));
         this.application.use('/dist', express.static(ROOTPATH + '/../../../dist'));
+
+        // streaming songs
+        this.application.get('/music/:song', (request: express.Request, response: express.Response) => {
+
+            const range = request.headers.range || '0'
+            const path = ROOTPATH + '/../../../assets/music/' + request.params.song
+            const size = fs.statSync(path).size
+            const chunkSize = 1 * 1e6  //  1MB
+            const start = Number(range.replace(/\D/g, ''))
+            const end = Math.min(start + chunkSize, size - 1)
+          
+            const contentLength = end - start + 1
+          
+            const headers = {
+              'Content-Range': `bytes ${start}-${end}/${size}`,
+              'Accept-Ranges': "bytes",
+              'Content-Length': contentLength,
+              'Content-Type': "audio/mp3",
+            }
+
+            response.writeHead(206, headers)
+          
+            const stream = fs.createReadStream(path, { start, end })
+
+            stream.pipe(response);
+
+          })
 
         this.application.get('/', (request: express.Request, response: express.Response) => {
 
