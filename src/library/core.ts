@@ -129,7 +129,6 @@ export class PlayerCore {
 
         const audioOptions = this._audioOptions();
 
-        // player audio library instance
         this._playerAudio = new PlayerAudio(audioOptions);
 
         switch (this._options.loadPlayerMode) {
@@ -196,7 +195,6 @@ export class PlayerCore {
 
     public async resetQueue(): Promise<void> {
 
-        // check if sound should be stopped on reset
         if (this._options.stopOnReset) {
             await this.stop();
         }
@@ -309,7 +307,6 @@ export class PlayerCore {
 
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
-        // if there is a sound currently being played
         if (currentSound !== null) {
 
             if (currentSound.onSeeking !== null) {
@@ -323,22 +320,25 @@ export class PlayerCore {
 
             }
 
-            // is the sound is being played
             if (currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
 
+                // already playing so just change the position
                 currentSound.playTime = soundPositionInSeconds;
 
                 if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX) {
+                    // in ajax mode (when source is AudioBufferSourceNode) we
+                    // need to stop the song and start again at new position
                     currentSound.elapsedPlayTime = soundPositionInSeconds;
                     await this._stop(currentSound, PlayerSound.SOUND_STATE_SEEKING);
                 } else if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AUDIO) {
+                    // in audio (element) mode it is easier we can just change the position
                     currentSound.state = PlayerSound.SOUND_STATE_SEEKING;
                     await this._play(currentSound);
                 }
 
             } else {
 
-                // only set the sound position but don't play
+                // only set the sound position but don't play yet
                 currentSound.playTime = soundPositionInSeconds;
                 currentSound.state = PlayerSound.SOUND_STATE_SEEKING;
 
@@ -384,7 +384,6 @@ export class PlayerCore {
 
                         // we don't need the listener anymore
                         sound.audioElement.removeEventListener('canplaythrough', canPlayThroughHandler);
-                        // call onready callback
                         sound.isReadyToPLay = true;
                         // duration should now be available
                         if (!isNaN(sound.audioElement.duration)) {
@@ -477,7 +476,7 @@ export class PlayerCore {
         if (sound.url !== null) {
 
             const request = new PlayerRequest();
-            // change buffering state
+
             sound.isBuffering = true;
             const arrayBuffer = await request.getArrayBuffer(sound);
             sound.arrayBuffer = arrayBuffer;
@@ -531,7 +530,6 @@ export class PlayerCore {
 
         // if there is a sound currently being played
         // AND the current sound is the same sound as the one that will now be played
-        // PAUSE the current sound
         if (
             currentSound !== null
             && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING)
@@ -550,12 +548,12 @@ export class PlayerCore {
 
         // if there is a sound currently being played OR paused
         // AND the current sound is NOT the same sound as the one that will now be played
-        // STOP the current sound
         if (
             currentSound !== null
             && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING || currentSound.state === PlayerSound.SOUND_STATE_PAUSED)
             && (currentSound.id !== sound.id)
         ) {
+            // stop the current sound
             await this._stop(currentSound, PlayerSound.SOUND_STATE_STOPPED);
         }
 
@@ -568,13 +566,12 @@ export class PlayerCore {
         }
 
         if (sound.sourceNode === null) {
-            // connect the source to the graph node(s)
+            // connect the source to the gain (graph) node
             await this._playerAudio.connectSound(sound, () => {
                 this._onEnded();
             });
         }
 
-        // has the sound already been loaded?
         if (!sound.isReadyToPLay) {
 
             await this._loadSound(sound);
@@ -601,14 +598,12 @@ export class PlayerCore {
             sound.playTime = sound.playTimeOffset;
         }
 
-        // start playing
         if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX) {
             await this._playAudioBuffer(sound);
         } else if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AUDIO) {
             await this._playMediaElementAudio(sound);
         }
 
-        // state is now playing
         sound.state = PlayerSound.SOUND_STATE_PLAYING;
 
         this._triggerSoundCallbacks(sound);
@@ -635,6 +630,7 @@ export class PlayerCore {
                     sound.sourceNode.start(0, sound.playTime);
                 } else {
                     if (sound.playTimeOffset > 0) {
+                        // if an offset is defined start playing at that position
                         sound.elapsedPlayTime = sound.playTimeOffset;
                         sound.sourceNode.start(0, sound.playTimeOffset);
                     } else {
@@ -658,7 +654,7 @@ export class PlayerCore {
             } else if (sound.state === PlayerSound.SOUND_STATE_PAUSED && sound.playTimeOffset === 0) {
                 sound.audioElement.currentTime = sound.playTime;
             } else {
-                // if an offset is defined use to play from a defined position
+                // if an offset is defined start playing at that position
                 if (sound.playTimeOffset > 0) {
                     sound.audioElement.currentTime = sound.playTimeOffset;
                 } else {
@@ -674,24 +670,21 @@ export class PlayerCore {
 
     protected _triggerSoundCallbacks(sound: ISound) {
 
-        // if there is an onResumed callback for the sound, trigger it
         if (sound.onResumed !== null && !sound.firstTimePlayed) {
             sound.onResumed(sound.playTime);
         }
 
-        // if there is an onStarted callback for the sound, trigger it
         if (sound.onStarted !== null && sound.firstTimePlayed) {
             sound.firstTimePlayed = false;
             sound.onStarted(sound.playTimeOffset);
         }
 
-        // if there is an onPlaying callback for the sound, trigger it
         if (sound.onPlaying !== null) {
             // reset progress timestamp
             this._playingProgressPreviousTimestamp = 0;
-            // on request animation frame callback set playing progress
-            // request animation frame callback has a argument, which
+            // "request animation frame" callback has an argument, which
             // is the timestamp when the callback gets called
+            // as this is the first call set timestamp manually to zero
             this._progressTrigger(sound, 0);
         } else {
             this._playingProgressRequestId = null;
@@ -713,7 +706,8 @@ export class PlayerCore {
             return;
         }
 
-        // throttle requests to not more than once every 200ms 
+        // throttle requests, use time set in options and
+        // make sure that at least that amount is elapsed 
         if ((timestamp - this._playingProgressPreviousTimestamp) >= this._options.playingProgressIntervalTime) {
 
             const currentTime = sound.getCurrentTime();
@@ -822,7 +816,6 @@ export class PlayerCore {
             whichSound = PlayerCore.CURRENT_SOUND;
         }
 
-        // if which sound to play is a constant
         switch (whichSound) {
             case PlayerCore.CURRENT_SOUND:
                 soundIndex = this._currentIndex
@@ -833,8 +826,8 @@ export class PlayerCore {
                     soundIndex = this._currentIndex + 1;
                     sound = this._queue[soundIndex];
                 } else if (this._options.loopQueue) {
-                    // if last sound is playing and loop is enabled
-                    // on next we jump to first sound
+                    // if last sound is playing and loop queue is enabled
+                    // then on onEnded we go from last to first sound
                     soundIndex = 0;
                     sound = this._queue[soundIndex];
                 }
@@ -844,8 +837,8 @@ export class PlayerCore {
                     soundIndex = this._currentIndex - 1;
                     sound = this._queue[soundIndex];
                 } else if (this._options.loopQueue) {
-                    // if first sound is playing and loop is enabled
-                    // on previous we jump to last sound
+                    // if first sound of the queue is playing and loop queue is enabled
+                    // then if previous() gets used, we jump to last sound in queue
                     soundIndex = this._queue.length - 1;
                     sound = this._queue[soundIndex];
                 }
@@ -863,7 +856,8 @@ export class PlayerCore {
                 }
                 break;
             default:
-                // if "which sound to play" (soundId) is a string or number
+                // if "which sound to play" is a soundId
+                // Note: soundId can be a string or number
                 [sound, soundIndex] = this._findSoundById({ soundId: whichSound });
         }
 
@@ -918,7 +912,7 @@ export class PlayerCore {
             const source = sources[i]
             let soundUrl = '';
 
-            // if the player had as option a baseUrl for sounds add it now
+            // if the player has set the baseUrl option for sounds, use it now
             if (this._options.soundsBaseUrl !== '') {
                 soundUrl = this._options.soundsBaseUrl;
             }
@@ -933,7 +927,6 @@ export class PlayerCore {
                 isCodecSupported = this._checkCodecSupport(source.codec);
             }
 
-            // only if the codec of the source is supported
             if (isCodecSupported) {
 
                 if (source.isPreferred) {
@@ -942,16 +935,17 @@ export class PlayerCore {
                     // previous match
                     bestSource.url = soundUrl;
                     bestSource.codec = source.codec;
-                    // so the source is preferred and supported so we can exit early
+                    // as the source is marked as preferred and it is supported
+                    // so we can exit early
                     break;
                 } else {
                     // if no best source has been found so far, we don't
                     // care if it's preferred it's automatically chosen
-                    // as best
+                    // as being the best
                     bestSource.url = soundUrl;
                     bestSource.codec = source.codec;
                     // source is supported, but maybe there is preferred & supported
-                    // so we don't exit the loop just yet
+                    // so we don't exit the loop just yet and continue searching
                 }
 
             }
@@ -1057,7 +1051,6 @@ export class PlayerCore {
             currentSound.elapsedPlayTime = currentTime;
         }
 
-        // trigger onpaused callback
         if (currentSound.onPaused !== null) {
             currentSound.onPaused(currentSound.playTime);
         }
@@ -1076,15 +1069,14 @@ export class PlayerCore {
             return;
         }
 
-        // check if sound is already stopped
         if (currentSound.state === PlayerSound.SOUND_STATE_STOPPED) {
             return;
         }
 
-        // freeze the audio context
+        // on stop we freeze the audio context
+        // as we assume it won't be needed right away
         await this._playerAudio.freezeAudioContext();
 
-        // trigger stopped callback
         if (currentSound.onStopped !== null) {
             currentSound.onStopped(currentSound.playTime);
         }
@@ -1109,8 +1101,8 @@ export class PlayerCore {
             if (sound.sourceNode instanceof AudioBufferSourceNode) {
                 // if using the AudioBufferSourceNode use the stop method
                 sound.sourceNode.stop(0);
-                // the audio buffer can be reused for multiple plays
-                // however the audio buffer source can not
+                // the "audio buffer" CAN be reused for multiple plays
+                // however the "audio buffer source" CAN NOT, so we disconnect
                 await this._playerAudio.disconnectSound(sound);
             }
 
@@ -1138,28 +1130,24 @@ export class PlayerCore {
 
     public async next(): Promise<ISound> {
 
-        // alias for play next
         return await this.play({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
 
     }
 
     public async previous(): Promise<ISound> {
 
-        // alias for play previous
         return await this.play({ whichSound: PlayerCore.PLAY_SOUND_PREVIOUS });
 
     }
 
     public async first(): Promise<ISound> {
 
-        // alias for play first
         return await this.play({ whichSound: PlayerCore.PLAY_SOUND_FIRST });
 
     }
 
     public async last(): Promise<ISound> {
 
-        // alias for play last
         return await this.play({ whichSound: PlayerCore.PLAY_SOUND_LAST });
 
     }
@@ -1184,7 +1172,8 @@ export class PlayerCore {
 
         let hiddenKeyword: string;
 
-        if (typeof document.hidden !== 'undefined') { // Opera 12.10 and Firefox 18 and later support
+        if (typeof document.hidden !== 'undefined') {
+            // Opera 12.10 and Firefox 18 and later support
             hiddenKeyword = 'hidden';
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

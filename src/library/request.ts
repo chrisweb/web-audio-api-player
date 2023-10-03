@@ -14,10 +14,9 @@ export class PlayerRequest {
 
             const xhr = new XMLHttpRequest();
 
-            // TODO: abort the request?
-            // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort
-
-            // thirs parameter is for "async", default true but who knows if prefer to explicitly set it just in case
+            // third parameter is for "async", should already be "true" by default
+            // but who knows maybe a browser vendor decides to change it
+            // so I prefer to explicitly set it to "true" just in case
             xhr.open('GET', requested.url, true);
 
             // set the expected response type from the server to arraybuffer
@@ -25,7 +24,7 @@ export class PlayerRequest {
 
             xhr.onload = function (): void {
 
-                // gets called even on for example 404, so check the status
+                // gets called even for example a code 404, so check the status is in the 2xx range
                 if (xhr.status >= 200 && xhr.status <= 299) {
                     resolve(xhr.response);
                 } else {
@@ -38,8 +37,6 @@ export class PlayerRequest {
             xhr.onprogress = function (event): void {
 
                 const loadingPercentageRaw = 100 / (event.total / event.loaded);
-
-                // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON
                 const loadingPercentage = Math.round(loadingPercentageRaw);
 
                 // update value on sound object
@@ -58,7 +55,6 @@ export class PlayerRequest {
 
             };
 
-            // now make the request
             xhr.send();
 
         });

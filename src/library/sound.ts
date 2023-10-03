@@ -131,7 +131,6 @@ export class PlayerSound implements ISound {
 
     constructor(soundAttributes: ISoundAttributes) {
 
-        // user provided values
         if (!Array.isArray(soundAttributes.source)) {
             this.source = [soundAttributes.source];
         } else {
@@ -225,8 +224,6 @@ export class PlayerSound implements ISound {
             }
         }
 
-
-
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON
         const currentTimeRounded = Math.round((currentTime + Number.EPSILON) * 100) / 100;
 
@@ -254,7 +251,9 @@ export class PlayerSound implements ISound {
     }
 
     protected _generateSoundId() {
+
         return Date.now().toString(36) + Math.random().toString(36).substring(2)
+        
     }
 
 }

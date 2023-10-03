@@ -65,8 +65,8 @@ export class PlayerAudio {
     protected _initialize(): void {
 
         // I was planning on using the "first user interaction hack" only (on mobile)
-        // for this I would have checked the if the autoplay policy prevents me
-        // from playing a sound programmatically (without user click)
+        // to check if the autoplay policy prevents me from playing a sound
+        // programmatically (without user click)
         // https://developer.mozilla.org/en-US/docs/Web/API/Navigator/getAutoplayPolicy
         // but this feature is only implemented on firefox (as of 19.09.2023)
 
@@ -96,7 +96,6 @@ export class PlayerAudio {
     protected _createAudioContext(): Promise<void> {
 
         if (this._audioContext instanceof AudioContext) {
-            // if already created, no need to create a new one
             return;
         }
 
@@ -298,6 +297,7 @@ export class PlayerAudio {
         } else {
 
             // halt the audio hardware access temporarily to reduce CPU and battery usage
+            // especially useful on mobile to prevent battery drain
             return this._audioContext.suspend();
 
         }
@@ -425,7 +425,7 @@ export class PlayerAudio {
 
             this._initializeVolume(gainNode);
 
-            // final step: connect the gain node to the audio destination node
+            // final audio graph step: connect the gain node to the audio destination node
             gainNode.connect(audioContext.destination);
 
             this._audioNodes.gainNode = gainNode;
@@ -454,7 +454,7 @@ export class PlayerAudio {
         if (this._options.loadPlayerMode === 'player_mode_ajax') {
 
             // get a new audio buffer source node
-            // Note: remember these are one use only
+            // Note: remember these are "one use" only
             // https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode
             const audioBufferSourceNode = await this._createAudioBufferSourceNode();
 
@@ -464,7 +464,7 @@ export class PlayerAudio {
             // connect the source to the sound gain node
             audioBufferSourceNode.connect(sound.gainNode);
 
-            // do we loop this song
+            // do we loop this song?
             audioBufferSourceNode.loop = sound.loop;
 
             // NOTE: the source nodes onended handler won't have any effect if the loop property
@@ -495,10 +495,6 @@ export class PlayerAudio {
         }
 
         // set the gain by default always to 1
-        // TODO: allow user to define a gain value for each sound via sound options
-        // this allows to normalize the gain of all sounds in a playlist
-        // TODO: in future allow a sound gain to be faded in or out
-        // without having to change the main player gain
         sound.gainNode.gain.value = 1;
 
         const playerGainNode = await this._getPlayerGainNode();
@@ -564,10 +560,11 @@ export class PlayerAudio {
             // check if the volume changed
             if (newGainValue !== currentGainRounded) {
 
-                // the gain value changes the amplitude of the sound wave
-                // a gain value of one does nothing
-                // values between 0 and 1 reduce the loudness, above one they amplify the loudness
-                // negative values work too, but they invert the waveform, so -1 is as loud as 1
+                // Note to self: the gain value changes the amplitude of the sound wave
+                // a gain value set to 1 does nothing
+                // values between 0 and 1 reduce the loudness, above 1 they amplify the loudness
+                // negative values work too, but they invert the waveform
+                // so -1 is as loud as 1 but with -1 the waveform is inverted
                 await this._changePlayerGainValue(newGainValue);
 
             }
@@ -589,7 +586,8 @@ export class PlayerAudio {
             volume = this._volume;
         } else {
             if (this._options.persistVolume) {
-                // if persist volume is enabled, check if there is a user volume in localstorage
+                // if persist volume is enabled
+                // check if there already is a user volume in localstorage
                 const userVolumeInPercent = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
 
                 if (!isNaN(userVolumeInPercent)) {
@@ -597,7 +595,8 @@ export class PlayerAudio {
                 }
             }
 
-            // if volume is not persisted or persited value not yet set
+            // if volume is not persisted
+            // or the persited value has not been set yet
             if (typeof volume === 'undefined') {
                 volume = this._options.volume;
             }
@@ -611,7 +610,8 @@ export class PlayerAudio {
     protected _initializeVolume(gainNode: GainNode): void {
 
         if (this._options.persistVolume) {
-            // if persist volume is enabled, check if there is a user volume in localstorage
+            // if persist volume is enabled
+            // check if there already is a user volume in localstorage
             const userVolumeInPercent = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
             const gainValue = userVolumeInPercent / 100;
 
@@ -623,7 +623,8 @@ export class PlayerAudio {
         }
 
 
-        // if no user volume take the default options volume
+        // if no "user volume" got found
+        // take the default options volume
         if (this._volume === null) {
             const gainValue = this._options.volume / 100;
             gainNode.gain.value = gainValue;
