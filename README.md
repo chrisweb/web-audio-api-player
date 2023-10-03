@@ -228,34 +228,6 @@ Note: if you use typescript, import the **ICoreOptions** interface along with th
 * audioContext: [AudioContext] (default: null) a custom [audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext) you inject to replace the default audiocontext of the player
 * addAudioElementsToDom: [boolean] (default: false) when audio elements get created, they are by default offscreen (not added to the DOM), if you want the audio elements to be added to the DOM set this option to true
 
-### sound attributes
-
-Note: if you use typescript, import the **ISoundAttributes** interface along with the playerCore, this makes it a lot easier to see what sound attributes are available and what the type of each value is
-
-**sound options:**
-
-* source: [(ISoundSource)[] | ISoundSource] (optional if an AudioBuffer or ArrayBuffer is provided instead else mandatory) a single sound source or an array of sound sources, an **ISoundSource** object consists of 3 values:
-  * **url** [string] is the base url defined in the player options + the path defined here or you add the full url here, the URL will get used by the player to load the sound when needed
-  * **codec** [string] the codec that got used to encode the sound, this allowed the player to check if that codec is supported by the browser and it also allows the player to decide which source to use if multiple sources have been defined
-  * **isPreferred** [boolean] (optional) the player will use the first source that has a codec this is supported by the browser, if more than one codec is supported it will take the source that is marked as **isPreferred**
-* id: [number | string] (optional, if none is set the player will generate one) unique id for the sound, can be used as a reference to link sound data which is not part of the sound object itself to an external source, for example if you have sound info stored in a database, set the sound id to the database id and you have a link between the two, it also allows you to call the player.play function using the sound id as argument to play that sound
-* loop: [boolean] (optional, default false) if the sound playback should loop when it reaches the end of sound
-* audioBuffer: [AudioBuffer] (optional) if you want to inject your own custom [AudioBuffer](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer) to be used instead of the default one the player will create
-* arrayBuffer: [ArrayBuffer] (optional) if you want to inject your own custom [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) to be used instead of the default one the player will create
-* duration: [number] (optional) if you know the duration of the sound and want to tell the player about it early, in [PLAYER_MODE_AJAX](#player_mode_ajax) the player will need to wait for the sound to be fully loaded until it can determine the duration
-
-**sound callbacks:**
-
-* onLoading(loadingPercentage, total, loaded): [function] (optional) a callback function that will get triggered at intervals during the loading process of a sound, the interval duration can be changed using the [player option "playingProgressIntervalTime"](#player-options), the callback has three parameters, **loadingPercentage** is the percentage that has been loaded so far (number ranging from 0 to 100)
-  * if the player mode is [PLAYER_MODE_AUDIO](#player_mode_audio), then **total** is an integer telling you the total song duration in seconds ([MDN HTMLMediaElement duration](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/duration)), **loaded** is an integer that tells you the amount that already got loaded (buffered end) in seconds ([MDN HTMLMediaElement timerange end](https://developer.mozilla.org/en-US/docs/Web/API/TimeRanges/end)), if you prefer to use the raw values I recommend you use the **sound.audioElement.buffered** and read them periodically yourself
-  * if the player mode is [PLAYER_MODE_AJAX](#player_mode_ajax), then **total** is an integer telling you the total bytes that will get loaded ([MDN ProgressEvent total](https://developer.mozilla.org/en-US/docs/Web/API/ProgressEvent/total)), **loaded** is an integer that tells you the amount of bytes that already got loaded ([MDN ProgressEvent loaded](https://developer.mozilla.org/en-US/docs/Web/API/ProgressEvent/loaded))
-* onPlaying(playingPercentage, duration, playTime)): [function] (optional) a callback function that will get triggered at intervals while the sound is playing, the callback has three parameters, **playingPercentage** is the percentage that has been played so far (number ranging from 0 to 100), **duration** is the total song duration, playTime is the current time in seconds that have been played
-* onEnded(willPlayNext): [function] (optional) a callback function that will get triggered when the end of the sound is reached, returns one parameter **willPlayNext** which is a boolean, true if there is a next song in the internal queue that will get played or false if no next sound will get played
-* onStarted(playTimeOffset): [function] (optional) a callback function that will get triggered when the sound playback starts, returned value is the playTimeOffset of the song, usually playTimeOffset is zero unless you explicitly set it to be something else
-* onStopped(playTime): [function] (optional) a callback function that will get triggered when the sound playback is stopped (the difference between pause and stop is that stop will free the resources needed to play a song), returns one parameter **playTime** which is the current sound position in seconds
-* onPaused(playTime): [function] (optional) a callback function that will get triggered when the sound playback is being paused (use pause instead of stop if there is a reason to assume that the playback will be resumed at anytime, if this can't be assumed it is recommended to call stop), returns one parameter **playTime** which is the current sound position in seconds
-* onResumed(playTime): [function] (optional) a callback function that will get triggered when the sound playback gets resumed after if got set to pause, returns one parameter **playTime** which is the current sound position in seconds
-
 ### player functions
 
 Note: all player functions a promise, I recommend using a try catch and await the promise or call promise.catch to fetch eventual errors thrown by the player, like so:
@@ -330,6 +302,42 @@ player.addSoundToQueue({ soundAttributes: mySoundAttributes })
 * disconnect() disconnects the player and destroys all songs in the queue, this function should get called for example in react when a component unmounts, call this function when you don't need the player anymore to free memory
 * getAudioContext() get the current audioContext that is being used by the player [MDN audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext)
 * manuallyUnlockAudio() this method can be used on mobile to unlock audio, you need to call this function inside an event handler that got triggered by the user, so for example an "onClick" event could call this function to unlock audio, calling this function programmatically without any user interaction will not unlock audio, an alternative if you don't want to implement this yourself is to enable the [player option](#player-options) called **unlockAudioOnFirstUserInteraction**, for more info about this check out the chapter ["locked audio on mobile"](#locked-audio-on-mobile)
+
+### sound attributes
+
+Note: if you use typescript, import the **ISoundAttributes** interface along with the playerCore, this makes it a lot easier to see what sound attributes are available and what the type of each value is
+
+**sound options:**
+
+* source: [(ISoundSource)[] | ISoundSource] (optional if an AudioBuffer or ArrayBuffer is provided instead else mandatory) a single sound source or an array of sound sources, an **ISoundSource** object consists of 3 values:
+  * **url** [string] is the base url defined in the player options + the path defined here or you add the full url here, the URL will get used by the player to load the sound when needed
+  * **codec** [string] the codec that got used to encode the sound, this allowed the player to check if that codec is supported by the browser and it also allows the player to decide which source to use if multiple sources have been defined
+  * **isPreferred** [boolean] (optional) the player will use the first source that has a codec this is supported by the browser, if more than one codec is supported it will take the source that is marked as **isPreferred**
+* id: [number | string] (optional, if none is set the player will generate one) unique id for the sound, can be used as a reference to link sound data which is not part of the sound object itself to an external source, for example if you have sound info stored in a database, set the sound id to the database id and you have a link between the two, it also allows you to call the player.play function using the sound id as argument to play that sound
+* loop: [boolean] (optional, default false) if the sound playback should loop when it reaches the end of sound
+* audioBuffer: [AudioBuffer] (optional) if you want to inject your own custom [AudioBuffer](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer) to be used instead of the default one the player will create
+* arrayBuffer: [ArrayBuffer] (optional) if you want to inject your own custom [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) to be used instead of the default one the player will create
+* duration: [number] (optional) if you know the duration of the sound and want to tell the player about it early, in [PLAYER_MODE_AJAX](#player_mode_ajax) the player will need to wait for the sound to be fully loaded until it can determine the duration
+
+**sound callbacks:**
+
+* onLoading(loadingPercentage, total, loaded): [function] (optional) a callback function that will get triggered at intervals during the loading process of a sound, the interval duration can be changed using the [player option "playingProgressIntervalTime"](#player-options), the callback has three parameters, **loadingPercentage** is the percentage that has been loaded so far (number ranging from 0 to 100)
+  * if the player mode is [PLAYER_MODE_AUDIO](#player_mode_audio), then **total** is an integer telling you the total song duration in seconds ([MDN HTMLMediaElement duration](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/duration)), **loaded** is an integer that tells you the amount that already got loaded (buffered end) in seconds ([MDN HTMLMediaElement timerange end](https://developer.mozilla.org/en-US/docs/Web/API/TimeRanges/end)), if you prefer to use the raw values I recommend you use the **sound.audioElement.buffered** and read them periodically yourself
+  * if the player mode is [PLAYER_MODE_AJAX](#player_mode_ajax), then **total** is an integer telling you the total bytes that will get loaded ([MDN ProgressEvent total](https://developer.mozilla.org/en-US/docs/Web/API/ProgressEvent/total)), **loaded** is an integer that tells you the amount of bytes that already got loaded ([MDN ProgressEvent loaded](https://developer.mozilla.org/en-US/docs/Web/API/ProgressEvent/loaded))
+* onPlaying(playingPercentage, duration, playTime)): [function] (optional) a callback function that will get triggered at intervals while the sound is playing, the callback has three parameters, **playingPercentage** is the percentage that has been played so far (number ranging from 0 to 100), **duration** is the total song duration, playTime is the current time in seconds that have been played
+* onEnded(willPlayNext): [function] (optional) a callback function that will get triggered when the end of the sound is reached, returns one parameter **willPlayNext** which is a boolean, true if there is a next song in the internal queue that will get played or false if no next sound will get played
+* onStarted(playTimeOffset): [function] (optional) a callback function that will get triggered when the sound playback starts, returned value is the playTimeOffset of the song, usually playTimeOffset is zero unless you explicitly set it to be something else
+* onStopped(playTime): [function] (optional) a callback function that will get triggered when the sound playback is stopped (the difference between pause and stop is that stop will free the resources needed to play a song), returns one parameter **playTime** which is the current sound position in seconds
+* onPaused(playTime): [function] (optional) a callback function that will get triggered when the sound playback is being paused (use pause instead of stop if there is a reason to assume that the playback will be resumed at anytime, if this can't be assumed it is recommended to call stop), returns one parameter **playTime** which is the current sound position in seconds
+* onResumed(playTime): [function] (optional) a callback function that will get triggered when the sound playback gets resumed after if got set to pause, returns one parameter **playTime** which is the current sound position in seconds
+
+### sound functions
+
+* getCurrentTime() returns the current playTime
+* getDuration() returns the duration of the sound
+* setDuration(duration: number) you can set the duration of a sound manually, this avoids having to wait for the sound to be loaded to know it's duration, might be useful depending on the kind of UI you are building
+* setLoop(loop: boolean) allows you to change the initial value for "loop sound", by default loop is false, use this to change the loop value after the sound got added to queue
+* getLoop() returns a boolean telling you what the current value for "loop sound" is
 
 ### locked audio on mobile
 
@@ -454,6 +462,8 @@ things I intend to add some day or if you want to help but are not sure what to 
 
 if you are interested in helping out 😊 by working on one of the following TODOs, please start by reading the ["contributing"](#contributing-prs-welcome) chapter above
 
+* add onDurationChange / onLoopChange callbacks to song(s)!?
+* add loop song, loop queue, loop off examples to simple player example
 * for audio mode, add option for songs "crossOrigin" to be set to "use-credentials" (https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/crossorigin) instead of "anonymous", "anonymous" could be kept as default value, also do the same for XHR calls (ajax mode) [XMLHttpRequest: withCredentials property](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials)
 * add sound option to set the initial gain value of a sound, for now it is always 1 (1 = no change to loudness), (optional method that lets you define a modifier (or coefficient) per song by which the gain will be changed), useful if some songs are louder than others and you want to normalize the volume of all songs in a playlist to be similar
 * add a song feature to fade out (current song) / fade in (next song) maybe two new options fadeInDuration and fadeOutDuration would be enough, if the values are set we do a fade
