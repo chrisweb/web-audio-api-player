@@ -227,6 +227,7 @@ Note: if you use typescript, import the **ICoreOptions** interface along with th
 * loadPlayerMode: [typePlayerModes] (default: PLAYER_MODE_AUDIO) this is a constant you can import from player, currently you can chose between two modes, [PLAYER_MODE_AUDIO](#player_mode_audio) which uses the audio element to load sounds via the audio element and [PLAYER_MODE_AJAX](#player_mode_ajax) to load sounds via the web audio API, for more info about the modes read the [modes extended knowledge](#modes-extended-knowledge) chapter
 * audioContext: [AudioContext] (default: null) a custom [audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext) you inject to replace the default audiocontext of the player
 * addAudioElementsToDom: [boolean] (default: false) when audio elements get created, they are by default offscreen (not added to the DOM), if you want the audio elements to be added to the DOM set this option to true
+* volumeTransitionTime: [number] (default: 100) value in milliseconds, by default the volume if changed will not go instantly from the old value to the new value but there is transition where it fades from current to new value, use this option to increase or decrease the transition duration
 
 ### player functions
 
@@ -301,6 +302,7 @@ player.addSoundToQueue({ soundAttributes: mySoundAttributes })
 * getVisibilityAutoMute() get the current boolean value that is set for the **visibilityAutoMute** option
 * disconnect() disconnects the player and destroys all songs in the queue, this function should get called for example in react when a component unmounts, call this function when you don't need the player anymore to free memory
 * getAudioContext() get the current audioContext that is being used by the player [MDN audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext)
+* getCurrentSound() returns the current sound, can be useful if you want to do things in your UI like getCurrentSound().getLoop() to check if the loop feature is on or off for the current song
 * manuallyUnlockAudio() this method can be used on mobile to unlock audio, you need to call this function inside an event handler that got triggered by the user, so for example an "onClick" event could call this function to unlock audio, calling this function programmatically without any user interaction will not unlock audio, an alternative if you don't want to implement this yourself is to enable the [player option](#player-options) called **unlockAudioOnFirstUserInteraction**, for more info about this check out the chapter ["locked audio on mobile"](#locked-audio-on-mobile)
 
 ### sound attributes
