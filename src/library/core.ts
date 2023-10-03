@@ -277,6 +277,10 @@ export class PlayerCore {
 
     public async setPosition(soundPositionInPercent: number): Promise<void> {
 
+        if (soundPositionInPercent < 0 || soundPositionInPercent > 100) {
+            throw new Error('soundPositionInPercent must be a number >= 0 and <= 100');
+        }
+
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         if (currentSound !== null) {
@@ -308,6 +312,10 @@ export class PlayerCore {
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         if (currentSound !== null) {
+
+            if (!isNaN(currentSound.duration) && (soundPositionInSeconds > currentSound.duration)) {
+                console.warn('soundPositionInSeconds > sound duration')
+            }
 
             if (currentSound.onSeeking !== null) {
 
@@ -630,6 +638,9 @@ export class PlayerCore {
                     sound.sourceNode.start(0, sound.playTime);
                 } else {
                     if (sound.playTimeOffset > 0) {
+                        if (sound.playTimeOffset > sound.duration) {
+                            console.warn('playTimeOffset > sound duration');
+                        }
                         // if an offset is defined start playing at that position
                         sound.elapsedPlayTime = sound.playTimeOffset;
                         sound.sourceNode.start(0, sound.playTimeOffset);
@@ -656,6 +667,9 @@ export class PlayerCore {
             } else {
                 // if an offset is defined start playing at that position
                 if (sound.playTimeOffset > 0) {
+                    if (sound.playTimeOffset > sound.duration) {
+                        console.warn('playTimeOffset > duration');
+                    }
                     sound.audioElement.currentTime = sound.playTimeOffset;
                 } else {
                     sound.audioElement.currentTime = 0;
