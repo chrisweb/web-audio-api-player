@@ -160,6 +160,28 @@ class PlayerSound {
         const durationRounded = Math.round((duration + Number.EPSILON) * 100) / 100;
         return durationRounded;
     }
+    setDuration(duration) {
+        if (!isNaN(duration)) {
+            this.duration = duration;
+            this.durationSetManually = true;
+        }
+    }
+    setLoop(loop) {
+        this.loop = loop;
+        if (this.state === PlayerSound.SOUND_STATE_PLAYING) {
+            if (this.sourceNode !== null) {
+                if (this.sourceNode instanceof AudioBufferSourceNode) {
+                    this.sourceNode.loop = loop;
+                }
+                else if (this.sourceNode instanceof MediaElementAudioSourceNode) {
+                    this.sourceNode.mediaElement.loop = loop;
+                }
+            }
+        }
+    }
+    getLoop() {
+        return this.loop;
+    }
     _generateSoundId() {
         return Date.now().toString(36) + Math.random().toString(36).substring(2);
     }

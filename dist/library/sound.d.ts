@@ -65,6 +65,9 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     durationSetManually: boolean;
     getCurrentTime(): number;
     getDuration(): number;
+    setDuration(duration: number): void;
+    setLoop(loop: boolean): void;
+    getLoop(): boolean;
 }
 export declare class PlayerSound implements ISound {
     static readonly SOUND_STATE_STOPPED = "sound_state_stopped";
@@ -107,6 +110,9 @@ export declare class PlayerSound implements ISound {
     constructor(soundAttributes: ISoundAttributes);
     getCurrentTime(): number;
     getDuration(): number;
+    setDuration(duration: number): void;
+    setLoop(loop: boolean): void;
+    getLoop(): boolean;
     protected _generateSoundId(): string;
 }
 export {};
