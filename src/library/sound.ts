@@ -77,6 +77,7 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     loadingProgress: number;
     firstTimePlayed: boolean;
     isConnectToPlayerGain: boolean;
+    durationSetManually: boolean;
     getCurrentTime(): number;
     getDuration(): number;
 }
@@ -116,6 +117,7 @@ export class PlayerSound implements ISound {
     public state: typeSoundStates = SOUND_STATE_STOPPED;
     public loadingProgress = 0;
     public duration: number = null;
+    public durationSetManually: boolean = false;
     public firstTimePlayed = true;
     public isConnectToPlayerGain = false;
 
@@ -148,7 +150,11 @@ export class PlayerSound implements ISound {
         // the user can set the duration manually
         // this is usefull if we need to convert the position percentage into seconds but don't want to preload the song
         // to get the duration the song has to get preloaded as the duration is a property of the audioBuffer
-        this.duration = soundAttributes.duration || null;
+        if (!isNaN(soundAttributes.duration)) {
+            this.duration = soundAttributes.duration;
+            this.durationSetManually = true;
+        }
+
 
         if (typeof soundAttributes.onLoading === 'function') {
             this.onLoading = soundAttributes.onLoading;
@@ -207,7 +213,10 @@ export class PlayerSound implements ISound {
             this.isBuffering = false;
             this.isBuffered = true;
             this.audioBufferDate = new Date();
-            this.duration = this.getDuration();
+            // only update duration if it did not get set manually
+            if (!this.durationSetManually) {
+                this.duration = this.audioBuffer.duration;
+            }
         }
 
     }
@@ -253,7 +262,7 @@ export class PlayerSound implements ISound {
     protected _generateSoundId() {
 
         return Date.now().toString(36) + Math.random().toString(36).substring(2)
-        
+
     }
 
 }

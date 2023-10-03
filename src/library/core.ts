@@ -394,7 +394,8 @@ export class PlayerCore {
                         sound.audioElement.removeEventListener('canplaythrough', canPlayThroughHandler);
                         sound.isReadyToPLay = true;
                         // duration should now be available
-                        if (!isNaN(sound.audioElement.duration)) {
+                        // if it got set manually don't overwrite it
+                        if (!isNaN(sound.audioElement.duration) && !sound.durationSetManually) {
                             sound.duration = sound.audioElement.duration;
                         }
 
@@ -421,7 +422,10 @@ export class PlayerCore {
                                 sound.onLoading(loadingPercentage, duration, buffered);
                             }
 
-                            sound.duration = sound.audioElement.duration;
+                            // only update duration if it did not get set manually
+                            if (!sound.durationSetManually) {
+                                sound.duration = sound.audioElement.duration;
+                            }
 
                             if (loadingPercentage === 100) {
                                 sound.isBuffering = false;
@@ -508,11 +512,15 @@ export class PlayerCore {
 
         const audioBuffer = await this._playerAudio.decodeAudio(arrayBufferCopy);
 
+        // only update duration if it did not get set manually
+        if (!sound.durationSetManually) {
+            sound.duration = audioBuffer.duration;
+        }
+
         sound.audioBuffer = audioBuffer;
         sound.isBuffering = false;
         sound.isBuffered = true;
         sound.audioBufferDate = new Date();
-        sound.duration = audioBuffer.duration;
         sound.isReadyToPLay = true;
 
     }
