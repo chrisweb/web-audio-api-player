@@ -14,13 +14,11 @@ import { PlayerUI } from './library/player/ui.js'
 const options: ICoreOptions = {
     soundsBaseUrl: 'http://127.0.0.1:35000/streaming/music/',
     loadPlayerMode: PlayerCore.PLAYER_MODE_AUDIO,
-    loopQueue: true,
     addAudioElementsToDom: true,
 }
 /*const options: ICoreOptions = {
     soundsBaseUrl: 'http://127.0.0.1:35000/static/music/',
     loadPlayerMode: PlayerCore.PLAYER_MODE_AJAX,
-    loopQueue: true,
 }*/
 
 // create an instance of the player
@@ -126,3 +124,5 @@ myPlaylist.forEach((song) => {
     console.log('sound got added to queue: ', sound)
 
 })
+
+playerUI.refresh()

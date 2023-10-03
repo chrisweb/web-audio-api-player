@@ -125,10 +125,18 @@
         <button id="js-byId-2" class="button" data-song-id="song2">Play song by ID (song 2)</button>
         <button id="js-byId-3" class="button" data-song-id="song3" data-song-play-time-offset="10">Play song by ID (song
             3) & start at (playTimeOffset) 10 seconds</button>
-        <button id="pause" class="button">Pause</button>
-        <button id="stop" class="button">Stop</button>
+        <button id="js-stop" class="button">Stop</button>
         <br>
-        <button id="disconnect" class="button">Disconnect player</button>
+        <button id="js-loop-song" class="button">
+            <span id="js-loop-song-on" class="hidden">Loop song: ON</span>
+            <span id="js-loop-song-off">Loop song: OFF</span>
+        </button>
+        <button id="js-loop-queue" class="button">
+            <span id="js-loop-queue-on" class="hidden">Loop queue: ON</span>
+            <span id="js-loop-queue-off">Loop queue: OFF</span>
+        </button>
+        <br>
+        <button id="js-disconnect" class="button">Disconnect player</button>
     </section>
 
 </body>

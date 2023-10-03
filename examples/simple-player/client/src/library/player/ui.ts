@@ -204,7 +204,11 @@ class PlayerUI {
 
         event.preventDefault()
 
-        const $button = event.target as HTMLElement
+        let $button = event.target as HTMLElement
+
+        if ($button.localName === 'span') {
+            $button = $button.parentElement
+        }
 
         if ($button.id === 'js-first') {
             this.player.play({ whichSound: 'first' })
@@ -224,15 +228,30 @@ class PlayerUI {
             }
         }
 
-        if ($button.id === 'pause') {
-            this.player.pause()
-        }
-
-        if ($button.id === 'stop') {
+        if ($button.id === 'js-stop') {
             this.player.stop()
         }
 
-        if ($button.id === 'disconnect') {
+        if ($button.id === 'js-loop-song') {
+            const currentSound = this.player.getCurrentSound()
+            if (currentSound.getLoop()) {
+                currentSound.setLoop(false)
+            } else {
+                currentSound.setLoop(true)
+            }
+            this._updateLoopSong()
+        }
+
+        if ($button.id === 'js-loop-queue') {
+            if (this.player.getLoopQueue()) {
+                this.player.setLoopQueue(false)
+            } else {
+                this.player.setLoopQueue(true)
+            }
+            this._updateLoopQueue()
+        }
+
+        if ($button.id === 'js-disconnect') {
             this.player.disconnect()
         }
 
@@ -310,6 +329,38 @@ class PlayerUI {
         this._switchPlayerContext('on')
     }
 
+    protected _updateLoopQueue(): void {
+
+        const isLoopQueue = this.player.getLoopQueue()
+        const $loopQueueOn = document.getElementById('js-loop-queue-on')
+        const $loopQueueOff = document.getElementById('js-loop-queue-off')
+
+        if (isLoopQueue) {
+            $loopQueueOn.classList.remove('hidden')
+            $loopQueueOff.classList.add('hidden')
+        } else {
+            $loopQueueOn.classList.add('hidden')
+            $loopQueueOff.classList.remove('hidden')
+        }
+
+    }
+
+    protected _updateLoopSong(): void {
+
+        const isLoopSound = this.player.getCurrentSound().getLoop()
+        const $loopSongOn = document.getElementById('js-loop-song-on')
+        const $loopSongOff = document.getElementById('js-loop-song-off')
+
+        if (isLoopSound) {
+            $loopSongOn.classList.remove('hidden')
+            $loopSongOff.classList.add('hidden')
+        } else {
+            $loopSongOn.classList.add('hidden')
+            $loopSongOff.classList.remove('hidden')
+        }
+
+    }
+
     protected _destroyListeners(): void {
 
         this._buttonsBox.removeEventListener('click', this._onClickButtonsBox.bind(this))
@@ -323,6 +374,13 @@ class PlayerUI {
         this._playTime = null
         this._durationTime = null
         this._volumeNumber = null
+
+    }
+
+    public refresh(): void {
+        
+        this._updateLoopQueue()
+        this._updateLoopSong()
 
     }
 
