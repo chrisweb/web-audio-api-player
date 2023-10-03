@@ -29,6 +29,7 @@ export interface ICoreOptions {
     loadPlayerMode?: typePlayerMode;
     audioContext?: AudioContext;
     addAudioElementsToDom?: boolean;
+    volumeTransitionTime?: number;
 }
 
 export interface ISoundsQueueOptions {
@@ -112,6 +113,7 @@ export class PlayerCore {
             loadPlayerMode: PLAYER_MODE_AUDIO,
             audioContext: null,
             addAudioElementsToDom: false,
+            volumeTransitionTime: 100,
         };
 
         const options = Object.assign({}, defaultOptions, playerOptions);
@@ -158,6 +160,7 @@ export class PlayerCore {
             persistVolume: this._options.persistVolume,
             loadPlayerMode: this._options.loadPlayerMode,
             addAudioElementsToDom: this._options.addAudioElementsToDom,
+            volumeTransitionTime: this._options.volumeTransitionTime,
         };
 
         return audioOptions;
@@ -313,7 +316,9 @@ export class PlayerCore {
 
         if (currentSound !== null) {
 
-            if (!isNaN(currentSound.duration) && (soundPositionInSeconds > currentSound.duration)) {
+            // round duration up as numbers are not integers
+            // so sometimes it is a tiny bit above
+            if (!isNaN(currentSound.duration) && (soundPositionInSeconds >  Math.ceil(currentSound.duration))) {
                 console.warn('soundPositionInSeconds > sound duration')
             }
 
@@ -646,7 +651,9 @@ export class PlayerCore {
                     sound.sourceNode.start(0, sound.playTime);
                 } else {
                     if (sound.playTimeOffset > 0) {
-                        if (sound.playTimeOffset > sound.duration) {
+                        // round duration up as numbers are not integers
+                        // so sometimes it is a tiny bit above
+                        if (sound.playTimeOffset > Math.ceil(sound.duration)) {
                             console.warn('playTimeOffset > sound duration');
                         }
                         // if an offset is defined start playing at that position
@@ -675,7 +682,9 @@ export class PlayerCore {
             } else {
                 // if an offset is defined start playing at that position
                 if (sound.playTimeOffset > 0) {
-                    if (sound.playTimeOffset > sound.duration) {
+                    // round duration up as numbers are not integers
+                    // so sometimes it is a tiny bit above
+                    if (sound.playTimeOffset > Math.ceil(sound.duration)) {
                         console.warn('playTimeOffset > duration');
                     }
                     sound.audioElement.currentTime = sound.playTimeOffset;
@@ -1234,6 +1243,12 @@ export class PlayerCore {
         const audioContext = await this._playerAudio.getAudioContext();
 
         return audioContext;
+
+    }
+
+    public getCurrentSound(): ISound {
+
+        return this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
     }
 

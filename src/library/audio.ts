@@ -9,6 +9,7 @@ export interface IAudioOptions {
     persistVolume: boolean;
     loadPlayerMode: string;
     addAudioElementsToDom: boolean;
+    volumeTransitionTime: number;
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/API/AudioNode
@@ -534,7 +535,9 @@ export class PlayerAudio {
 
         if (this._audioNodes.gainNode instanceof GainNode) {
             const audioContext = await this.getAudioContext();
-            this._audioNodes.gainNode.gain.setTargetAtTime(gainValue, audioContext.currentTime, 0.1);
+            const timeConstantInMilliseconds = (!isNaN(this._options.volumeTransitionTime) && this._options.volumeTransitionTime > 0) ? this._options.volumeTransitionTime : 100
+            const timeConstantInSeconds = timeConstantInMilliseconds / 1000;
+            this._audioNodes.gainNode.gain.setTargetAtTime(gainValue, audioContext.currentTime, timeConstantInSeconds);
         }
 
     }
