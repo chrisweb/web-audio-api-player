@@ -7,6 +7,7 @@ export interface IAudioOptions {
     persistVolume: boolean;
     loadPlayerMode: string;
     addAudioElementsToDom: boolean;
+    volumeTransitionTime: number;
 }
 export interface IAudioNodes {
     gainNode: GainNode;

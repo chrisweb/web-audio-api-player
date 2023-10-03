@@ -482,7 +482,9 @@ class PlayerAudio {
         return __awaiter(this, void 0, void 0, function* () {
             if (this._audioNodes.gainNode instanceof GainNode) {
                 const audioContext = yield this.getAudioContext();
-                this._audioNodes.gainNode.gain.setTargetAtTime(gainValue, audioContext.currentTime, 0.1);
+                const timeConstantInMilliseconds = (!isNaN(this._options.volumeTransitionTime) && this._options.volumeTransitionTime > 0) ? this._options.volumeTransitionTime : 100;
+                const timeConstantInSeconds = timeConstantInMilliseconds / 1000;
+                this._audioNodes.gainNode.gain.setTargetAtTime(gainValue, audioContext.currentTime, timeConstantInSeconds);
             }
         });
     }
@@ -612,6 +614,7 @@ class PlayerCore {
             loadPlayerMode: PLAYER_MODE_AUDIO,
             audioContext: null,
             addAudioElementsToDom: false,
+            volumeTransitionTime: 100,
         };
         const options = Object.assign({}, defaultOptions, playerOptions);
         this._queue = [];
@@ -647,6 +650,7 @@ class PlayerCore {
             persistVolume: this._options.persistVolume,
             loadPlayerMode: this._options.loadPlayerMode,
             addAudioElementsToDom: this._options.addAudioElementsToDom,
+            volumeTransitionTime: this._options.volumeTransitionTime,
         };
         return audioOptions;
     }
@@ -738,7 +742,7 @@ class PlayerCore {
         return __awaiter(this, void 0, void 0, function* () {
             const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
             if (currentSound !== null) {
-                if (!isNaN(currentSound.duration) && (soundPositionInSeconds > currentSound.duration)) {
+                if (!isNaN(currentSound.duration) && (soundPositionInSeconds > Math.ceil(currentSound.duration))) {
                     console.warn('soundPositionInSeconds > sound duration');
                 }
                 if (currentSound.onSeeking !== null) {
@@ -943,7 +947,7 @@ class PlayerCore {
                     }
                     else {
                         if (sound.playTimeOffset > 0) {
-                            if (sound.playTimeOffset > sound.duration) {
+                            if (sound.playTimeOffset > Math.ceil(sound.duration)) {
                                 console.warn('playTimeOffset > sound duration');
                             }
                             sound.elapsedPlayTime = sound.playTimeOffset;
@@ -971,7 +975,7 @@ class PlayerCore {
                 }
                 else {
                     if (sound.playTimeOffset > 0) {
-                        if (sound.playTimeOffset > sound.duration) {
+                        if (sound.playTimeOffset > Math.ceil(sound.duration)) {
                             console.warn('playTimeOffset > duration');
                         }
                         sound.audioElement.currentTime = sound.playTimeOffset;
@@ -1330,6 +1334,9 @@ class PlayerCore {
             const audioContext = yield this._playerAudio.getAudioContext();
             return audioContext;
         });
+    }
+    getCurrentSound() {
+        return this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
     }
 }
 PlayerCore.WHERE_IN_QUEUE_AT_END = 'append';

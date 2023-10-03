@@ -21,6 +21,7 @@ export interface ICoreOptions {
     loadPlayerMode?: typePlayerMode;
     audioContext?: AudioContext;
     addAudioElementsToDom?: boolean;
+    volumeTransitionTime?: number;
 }
 export interface ISoundsQueueOptions {
     soundAttributes: ISoundAttributes;
@@ -109,5 +110,6 @@ export declare class PlayerCore {
     protected _handleVisibilityChange(): void;
     disconnect(): Promise<void>;
     getAudioContext(): Promise<AudioContext>;
+    getCurrentSound(): ISound;
 }
 export {};
