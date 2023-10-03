@@ -53,6 +53,7 @@ class PlayerSound {
         this.state = SOUND_STATE_STOPPED;
         this.loadingProgress = 0;
         this.duration = null;
+        this.durationSetManually = false;
         this.firstTimePlayed = true;
         this.isConnectToPlayerGain = false;
         if (!Array.isArray(soundAttributes.source)) {
@@ -68,7 +69,10 @@ class PlayerSound {
             this.id = this._generateSoundId();
         }
         this.loop = soundAttributes.loop || false;
-        this.duration = soundAttributes.duration || null;
+        if (!isNaN(soundAttributes.duration)) {
+            this.duration = soundAttributes.duration;
+            this.durationSetManually = true;
+        }
         if (typeof soundAttributes.onLoading === 'function') {
             this.onLoading = soundAttributes.onLoading;
         }
@@ -125,7 +129,9 @@ class PlayerSound {
             this.isBuffering = false;
             this.isBuffered = true;
             this.audioBufferDate = new Date();
-            this.duration = this.getDuration();
+            if (!this.durationSetManually) {
+                this.duration = this.audioBuffer.duration;
+            }
         }
     }
     getCurrentTime() {
@@ -763,7 +769,7 @@ class PlayerCore {
                     const canPlayThroughHandler = () => __awaiter(this, void 0, void 0, function* () {
                         sound.audioElement.removeEventListener('canplaythrough', canPlayThroughHandler);
                         sound.isReadyToPLay = true;
-                        if (!isNaN(sound.audioElement.duration)) {
+                        if (!isNaN(sound.audioElement.duration) && !sound.durationSetManually) {
                             sound.duration = sound.audioElement.duration;
                         }
                         return resolve();
@@ -779,7 +785,9 @@ class PlayerCore {
                             if (sound.onLoading !== null) {
                                 sound.onLoading(loadingPercentage, duration, buffered);
                             }
-                            sound.duration = sound.audioElement.duration;
+                            if (!sound.durationSetManually) {
+                                sound.duration = sound.audioElement.duration;
+                            }
                             if (loadingPercentage === 100) {
                                 sound.isBuffering = false;
                                 sound.isBuffered = true;
@@ -821,11 +829,13 @@ class PlayerCore {
         return __awaiter(this, void 0, void 0, function* () {
             const arrayBufferCopy = sound.arrayBuffer.slice(0);
             const audioBuffer = yield this._playerAudio.decodeAudio(arrayBufferCopy);
+            if (!sound.durationSetManually) {
+                sound.duration = audioBuffer.duration;
+            }
             sound.audioBuffer = audioBuffer;
             sound.isBuffering = false;
             sound.isBuffered = true;
             sound.audioBufferDate = new Date();
-            sound.duration = audioBuffer.duration;
             sound.isReadyToPLay = true;
         });
     }

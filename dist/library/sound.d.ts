@@ -62,6 +62,7 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     loadingProgress: number;
     firstTimePlayed: boolean;
     isConnectToPlayerGain: boolean;
+    durationSetManually: boolean;
     getCurrentTime(): number;
     getDuration(): number;
 }
@@ -92,6 +93,7 @@ export declare class PlayerSound implements ISound {
     state: typeSoundStates;
     loadingProgress: number;
     duration: number;
+    durationSetManually: boolean;
     firstTimePlayed: boolean;
     isConnectToPlayerGain: boolean;
     onLoading: IOnProgress;
