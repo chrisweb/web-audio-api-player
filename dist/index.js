@@ -691,6 +691,9 @@ class PlayerCore {
     }
     setPosition(soundPositionInPercent) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (soundPositionInPercent < 0 || soundPositionInPercent > 100) {
+                throw new Error('soundPositionInPercent must be a number >= 0 and <= 100');
+            }
             const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
             if (currentSound !== null) {
                 let duration = currentSound.getDuration();
@@ -707,6 +710,9 @@ class PlayerCore {
         return __awaiter(this, void 0, void 0, function* () {
             const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
             if (currentSound !== null) {
+                if (!isNaN(currentSound.duration) && (soundPositionInSeconds > currentSound.duration)) {
+                    console.warn('soundPositionInSeconds > sound duration');
+                }
                 if (currentSound.onSeeking !== null) {
                     const playTime = soundPositionInSeconds;
                     const duration = currentSound.getDuration();
@@ -905,6 +911,9 @@ class PlayerCore {
                     }
                     else {
                         if (sound.playTimeOffset > 0) {
+                            if (sound.playTimeOffset > sound.duration) {
+                                console.warn('playTimeOffset > sound duration');
+                            }
                             sound.elapsedPlayTime = sound.playTimeOffset;
                             sound.sourceNode.start(0, sound.playTimeOffset);
                         }
@@ -930,6 +939,9 @@ class PlayerCore {
                 }
                 else {
                     if (sound.playTimeOffset > 0) {
+                        if (sound.playTimeOffset > sound.duration) {
+                            console.warn('playTimeOffset > duration');
+                        }
                         sound.audioElement.currentTime = sound.playTimeOffset;
                     }
                     else {
