@@ -465,7 +465,6 @@ things I intend to add some day or if you want to help but are not sure what to 
 if you are interested in helping out 😊 by working on one of the following TODOs, please start by reading the ["contributing"](#contributing-prs-welcome) chapter above
 
 * add onDurationChange / onLoopChange callbacks to song(s)!?
-* add loop song, loop queue, loop off examples to simple player example
 * for audio mode, add option for songs "crossOrigin" to be set to "use-credentials" (https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/crossorigin) instead of "anonymous", "anonymous" could be kept as default value, also do the same for XHR calls (ajax mode) [XMLHttpRequest: withCredentials property](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials)
 * add sound option to set the initial gain value of a sound, for now it is always 1 (1 = no change to loudness), (optional method that lets you define a modifier (or coefficient) per song by which the gain will be changed), useful if some songs are louder than others and you want to normalize the volume of all songs in a playlist to be similar
 * add a song feature to fade out (current song) / fade in (next song) maybe two new options fadeInDuration and fadeOutDuration would be enough, if the values are set we do a fade
