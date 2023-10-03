@@ -80,6 +80,9 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     durationSetManually: boolean;
     getCurrentTime(): number;
     getDuration(): number;
+    setDuration(duration: number): void;
+    setLoop(loop: boolean): void;
+    getLoop(): boolean;
 }
 
 export class PlayerSound implements ISound {
@@ -154,7 +157,6 @@ export class PlayerSound implements ISound {
             this.duration = soundAttributes.duration;
             this.durationSetManually = true;
         }
-
 
         if (typeof soundAttributes.onLoading === 'function') {
             this.onLoading = soundAttributes.onLoading;
@@ -256,6 +258,39 @@ export class PlayerSound implements ISound {
         const durationRounded = Math.round((duration + Number.EPSILON) * 100) / 100;
 
         return durationRounded;
+
+    }
+
+    public setDuration(duration: number): void {
+
+        if (!isNaN(duration)) {
+            this.duration = duration;
+            this.durationSetManually = true;
+        }
+
+    }
+
+    public setLoop(loop: boolean): void {
+
+        this.loop = loop;
+
+        if (this.state === PlayerSound.SOUND_STATE_PLAYING) {
+
+            if (this.sourceNode !== null) {
+                if (this.sourceNode instanceof AudioBufferSourceNode) {
+                    this.sourceNode.loop = loop;
+                } else if (this.sourceNode instanceof MediaElementAudioSourceNode) {
+                    this.sourceNode.mediaElement.loop = loop;
+                }
+            }
+
+        }
+
+    }
+
+    public getLoop(): boolean {
+
+        return this.loop;
 
     }
 
