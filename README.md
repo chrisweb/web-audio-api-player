@@ -8,11 +8,15 @@
 
 ## About this project
 
-🎶 An opensource javascript (typescript) audio player for the browser, built using the Web Audio API with support for HTML5 audio elements
+🎶 An opensource javascript (typescript) audio player for the browser, built using the Web Audio API with support for HTML5 audio elements  
 
-this player can be added to any javascript project and extended in many ways, it is not bound to a specific UI, this player is just a core that can be used to create any kind of player you can imagine and even be used to play sound in video games or for any other sound / song playing needs you may have  
+This player can be added to any javascript project and extended in many ways, it is not bound to a specific UI, this player is just a core that can be used to create any kind of player you can imagine  
 
-Want to help improve the documentation or contribute to this project by improving and fixing it, then first check out the [TODOs section](#todos-ideas-for-future-improvements) below, maybe there is something in the list you want to help with. Any contribution, even things not listed on the TODO list are of course welcome. To get started check out the section ["contributing" section](#contributing-prs-welcome) below.  
+To get started I recommend checking out the [guide to building a simple audio player UI](#guide-to-building-a-simple-audio-player-ui) in this readme, or head straight to the [player options](#player-options) and functions documentation, but also have a look at the code of the working [simple player example](examples/simple-player) that is part of this repository  
+
+If you want to help improve the documentation or contribute to this project by improving and fixing it, then first check out the [TODOs section](#todos-ideas-for-future-improvements) below, maybe there is something in the list you want to help with  
+
+Any contribution, even things not listed on the TODO list are of course welcome. To get started check out the section ["contributing" section](#contributing-prs-welcome) below  
 
 ## installation
 
