@@ -18,6 +18,8 @@ If you want to help improve the documentation or contribute to this project by i
 
 Any contribution, even things not listed on the TODO list are of course welcome. To get started check out the section ["contributing" section](#contributing-prs-welcome) below  
 
+If you found a bug or want to request a new feature please go to the [issues page](https://github.com/chrisweb/web-audio-api-player/issues) and if you have a question please use the [dicussions page](https://github.com/chrisweb/web-audio-api-player/discussions)  
+
 ## installation
 
 web audio API player is published to the [npm registry](https://npm.im/web-audio-api-player) so you can install it with either [npm](https://www.npmjs.com/get-npm) or [yarn](https://yarnpkg.com)  
@@ -468,17 +470,17 @@ things I intend to add some day or if you want to help but are not sure what to 
 
 if you are interested in helping out 😊 by working on one of the following TODOs, please start by reading the ["contributing"](#contributing-prs-welcome) chapter above
 
-* add onDurationChange / onLoopChange callbacks to song(s)!?
-* for audio mode, add option for songs "crossOrigin" to be set to "use-credentials" (https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/crossorigin) instead of "anonymous", "anonymous" could be kept as default value, also do the same for XHR calls (ajax mode) [XMLHttpRequest: withCredentials property](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials)
-* add sound option to set the initial gain value of a sound, for now it is always 1 (1 = no change to loudness), (optional method that lets you define a modifier (or coefficient) per song by which the gain will be changed), useful if some songs are louder than others and you want to normalize the volume of all songs in a playlist to be similar
+* for audio mode, add option for songs "crossOrigin" to be set to "use-credentials" [HTML attribute: crossorigin](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/crossorigin) instead of "anonymous", "anonymous" could be kept as default value, also do the same for XHR calls (ajax mode) [XMLHttpRequest: withCredentials property](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials)
 * add a song feature to fade out (current song) / fade in (next song) maybe two new options fadeInDuration and fadeOutDuration would be enough, if the values are set we do a fade
+* add onDurationChange / onLoopChange callbacks to song(s)!?
+* add sound option to set the initial gain value of a sound, for now it is always 1 (1 = no change to loudness), (optional method that lets you define a modifier (or coefficient) per song by which the gain will be changed), useful if some songs are louder than others and you want to normalize the volume of all songs in a playlist to be similar
 * add a shuffle songs feature, I thought about adding a PLAY_SHUFFLE(D) option for the play() function but then only the first song would be a random pick, so the player itself needs a shuffle mode which also shuffles the next songs, you need to be able to turn it on / off at any time
 * today we have sound callbacks for events like "playing", "started"..., but would player callbacks be useful, we could add callbacks for things like an "onVolumeChange" event?
 * is there a need to add more callbacks to songs, for native audio (element) events? [audio#events](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio#events) ... are there equivalents for songs loaded in ajax mode
 * add an example where dev custom audiocontext gets connected to an [AnalyserNode](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode) or oscilator node and then passed to player (to which we then connect the song gainnode and then connect that audiocontext to the destination)
 * instead of having sound properties like "isReadyToPLay, isBuffered, isBuffering" it would be better to use the SOUND_STATE_XXX constants
-* add (stereo) panning (maybe add an example of how to do it by injecting an audiocontext that has the panningnode attached already) <https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode>
-* use service worker to cache ajax requests when the player mode is ajax (audio buffer) <https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API>
+* add (stereo) panning (maybe add an example of how to do it by injecting an audiocontext that has the panningnode attached already) [MDN: StereoPannerNode](https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode)
+* use service worker to cache ajax requests when the player mode is ajax (audio buffer) [MDN: Service Worker API](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)
 * allow to add an array of sounds to queue all at once
 * allow to add sound to queue after a sound by id (not just at beginning or end, as it is as of now)
 * for volume (gain) allow values beyond 0 to 1 to amplify wave or invert it?
