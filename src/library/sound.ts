@@ -235,10 +235,7 @@ export class PlayerSound implements ISound {
             }
         }
 
-        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON
-        const currentTimeRounded = Math.round((currentTime + Number.EPSILON) * 100) / 100;
-
-        return currentTimeRounded;
+        return currentTime;
 
     }
 
@@ -254,10 +251,7 @@ export class PlayerSound implements ISound {
             }
         }
 
-        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON
-        const durationRounded = Math.round((duration + Number.EPSILON) * 100) / 100;
-
-        return durationRounded;
+        return duration;
 
     }
 
