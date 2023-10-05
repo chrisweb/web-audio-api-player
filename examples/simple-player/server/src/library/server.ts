@@ -102,9 +102,7 @@ export class Server {
                     stream.pipe(response);
 
                 } else {
-
-                    console.log(path.resolve(fullPath))
-
+                    
                     response.sendFile(path.resolve(fullPath))
 
                 }
