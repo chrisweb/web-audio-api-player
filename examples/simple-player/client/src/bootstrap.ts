@@ -12,12 +12,12 @@ import { PlayerUI } from './library/player/ui.js'
 // !!! for some details about the differencies of the two MODES
 // check out the documentation part of the readme
 const options: ICoreOptions = {
-    soundsBaseUrl: 'http://127.0.0.1:35000/streaming/music/',
-    loadPlayerMode: PlayerCore.PLAYER_MODE_AUDIO,
+    soundsBaseUrl: 'http://127.0.0.1:35000/music/',
+    loadPlayerMode: PlayerCore.PLAYER_MODE_AJAX,
     addAudioElementsToDom: true,
 }
 /*const options: ICoreOptions = {
-    soundsBaseUrl: 'http://127.0.0.1:35000/static/music/',
+    soundsBaseUrl: 'http://127.0.0.1:35000/music/',
     loadPlayerMode: PlayerCore.PLAYER_MODE_AJAX,
 }*/
 

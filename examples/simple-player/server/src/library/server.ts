@@ -40,7 +40,7 @@ export class Server {
         this.application.use('/dist', express.static(ROOTPATH + '/../../../dist'));
 
         // streaming songs
-        this.application.get('/streaming/music/:song', (request: express.Request, response: express.Response) => {
+        this.application.get('/music/:song', (request: express.Request, response: express.Response) => {
 
             const fullPath = ROOTPATH + '/../../../assets/music/' + request.params.song
             const size = fs.statSync(fullPath).size
@@ -52,10 +52,10 @@ export class Server {
                 response.end()
             }
 
-            const range = request.headers.range || '0'
-            let start, end
+            const range = request.headers.range
+            let start, end, contentLength
 
-            if (range) {
+            if (typeof range !== 'undefined') {
                 const bytesPrefix = "bytes=";
                 if (range.startsWith(bytesPrefix)) {
                     const bytesRange = range.substring(bytesPrefix.length)
@@ -74,36 +74,46 @@ export class Server {
                         }
                     }
                 }
+            } else {
+                // no range, so this handle it as a static file request
+                contentLength = size
             }
 
             const extension = path.extname(fullPath)
             const mimeType = contentType(extension)
 
-            const contentLength = end - start + 1
+            contentLength = end - start + 1
 
             if (mimeType !== false) {
 
-                const headers = {
-                    'Content-Range': `bytes ${start}-${end}/${size}`,
-                    'Accept-Ranges': 'bytes',
-                    'Content-Length': contentLength,
-                    'Content-Type': mimeType,
+                if (typeof range !== 'undefined') {
+
+                    const headers = {
+                        'Content-Range': `bytes ${start}-${end}/${size}`,
+                        'Accept-Ranges': 'bytes',
+                        'Content-Length': contentLength,
+                        'Content-Type': mimeType,
+                    }
+
+                    response.writeHead(206, headers)
+
+                    const stream = fs.createReadStream(fullPath, { start, end })
+
+                    stream.pipe(response);
+
+                } else {
+
+                    console.log(path.resolve(fullPath))
+
+                    response.sendFile(path.resolve(fullPath))
+
                 }
-
-                response.writeHead(206, headers)
-
-                const stream = fs.createReadStream(fullPath, { start, end })
-
-                stream.pipe(response);
 
             } else {
                 response.status(415).send();
             }
 
         })
-
-        // static songs
-        this.application.use('/static/music', express.static(ROOTPATH + '/../../../assets/music'));
 
         this.application.get('/', (request: express.Request, response: express.Response) => {
 
