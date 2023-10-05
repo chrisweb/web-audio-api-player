@@ -42,14 +42,43 @@ export class Server {
         // streaming songs
         this.application.get('/streaming/music/:song', (request: express.Request, response: express.Response) => {
 
-            const range = request.headers.range || '0'
             const fullPath = ROOTPATH + '/../../../assets/music/' + request.params.song
             const size = fs.statSync(fullPath).size
+
+            if (request.method === 'HEAD') {
+                response.statusCode = 200
+                response.setHeader("accept-ranges", "bytes")
+                response.setHeader("content-length", size)
+                response.end()
+            }
+
+            const range = request.headers.range || '0'
+            let start, end
+
+            if (range) {
+                const bytesPrefix = "bytes=";
+                if (range.startsWith(bytesPrefix)) {
+                    const bytesRange = range.substring(bytesPrefix.length)
+                    const parts = bytesRange.split('-')
+                    if (parts.length === 2) {
+                        const rangeStart = parts[0] && parts[0].trim()
+                        if (rangeStart) {
+                            start = parseInt(rangeStart)
+                        }
+                        const rangeEnd = parts[1] && parts[1].trim()
+                        if (rangeEnd && rangeEnd.length > 0) {
+                            end = parseInt(rangeEnd)
+                        } else {
+                            const chunkSize = 1 * 1e6  //  1MB
+                            end = Math.min(start + chunkSize, size - 1)
+                        }
+                    }
+                }
+            }
+
             const extension = path.extname(fullPath)
             const mimeType = contentType(extension)
-            const chunkSize = 1 * 1e6  //  1MB
-            const start = Number(range.replace(/\D/g, ''))
-            const end = Math.min(start + chunkSize, size - 1)
+
             const contentLength = end - start + 1
 
             if (mimeType !== false) {
@@ -60,11 +89,11 @@ export class Server {
                     'Content-Length': contentLength,
                     'Content-Type': mimeType,
                 }
-    
+
                 response.writeHead(206, headers)
-    
+
                 const stream = fs.createReadStream(fullPath, { start, end })
-    
+
                 stream.pipe(response);
 
             } else {
