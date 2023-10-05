@@ -545,7 +545,6 @@ export class PlayerCore {
 
         // if there is no sound we could play, do nothing
         if (sound === null) {
-            console.warn('no more sounds in array');
             return sound;
         }
 
@@ -808,7 +807,9 @@ export class PlayerCore {
                     }
 
                     try {
-                        await this.next();
+                        if (willPlayNext) {
+                            await this.next();
+                        }
                     } catch (error) {
                         console.error(error)
                     }
