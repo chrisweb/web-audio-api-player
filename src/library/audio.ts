@@ -537,7 +537,12 @@ export class PlayerAudio {
             const audioContext = await this.getAudioContext();
             const timeConstantInMilliseconds = (!isNaN(this._options.volumeTransitionTime) && this._options.volumeTransitionTime > 0) ? this._options.volumeTransitionTime : 100
             const timeConstantInSeconds = timeConstantInMilliseconds / 1000;
-            this._audioNodes.gainNode.gain.setTargetAtTime(gainValue, audioContext.currentTime, timeConstantInSeconds);
+            try {
+                this._audioNodes.gainNode.gain.setTargetAtTime(gainValue, audioContext.currentTime, timeConstantInSeconds);
+            } catch (error) {
+                console.error('gainValue: ' + gainValue + ' ' + error)
+            }
+            
         }
 
     }
@@ -585,7 +590,7 @@ export class PlayerAudio {
         let volume: number;
 
         // check if volume has already been set
-        if (this._volume !== null) {
+        if (this._volume !== null && !isNaN(this._volume)) {
             volume = this._volume;
         } else {
             if (this._options.persistVolume) {
