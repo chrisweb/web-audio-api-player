@@ -13,7 +13,7 @@ import { PlayerUI } from './library/player/ui.js'
 // check out the documentation part of the readme
 const options: ICoreOptions = {
     soundsBaseUrl: 'http://127.0.0.1:35000/music/',
-    loadPlayerMode: PlayerCore.PLAYER_MODE_AJAX,
+    loadPlayerMode: PlayerCore.PLAYER_MODE_AUDIO,
     addAudioElementsToDom: true,
 }
 /*const options: ICoreOptions = {
