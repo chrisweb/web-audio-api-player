@@ -1,11 +1,12 @@
 // es6 import http://2ality.com/2014/09/es6-modules-final.html
 
-// vendor
-import express from 'express';
-
 // nodejs
 import path from 'path';
 import fs from 'fs';
+
+// vendor
+import express from 'express';
+import { contentType } from 'mime-types';
 
 // hack because __dirname is not defined
 // https://github.com/nodejs/node/issues/16844
@@ -42,26 +43,33 @@ export class Server {
         this.application.get('/streaming/music/:song', (request: express.Request, response: express.Response) => {
 
             const range = request.headers.range || '0'
-            const path = ROOTPATH + '/../../../assets/music/' + request.params.song
-            const size = fs.statSync(path).size
+            const fullPath = ROOTPATH + '/../../../assets/music/' + request.params.song
+            const size = fs.statSync(fullPath).size
+            const extension = path.extname(fullPath)
+            const mimeType = contentType(extension)
             const chunkSize = 1 * 1e6  //  1MB
             const start = Number(range.replace(/\D/g, ''))
             const end = Math.min(start + chunkSize, size - 1)
-
             const contentLength = end - start + 1
 
-            const headers = {
-                'Content-Range': `bytes ${start}-${end}/${size}`,
-                'Accept-Ranges': "bytes",
-                'Content-Length': contentLength,
-                'Content-Type': "audio/mp3",
+            if (mimeType !== false) {
+
+                const headers = {
+                    'Content-Range': `bytes ${start}-${end}/${size}`,
+                    'Accept-Ranges': 'bytes',
+                    'Content-Length': contentLength,
+                    'Content-Type': mimeType,
+                }
+    
+                response.writeHead(206, headers)
+    
+                const stream = fs.createReadStream(fullPath, { start, end })
+    
+                stream.pipe(response);
+
+            } else {
+                response.status(415).send();
             }
-
-            response.writeHead(206, headers)
-
-            const stream = fs.createReadStream(path, { start, end })
-
-            stream.pipe(response);
 
         })
 
