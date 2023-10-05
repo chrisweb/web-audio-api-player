@@ -144,8 +144,7 @@ class PlayerSound {
                 currentTime = this.audioElement.currentTime;
             }
         }
-        const currentTimeRounded = Math.round((currentTime + Number.EPSILON) * 100) / 100;
-        return currentTimeRounded;
+        return currentTime;
     }
     getDuration() {
         let duration;
@@ -157,8 +156,7 @@ class PlayerSound {
                 duration = this.audioElement.duration;
             }
         }
-        const durationRounded = Math.round((duration + Number.EPSILON) * 100) / 100;
-        return durationRounded;
+        return duration;
     }
     setDuration(duration) {
         if (!isNaN(duration)) {
@@ -484,7 +482,12 @@ class PlayerAudio {
                 const audioContext = yield this.getAudioContext();
                 const timeConstantInMilliseconds = (!isNaN(this._options.volumeTransitionTime) && this._options.volumeTransitionTime > 0) ? this._options.volumeTransitionTime : 100;
                 const timeConstantInSeconds = timeConstantInMilliseconds / 1000;
-                this._audioNodes.gainNode.gain.setTargetAtTime(gainValue, audioContext.currentTime, timeConstantInSeconds);
+                try {
+                    this._audioNodes.gainNode.gain.setTargetAtTime(gainValue, audioContext.currentTime, timeConstantInSeconds);
+                }
+                catch (error) {
+                    console.error('gainValue: ' + gainValue + ' ' + error);
+                }
             }
         });
     }
@@ -506,7 +509,7 @@ class PlayerAudio {
     }
     getVolume() {
         let volume;
-        if (this._volume !== null) {
+        if (this._volume !== null && !isNaN(this._volume)) {
             volume = this._volume;
         }
         else {
@@ -742,8 +745,8 @@ class PlayerCore {
         return __awaiter(this, void 0, void 0, function* () {
             const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
             if (currentSound !== null) {
-                if (!isNaN(currentSound.duration) && (soundPositionInSeconds > Math.ceil(currentSound.duration))) {
-                    console.warn('soundPositionInSeconds > sound duration');
+                if (!isNaN(currentSound.duration) && (soundPositionInSeconds >= currentSound.duration)) {
+                    soundPositionInSeconds = currentSound.duration - 0.1;
                 }
                 if (currentSound.onSeeking !== null) {
                     const playTime = soundPositionInSeconds;
@@ -875,7 +878,6 @@ class PlayerCore {
             const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
             const sound = this._getSoundFromQueue({ whichSound, updateIndex: true });
             if (sound === null) {
-                console.warn('no more sounds in array');
                 return sound;
             }
             if (currentSound !== null
@@ -1024,7 +1026,9 @@ class PlayerCore {
                             currentSound.onEnded(willPlayNext);
                         }
                         try {
-                            yield this.next();
+                            if (willPlayNext) {
+                                yield this.next();
+                            }
                         }
                         catch (error) {
                             console.error(error);
