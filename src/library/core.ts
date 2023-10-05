@@ -316,10 +316,11 @@ export class PlayerCore {
 
         if (currentSound !== null) {
 
-            // round duration up as numbers are not integers
-            // so sometimes it is a tiny bit above
-            if (!isNaN(currentSound.duration) && (soundPositionInSeconds >  Math.ceil(currentSound.duration))) {
-                console.warn('soundPositionInSeconds > sound duration')
+            // if the given position > duration, set position to duration
+            if (!isNaN(currentSound.duration) && (soundPositionInSeconds >=  currentSound.duration)) {
+                // duration - 0.1 because in safari if currentTime = duration
+                // the onended event does not get triggered
+                soundPositionInSeconds = currentSound.duration - 0.1
             }
 
             if (currentSound.onSeeking !== null) {
