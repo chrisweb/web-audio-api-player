@@ -299,7 +299,7 @@ class PlayerAudio {
                 const audioElement = new Audio();
                 audioElement.controls = false;
                 audioElement.autoplay = false;
-                audioElement.preload = 'metadata';
+                audioElement.preload = 'auto';
                 audioElement.volume = 1;
                 audioElement.id = 'web-audio-api-player';
                 this._audioElement = audioElement;
@@ -788,49 +788,44 @@ class PlayerCore {
         });
     }
     _loadSoundUsingAudioElement(sound) {
-        return new Promise((resolve, reject) => {
+        return __awaiter(this, void 0, void 0, function* () {
             const { url, codec = null } = this._findBestSource(sound.source);
             sound.url = url;
             sound.codec = codec;
             if (sound.url !== null) {
-                this._playerAudio.getAudioElement().then((audioElement) => {
-                    sound.audioElement = audioElement;
-                    const canPlayThroughHandler = () => __awaiter(this, void 0, void 0, function* () {
-                        sound.audioElement.removeEventListener('canplaythrough', canPlayThroughHandler);
-                        sound.isReadyToPLay = true;
-                        if (!isNaN(sound.audioElement.duration) && !sound.durationSetManually) {
-                            sound.duration = sound.audioElement.duration;
+                sound.audioElement = yield this._playerAudio.getAudioElement();
+                sound.audioElement.onprogress = () => {
+                    if (sound.audioElement.buffered.length) {
+                        const duration = sound.getDuration();
+                        const buffered = sound.audioElement.buffered.end(0);
+                        const loadingPercentageRaw = 100 / (duration / buffered);
+                        const loadingPercentage = Math.round(loadingPercentageRaw);
+                        sound.loadingProgress = loadingPercentage;
+                        if (sound.onLoading !== null) {
+                            sound.onLoading(loadingPercentage, duration, buffered);
                         }
-                        return resolve();
-                    });
-                    sound.audioElement.addEventListener('canplaythrough', canPlayThroughHandler);
-                    sound.audioElement.onprogress = () => {
-                        if (sound.audioElement.buffered.length) {
-                            const duration = sound.getDuration();
-                            const buffered = sound.audioElement.buffered.end(0);
-                            const loadingPercentageRaw = 100 / (duration / buffered);
-                            const loadingPercentage = Math.round(loadingPercentageRaw);
-                            sound.loadingProgress = loadingPercentage;
-                            if (sound.onLoading !== null) {
-                                sound.onLoading(loadingPercentage, duration, buffered);
-                            }
-                            if (!sound.durationSetManually) {
-                                sound.duration = sound.audioElement.duration;
-                            }
-                            if (loadingPercentage === 100) {
-                                sound.isBuffering = false;
-                                sound.isBuffered = true;
-                                sound.audioBufferDate = new Date();
-                            }
+                        if (loadingPercentage === 100) {
+                            sound.isBuffering = false;
+                            sound.isBuffered = true;
+                            sound.audioBufferDate = new Date();
                         }
-                    };
-                    sound.audioElement.crossOrigin = 'anonymous';
-                    sound.audioElement.src = sound.url;
-                    sound.audioElement.load();
-                }).catch(reject);
+                    }
+                };
+                const canPlayThroughHandler = () => __awaiter(this, void 0, void 0, function* () {
+                    sound.audioElement.removeEventListener('canplaythrough', canPlayThroughHandler);
+                    sound.isReadyToPLay = true;
+                    if (!isNaN(sound.audioElement.duration) && !sound.durationSetManually) {
+                        sound.duration = sound.audioElement.duration;
+                    }
+                    yield this._play(sound);
+                });
+                sound.audioElement.addEventListener('canplaythrough', canPlayThroughHandler);
+                sound.audioElement.crossOrigin = 'anonymous';
+                sound.audioElement.src = sound.url;
+                sound.audioElement.load();
             }
             else {
-                reject(new Error('sound has no url'));
+                throw new Error('sound has no url');
             }
         });
     }
@@ -866,11 +861,7 @@ class PlayerCore {
             sound.isBuffered = true;
             sound.audioBufferDate = new Date();
             sound.isReadyToPLay = true;
-        });
-    }
-    manuallyUnlockAudio() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this._playerAudio.unlockAudio();
+            yield this._play(sound);
         });
     }
     play({ whichSound, playTimeOffset } = {}) {
@@ -909,7 +900,6 @@ class PlayerCore {
             }
             if (!sound.isReadyToPLay) {
                 yield this._loadSound(sound);
-                yield this._play(sound);
             }
             else {
                 yield this._play(sound);
@@ -919,6 +909,9 @@ class PlayerCore {
     }
     _play(sound) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (sound.state === PlayerSound.SOUND_STATE_PLAYING) {
+                return;
+            }
             if (this._playerAudio.isAudioContextFrozen()) {
                 yield this._playerAudio.unfreezeAudioContext();
             }
@@ -1323,6 +1316,11 @@ class PlayerCore {
         else {
             this.unMute();
         }
+    }
+    manuallyUnlockAudio() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this._playerAudio.unlockAudio();
+        });
     }
     disconnect() {
         return __awaiter(this, void 0, void 0, function* () {
