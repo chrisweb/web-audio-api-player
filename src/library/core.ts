@@ -317,7 +317,7 @@ export class PlayerCore {
         if (currentSound !== null) {
 
             // if the given position > duration, set position to duration
-            if (!isNaN(currentSound.duration) && (soundPositionInSeconds >=  currentSound.duration)) {
+            if (!isNaN(currentSound.duration) && (soundPositionInSeconds >= currentSound.duration)) {
                 // duration - 0.1 because in safari if currentTime = duration
                 // the onended event does not get triggered
                 soundPositionInSeconds = currentSound.duration - 0.1
@@ -378,92 +378,80 @@ export class PlayerCore {
 
     }
 
-    protected _loadSoundUsingAudioElement(sound: ISound): Promise<void> {
+    protected async _loadSoundUsingAudioElement(sound: ISound): Promise<void> {
 
-        return new Promise((resolve, reject) => {
+        // extract the url and codec from sources
+        const { url, codec = null } = this._findBestSource(sound.source);
 
-            // extract the url and codec from sources
-            const { url, codec = null } = this._findBestSource(sound.source);
+        sound.url = url;
+        sound.codec = codec;
 
-            sound.url = url;
-            sound.codec = codec;
+        if (sound.url !== null) {
 
-            if (sound.url !== null) {
+            sound.audioElement = await this._playerAudio.getAudioElement();
 
-                this._playerAudio.getAudioElement().then((audioElement) => {
+            // loading progress
+            // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
+            sound.audioElement.onprogress = () => {
 
-                    sound.audioElement = audioElement;
+                if (sound.audioElement.buffered.length) {
 
-                    const canPlayThroughHandler = async () => {
+                    const duration = sound.getDuration()
+                    const buffered = sound.audioElement.buffered.end(0)
+                    const loadingPercentageRaw = 100 / (duration / buffered);
+                    const loadingPercentage = Math.round(loadingPercentageRaw);
 
-                        // we don't need the listener anymore
-                        sound.audioElement.removeEventListener('canplaythrough', canPlayThroughHandler);
-                        sound.isReadyToPLay = true;
-                        // duration should now be available
-                        // if it got set manually don't overwrite it
-                        if (!isNaN(sound.audioElement.duration) && !sound.durationSetManually) {
-                            sound.duration = sound.audioElement.duration;
-                        }
+                    sound.loadingProgress = loadingPercentage;
 
-                        return resolve();
-
+                    if (sound.onLoading !== null) {
+                        sound.onLoading(loadingPercentage, duration, buffered);
                     }
 
-                    sound.audioElement.addEventListener('canplaythrough', canPlayThroughHandler);
-
-                    // loading progress
-                    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
-                    sound.audioElement.onprogress = () => {
-
-                        if (sound.audioElement.buffered.length) {
-
-                            const duration = sound.getDuration()
-                            const buffered = sound.audioElement.buffered.end(0)
-                            const loadingPercentageRaw = 100 / (duration / buffered);
-                            const loadingPercentage = Math.round(loadingPercentageRaw);
-
-                            sound.loadingProgress = loadingPercentage;
-
-                            if (sound.onLoading !== null) {
-                                sound.onLoading(loadingPercentage, duration, buffered);
-                            }
-
-                            // only update duration if it did not get set manually
-                            if (!sound.durationSetManually) {
-                                sound.duration = sound.audioElement.duration;
-                            }
-
-                            if (loadingPercentage === 100) {
-                                sound.isBuffering = false;
-                                sound.isBuffered = true;
-                                sound.audioBufferDate = new Date();
-                            }
-
-                        }
-
+                    if (loadingPercentage === 100) {
+                        sound.isBuffering = false;
+                        sound.isBuffered = true;
+                        sound.audioBufferDate = new Date();
                     }
 
-                    // in chrome you will get this error message in the console:
-                    // "MediaElementAudioSource outputs zeroes due to CORS access restrictions"
-                    // to fix this put crossOrigin to anonymous or change the cors
-                    // Access-Control-Allow-Origin header of the server to *
-                    // "crossOrigin" has to be set before "src"
-                    sound.audioElement.crossOrigin = 'anonymous';
-
-                    sound.audioElement.src = sound.url;
-
-                    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/load
-                    sound.audioElement.load();
-
-                }).catch(reject);
-
-            } else {
-
-                reject(new Error('sound has no url'));
+                }
 
             }
 
-        });
+            const canPlayThroughHandler = async () => {
+
+                // we don't need the listener anymore
+                sound.audioElement.removeEventListener('canplaythrough', canPlayThroughHandler);
+                sound.isReadyToPLay = true;
+                // duration should now be available
+                // if it got set manually don't overwrite it
+                if (!isNaN(sound.audioElement.duration) && !sound.durationSetManually) {
+                    sound.duration = sound.audioElement.duration;
+                }
+
+                await this._play(sound);
+
+            }
+
+            sound.audioElement.addEventListener('canplaythrough', canPlayThroughHandler);
+
+            // in chrome you will get this error message in the console:
+            // "MediaElementAudioSource outputs zeroes due to CORS access restrictions"
+            // to fix this put crossOrigin to anonymous or change the cors
+            // Access-Control-Allow-Origin header of the server to *
+            // "crossOrigin" has to be set before "src"
+            sound.audioElement.crossOrigin = 'anonymous';
+
+            sound.audioElement.src = sound.url;
+
+            // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/load
+            sound.audioElement.load();
+
+        } else {
+
+            //reject(new Error('sound has no url'));
+            throw new Error('sound has no url');
+
+        }
 
     }
 
@@ -529,10 +517,8 @@ export class PlayerCore {
         sound.audioBufferDate = new Date();
         sound.isReadyToPLay = true;
 
-    }
+        await this._play(sound);
 
-    public async manuallyUnlockAudio() {
-        await this._playerAudio.unlockAudio();
     }
 
     public async play({ whichSound, playTimeOffset }: IPlayOptions = {}): Promise<ISound> {
@@ -597,8 +583,6 @@ export class PlayerCore {
 
             await this._loadSound(sound);
 
-            await this._play(sound);
-
         } else {
 
             await this._play(sound);
@@ -610,6 +594,10 @@ export class PlayerCore {
     }
 
     protected async _play(sound: ISound): Promise<void> {
+
+        if (sound.state === PlayerSound.SOUND_STATE_PLAYING) {
+            return;
+        }
 
         if (this._playerAudio.isAudioContextFrozen()) {
             await this._playerAudio.unfreezeAudioContext();
@@ -625,6 +613,11 @@ export class PlayerCore {
             await this._playMediaElementAudio(sound);
         }
 
+        // the AudioBufferSourceNode does not have events (other than onended)
+        // the playbackState got removed:
+        // https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Migrating_from_webkitAudioContext#changes_to_determining_playback_state
+        // for the AudioElement we could use the play event to trigger the next two lines!?
+        // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement#events
         sound.state = PlayerSound.SOUND_STATE_PLAYING;
 
         this._triggerSoundCallbacks(sound);
@@ -663,6 +656,7 @@ export class PlayerCore {
                         sound.sourceNode.start();
                     }
                 }
+
             } catch (error) {
                 throw new Error(error);
             }
@@ -1224,6 +1218,13 @@ export class PlayerCore {
         } else {
             this.unMute();
         }
+
+    }
+
+    public async manuallyUnlockAudio() {
+
+        await this._playerAudio.unlockAudio();
+
     }
 
     public async disconnect(): Promise<void> {
