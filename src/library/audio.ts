@@ -534,15 +534,17 @@ export class PlayerAudio {
     protected async _changePlayerGainValue(gainValue: number): Promise<void> {
 
         if (this._audioNodes.gainNode instanceof GainNode) {
+
             const audioContext = await this.getAudioContext();
             const timeConstantInMilliseconds = (!isNaN(this._options.volumeTransitionTime) && this._options.volumeTransitionTime > 0) ? this._options.volumeTransitionTime : 100
             const timeConstantInSeconds = timeConstantInMilliseconds / 1000;
+
             try {
                 this._audioNodes.gainNode.gain.setTargetAtTime(gainValue, audioContext.currentTime, timeConstantInSeconds);
             } catch (error) {
                 console.error('gainValue: ' + gainValue + ' ' + error)
             }
-            
+
         }
 
     }
@@ -590,26 +592,33 @@ export class PlayerAudio {
         let volume: number;
 
         // check if volume has already been set
-        if (this._volume !== null && !isNaN(this._volume)) {
+        if (this._volume !== null) {
+
             volume = this._volume;
-        } else {
-            if (this._options.persistVolume) {
-                // if persist volume is enabled
-                // check if there already is a user volume in localstorage
-                const userVolumeInPercent = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
 
-                if (!isNaN(userVolumeInPercent)) {
-                    volume = userVolumeInPercent;
-                }
-            }
+        } else if (this._options.persistVolume) {
 
-            // if volume is not persisted
-            // or the persited value has not been set yet
-            if (typeof volume === 'undefined') {
-                volume = this._options.volume;
-            }
-            this._volume = volume;
+            // if persist volume is enabled
+            // check if there already is a user volume in localstorage
+            const userVolumeInPercent = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
+
+            volume = userVolumeInPercent;
+
         }
+
+        // if still no value, fallback to default options value
+        if (typeof volume === 'undefined' || isNaN(volume)) {
+
+            if (!isNaN(this._options.volume)) {
+                volume = this._options.volume;
+            } else {
+                volume = 80;
+                console.error('player options volume is not a number')
+            }
+            
+        }
+
+        this._volume = volume;
 
         return volume;
 
