@@ -509,21 +509,23 @@ class PlayerAudio {
     }
     getVolume() {
         let volume;
-        if (this._volume !== null && !isNaN(this._volume)) {
+        if (this._volume !== null) {
             volume = this._volume;
         }
-        else {
-            if (this._options.persistVolume) {
-                const userVolumeInPercent = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
-                if (!isNaN(userVolumeInPercent)) {
-                    volume = userVolumeInPercent;
-                }
-            }
-            if (typeof volume === 'undefined') {
+        else if (this._options.persistVolume) {
+            const userVolumeInPercent = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
+            volume = userVolumeInPercent;
+        }
+        if (typeof volume === 'undefined' || isNaN(volume)) {
+            if (!isNaN(this._options.volume)) {
                 volume = this._options.volume;
             }
-            this._volume = volume;
+            else {
+                volume = 80;
+                console.error('player options volume is not a number');
+            }
         }
+        this._volume = volume;
         return volume;
     }
     _initializeVolume(gainNode) {
