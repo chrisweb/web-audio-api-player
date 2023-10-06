@@ -232,7 +232,7 @@ export class PlayerAudio {
 
             audioElement.controls = false;
             audioElement.autoplay = false;
-            audioElement.preload = 'metadata';
+            audioElement.preload = 'auto';
             audioElement.volume = 1;
             audioElement.id = 'web-audio-api-player';
 
