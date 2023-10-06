@@ -62,6 +62,10 @@ class PlayerUI {
         // show first song data even though it is not yet loaded
         this.updateSongInfo('song1')
 
+        // in firefox it puts the handler in the middle
+        // even though the value is zero
+        this._playingProgressBar.value = '0'
+
     }
 
     public updateSongInfo(songId: string) {
