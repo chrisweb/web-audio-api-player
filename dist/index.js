@@ -70,6 +70,7 @@ class PlayerSound {
             this.id = this._generateSoundId();
         }
         this.loop = soundAttributes.loop || false;
+        this.seekPercentage = soundAttributes.seekPercentage || 0;
         if (!isNaN(soundAttributes.duration)) {
             this.duration = soundAttributes.duration;
             this.durationSetManually = true;

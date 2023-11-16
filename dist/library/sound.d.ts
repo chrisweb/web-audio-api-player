@@ -36,6 +36,7 @@ export interface ISoundAttributes {
     audioBuffer?: AudioBuffer;
     arrayBuffer?: ArrayBuffer;
     duration?: number;
+    seekPercentage: number;
     onLoading?: IOnProgress;
     onPlaying?: IOnProgress;
     onEnded?: IOnEnded;
@@ -63,7 +64,6 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     isConnectToPlayerGain: boolean;
     durationSetManually: boolean;
     elapsedPlayTime: number;
-    seekPercentage: number;
     getCurrentTime(): number;
     getDuration(): number;
     setDuration(duration: number): void;
