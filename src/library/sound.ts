@@ -49,7 +49,7 @@ export interface ISoundAttributes {
     arrayBuffer?: ArrayBuffer;
     duration?: number;
 
-    // events
+    // callbacks
     onLoading?: IOnProgress;
     onPlaying?: IOnProgress;
     onEnded?: IOnEnded;
@@ -61,6 +61,7 @@ export interface ISoundAttributes {
 }
 
 export interface ISound extends ISoundAttributes, ISoundSource {
+    // public properties
     sourceNode: AudioBufferSourceNode | MediaElementAudioSourceNode;
     gainNode: GainNode;
     isReadyToPLay: boolean;
@@ -71,13 +72,15 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     playTimeOffset: number;
     startTime: number;
     playTime: number;
-    elapsedPlayTime: number;
     playedTimePercentage: number;
     state: typeSoundStates;
     loadingProgress: number;
     firstTimePlayed: boolean;
     isConnectToPlayerGain: boolean;
     durationSetManually: boolean;
+    elapsedPlayTime: number;
+    seekPercentage: number; 
+    // methods
     getCurrentTime(): number;
     getDuration(): number;
     setDuration(duration: number): void;
@@ -93,7 +96,7 @@ export class PlayerSound implements ISound {
     static readonly SOUND_STATE_PLAYING = 'sound_state_playing';
     static readonly SOUND_STATE_SEEKING = 'sound_state_seeking';
 
-    // properties
+    // public properties
     public source: (ISoundSource)[] | ISoundSource;
     public url: string = null;
     public codec: string = null;
@@ -110,11 +113,6 @@ export class PlayerSound implements ISound {
     public audioBufferDate: Date = null;
     public playTimeOffset = 0;
     public startTime = 0;
-    // elapsedPlayTime is used to adjust the playtime
-    // when playing audio buffers
-    // on seek, pause or when there is a playTimeOffset
-    // see getCurrentTime function
-    public elapsedPlayTime = 0;
     public playTime = 0;
     public playedTimePercentage = 0;
     public state: typeSoundStates = SOUND_STATE_STOPPED;
@@ -123,7 +121,14 @@ export class PlayerSound implements ISound {
     public durationSetManually: boolean = false;
     public firstTimePlayed = true;
     public isConnectToPlayerGain = false;
-
+    // elapsedPlayTime is used to adjust the playtime
+    // when playing audio buffers
+    // on seek, pause or when there is a playTimeOffset
+    // see getCurrentTime function
+    public elapsedPlayTime = 0;
+    // the percentage to seek to
+    public seekPercentage = 0; 
+    
     // callbacks
     public onLoading: IOnProgress;
     public onPlaying: IOnProgress;
