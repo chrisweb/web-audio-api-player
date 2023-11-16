@@ -1,4 +1,4 @@
-import { ISound, ISoundAttributes, ISoundSource, typeSoundStates } from './sound';
+import { ISound, ISoundAttributes, ISoundSource } from './sound';
 import { PlayerAudio, IAudioOptions } from './audio';
 declare const PLAYER_MODE_AUDIO = "player_mode_audio";
 declare const PLAYER_MODE_AJAX = "player_mode_ajax";
@@ -26,9 +26,6 @@ export interface ICoreOptions {
 export interface ISoundsQueueOptions {
     soundAttributes: ISoundAttributes;
     whereInQueue?: typeWhereInQueue;
-}
-interface IDecodeSoundOptions {
-    sound: ISound;
 }
 export interface IPlayOptions {
     whichSound?: number | string | undefined;
@@ -80,11 +77,12 @@ export declare class PlayerCore {
     unMute(): void;
     isMuted(): boolean;
     setPosition(soundPositionInPercent: number): Promise<void>;
+    protected _setPosition(sound: ISound): void;
     setPositionInSeconds(soundPositionInSeconds: number): Promise<void>;
-    protected _loadSound(sound: ISound): Promise<void>;
+    loadSound(sound: ISound): Promise<ISound>;
     protected _loadSoundUsingAudioElement(sound: ISound): Promise<void>;
     protected _loadSoundUsingRequest(sound: ISound): Promise<void>;
-    protected _decodeSound({ sound }: IDecodeSoundOptions): Promise<void>;
+    protected _decodeSound(sound: ISound): Promise<void>;
     play({ whichSound, playTimeOffset }?: IPlayOptions): Promise<ISound>;
     protected _play(sound: ISound): Promise<void>;
     protected _playAudioBuffer(sound: ISound): Promise<void>;
@@ -99,7 +97,7 @@ export declare class PlayerCore {
     protected _checkMimeTypesSupport(mediaMimeTypes: string[]): boolean;
     pause(): Promise<ISound>;
     stop(): Promise<ISound>;
-    protected _stop(sound: ISound, soundState: typeSoundStates): Promise<void>;
+    protected _stop(sound: ISound): Promise<void>;
     next(): Promise<ISound>;
     previous(): Promise<ISound>;
     first(): Promise<ISound>;

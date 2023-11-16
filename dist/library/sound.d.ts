@@ -56,13 +56,14 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     playTimeOffset: number;
     startTime: number;
     playTime: number;
-    elapsedPlayTime: number;
     playedTimePercentage: number;
     state: typeSoundStates;
     loadingProgress: number;
     firstTimePlayed: boolean;
     isConnectToPlayerGain: boolean;
     durationSetManually: boolean;
+    elapsedPlayTime: number;
+    seekPercentage: number;
     getCurrentTime(): number;
     getDuration(): number;
     setDuration(duration: number): void;
@@ -90,7 +91,6 @@ export declare class PlayerSound implements ISound {
     audioBufferDate: Date;
     playTimeOffset: number;
     startTime: number;
-    elapsedPlayTime: number;
     playTime: number;
     playedTimePercentage: number;
     state: typeSoundStates;
@@ -99,6 +99,8 @@ export declare class PlayerSound implements ISound {
     durationSetManually: boolean;
     firstTimePlayed: boolean;
     isConnectToPlayerGain: boolean;
+    elapsedPlayTime: number;
+    seekPercentage: number;
     onLoading: IOnProgress;
     onPlaying: IOnProgress;
     onEnded: IOnEnded;
