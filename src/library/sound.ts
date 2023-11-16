@@ -48,6 +48,7 @@ export interface ISoundAttributes {
     audioBuffer?: AudioBuffer;
     arrayBuffer?: ArrayBuffer;
     duration?: number;
+    seekPercentage: number;
 
     // callbacks
     onLoading?: IOnProgress;
@@ -79,7 +80,6 @@ export interface ISound extends ISoundAttributes, ISoundSource {
     isConnectToPlayerGain: boolean;
     durationSetManually: boolean;
     elapsedPlayTime: number;
-    seekPercentage: number; 
     // methods
     getCurrentTime(): number;
     getDuration(): number;
@@ -154,6 +154,8 @@ export class PlayerSound implements ISound {
         }
 
         this.loop = soundAttributes.loop || false;
+
+        this.seekPercentage = soundAttributes.seekPercentage || 0;
 
         // the user can set the duration manually
         // this is usefull if we need to convert the position percentage into seconds but don't want to preload the song
@@ -245,7 +247,7 @@ export class PlayerSound implements ISound {
     }
 
     public getDuration(): number {
-        
+
         return this.duration;
 
     }
