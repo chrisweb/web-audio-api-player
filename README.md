@@ -310,6 +310,7 @@ player.addSoundToQueue({ soundAttributes: mySoundAttributes })
 * getAudioContext() get the current audioContext that is being used by the player [MDN audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext)
 * getCurrentSound() returns the current sound, can be useful if you want to do things in your UI like getCurrentSound().getLoop() to check if the loop feature is on or off for the current song
 * manuallyUnlockAudio() this method can be used on mobile to unlock audio, you need to call this function inside an event handler that got triggered by the user, so for example an "onClick" event could call this function to unlock audio, calling this function programmatically without any user interaction will not unlock audio, an alternative if you don't want to implement this yourself is to enable the [player option](#player-options) called **unlockAudioOnFirstUserInteraction**, for more info about this check out the chapter ["locked audio on mobile"](#locked-audio-on-mobile)
+* loadSound(sound: ISound, afterLoadingAction?: typeAfterLoadingAction) this method can be used to load a given sound, the second parameter **afterLoadingAction** is optional, if the afterLoadingAction is set to **PlayerCore.AFTER_LOADING_SEEK** then after the loading is done the sound will seek to a position defined by **sound.seekPercentage** or if set to **PlayerCore.AFTER_LOADING_PLAY** then the song will start playing after the loading has finished, if not set the sound will just get loaded, this is a helper function you don't need to trigger it manually if you have no use case that requires it, if you use play() instead then loadSound will get called automatically (with afterLoadingAction set to play) and if you use setPostion before the sound started playing then loadSound will get called automatically (with afterLoadingAction set to seek), loadSound is useful if you want to get the sound duration before the song is actually playing (as long as a sound is not loaded it's duration is not defined)
 
 ### sound attributes
 
@@ -326,6 +327,7 @@ Note: if you use typescript, import the **ISoundAttributes** interface along wit
 * audioBuffer: [AudioBuffer] (optional) if you want to inject your own custom [AudioBuffer](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer) to be used instead of the default one the player will create
 * arrayBuffer: [ArrayBuffer] (optional) if you want to inject your own custom [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) to be used instead of the default one the player will create
 * duration: [number] (optional) if you know the duration of the sound and want to tell the player about it early, in [PLAYER_MODE_AJAX](#player-modes-explained) the player will need to wait for the sound to be fully loaded until it can determine the duration
+* seekPercentage: [number] (optional) a value in percent used by the player loadSound function, if the second parameter of loadSound is set to **PlayerCore.AFTER_LOADING_SEEK** then after loading the sound will seek to the **seekPercentage** value
 
 **sound callbacks:**
 
