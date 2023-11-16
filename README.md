@@ -464,7 +464,8 @@ things I intend to add some day or if you want to help but are not sure what to 
 
 if you are interested in helping out 😊 by working on one of the following TODOs, please start by reading the ["contributing"](#contributing-prs-welcome) chapter above
 
-* add an option to the sound to allow setting a custom media element for audio element mode!? similar to arraybuffer and soundbuffer for ajax mode
+* add an option to the sound to allow setting a custom media element for audio mode!? similar to arraybuffer and soundbuffer for ajax mode
+* the player has a big limitation, the audio mode uses a single audio element, this means that playing a song and loading the next one will not work as both would share the same media (audio) element, the single media element makes it easier on mobile to unlock audio early and then play whatever song later, it would be better if each song had it's own element but the update should not break mobile unlocking
 * for audio mode, add option for songs "crossOrigin" to be set to "use-credentials" [HTML attribute: crossorigin](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/crossorigin) instead of "anonymous", "anonymous" could be kept as default value, also do the same for XHR calls (ajax mode) [XMLHttpRequest: withCredentials property](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials)
 * add a song feature to fade out (current song) / fade in (next song) maybe two new options fadeInDuration and fadeOutDuration would be enough, if the values are set we do a fade
 * add onDurationChange / onLoopChange callbacks to song(s)!?
