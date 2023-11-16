@@ -245,18 +245,8 @@ export class PlayerSound implements ISound {
     }
 
     public getDuration(): number {
-
-        let duration: number;
-
-        if (this.sourceNode !== null) {
-            if (this.sourceNode instanceof AudioBufferSourceNode) {
-                duration = this.audioBuffer.duration;
-            } else if (this.sourceNode instanceof MediaElementAudioSourceNode) {
-                duration = this.audioElement.duration;
-            }
-        }
-
-        return duration;
+        
+        return this.duration;
 
     }
 
