@@ -148,16 +148,7 @@ class PlayerSound {
         return currentTime;
     }
     getDuration() {
-        let duration;
-        if (this.sourceNode !== null) {
-            if (this.sourceNode instanceof AudioBufferSourceNode) {
-                duration = this.audioBuffer.duration;
-            }
-            else if (this.sourceNode instanceof MediaElementAudioSourceNode) {
-                duration = this.audioElement.duration;
-            }
-        }
-        return duration;
+        return this.duration;
     }
     setDuration(duration) {
         if (!isNaN(duration)) {
@@ -737,7 +728,7 @@ class PlayerCore {
                 currentSound.seekPercentage = Math.round(soundPositionInPercent);
                 const duration = currentSound.getDuration();
                 if (duration === null || isNaN(duration)) {
-                    yield this.loadSound(currentSound);
+                    yield this.loadSound(currentSound, PlayerCore.AFTER_LOADING_SEEK);
                 }
                 else {
                     this._setPosition(currentSound);
@@ -746,16 +737,19 @@ class PlayerCore {
         });
     }
     _setPosition(sound) {
-        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
-        if (currentSound !== null) {
-            const duration = currentSound.getDuration();
-            const soundPositionInSeconds = (duration / 100) * sound.seekPercentage;
-            this.setPositionInSeconds(soundPositionInSeconds);
-        }
+        const duration = sound.getDuration();
+        const soundPositionInSeconds = (duration / 100) * sound.seekPercentage;
+        this.setPositionInSeconds(soundPositionInSeconds, sound);
     }
-    setPositionInSeconds(soundPositionInSeconds) {
+    setPositionInSeconds(soundPositionInSeconds, sound) {
         return __awaiter(this, void 0, void 0, function* () {
-            const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+            let currentSound = null;
+            if (typeof sound !== 'undefined') {
+                currentSound = sound;
+            }
+            else {
+                currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+            }
             if (currentSound !== null) {
                 if (!isNaN(currentSound.duration) && (soundPositionInSeconds >= currentSound.duration)) {
                     soundPositionInSeconds = currentSound.duration - 0.1;
@@ -785,14 +779,14 @@ class PlayerCore {
             }
         });
     }
-    loadSound(sound) {
+    loadSound(sound, afterLoadingAction) {
         return __awaiter(this, void 0, void 0, function* () {
             switch (this._options.loadPlayerMode) {
                 case PlayerCore.PLAYER_MODE_AUDIO:
-                    yield this._loadSoundUsingAudioElement(sound);
+                    yield this._loadSoundUsingAudioElement(sound, afterLoadingAction);
                     break;
                 case PlayerCore.PLAYER_MODE_AJAX:
-                    yield this._loadSoundUsingRequest(sound);
+                    yield this._loadSoundUsingRequest(sound, afterLoadingAction);
                     break;
                 case PlayerCore.PLAYER_MODE_FETCH:
                     console.warn(PlayerCore.PLAYER_MODE_FETCH + ' is not implemented yet');
@@ -801,7 +795,7 @@ class PlayerCore {
             return sound;
         });
     }
-    _loadSoundUsingAudioElement(sound) {
+    _loadSoundUsingAudioElement(sound, afterLoadingAction) {
         return __awaiter(this, void 0, void 0, function* () {
             const { url, codec = null } = this._findBestSource(sound.source);
             sound.url = url;
@@ -810,10 +804,13 @@ class PlayerCore {
                 sound.audioElement = yield this._playerAudio.getAudioElement();
                 sound.audioElement.onprogress = () => {
                     if (sound.audioElement.buffered.length) {
-                        const duration = sound.getDuration();
+                        let loadingPercentage;
                         const buffered = sound.audioElement.buffered.end(0);
-                        const loadingPercentageRaw = 100 / (duration / buffered);
-                        const loadingPercentage = Math.round(loadingPercentageRaw);
+                        const duration = sound.getDuration();
+                        if (typeof duration !== 'undefined') {
+                            const loadingPercentageRaw = 100 / (duration / buffered);
+                            loadingPercentage = Math.round(loadingPercentageRaw);
+                        }
                         sound.loadingProgress = loadingPercentage;
                         if (sound.onLoading !== null) {
                             sound.onLoading(loadingPercentage, duration, buffered);
@@ -831,11 +828,11 @@ class PlayerCore {
                     if (!isNaN(sound.audioElement.duration) && !sound.durationSetManually) {
                         sound.duration = sound.audioElement.duration;
                     }
-                    switch (sound.state) {
-                        case PlayerSound.SOUND_STATE_SEEKING:
+                    switch (afterLoadingAction) {
+                        case PlayerCore.AFTER_LOADING_SEEK:
                             this._setPosition(sound);
                             break;
-                        case PlayerSound.SOUND_STATE_PLAYING:
+                        case PlayerCore.AFTER_LOADING_PLAY:
                             this._play(sound);
                             break;
                     }
@@ -850,7 +847,7 @@ class PlayerCore {
             }
         });
     }
-    _loadSoundUsingRequest(sound) {
+    _loadSoundUsingRequest(sound, afterLoadingAction) {
         return __awaiter(this, void 0, void 0, function* () {
             if (sound.arrayBuffer !== null) {
                 return yield this._decodeSound(sound);
@@ -863,18 +860,18 @@ class PlayerCore {
                 sound.isBuffering = true;
                 const arrayBuffer = yield request.getArrayBuffer(sound);
                 sound.arrayBuffer = arrayBuffer;
-                yield this._decodeSound(sound);
+                yield this._decodeSound(sound, afterLoadingAction);
             }
             else {
                 throw new Error('sound has no url');
             }
         });
     }
-    _decodeSound(sound) {
+    _decodeSound(sound, afterLoadingAction) {
         return __awaiter(this, void 0, void 0, function* () {
             const arrayBufferCopy = sound.arrayBuffer.slice(0);
             const audioBuffer = yield this._playerAudio.decodeAudio(arrayBufferCopy);
-            if (!sound.durationSetManually) {
+            if (!isNaN(audioBuffer.duration) && !sound.durationSetManually) {
                 sound.duration = audioBuffer.duration;
             }
             sound.audioBuffer = audioBuffer;
@@ -882,11 +879,11 @@ class PlayerCore {
             sound.isBuffered = true;
             sound.audioBufferDate = new Date();
             sound.isReadyToPLay = true;
-            switch (sound.state) {
-                case PlayerSound.SOUND_STATE_SEEKING:
+            switch (afterLoadingAction) {
+                case PlayerCore.AFTER_LOADING_SEEK:
                     this._setPosition(sound);
                     break;
-                case PlayerSound.SOUND_STATE_PLAYING:
+                case PlayerCore.AFTER_LOADING_PLAY:
                     this._play(sound);
                     break;
             }
@@ -928,7 +925,7 @@ class PlayerCore {
                 });
             }
             if (!sound.isReadyToPLay) {
-                yield this.loadSound(sound);
+                yield this.loadSound(sound, PlayerCore.AFTER_LOADING_PLAY);
             }
             else {
                 yield this._play(sound);
@@ -1373,6 +1370,8 @@ class PlayerCore {
 }
 PlayerCore.WHERE_IN_QUEUE_AT_END = 'append';
 PlayerCore.WHERE_IN_QUEUE_AT_START = 'prepend';
+PlayerCore.AFTER_LOADING_SEEK = 'after_loading_seek';
+PlayerCore.AFTER_LOADING_PLAY = 'after_loading_play';
 PlayerCore.PLAY_SOUND_NEXT = 'next';
 PlayerCore.PLAY_SOUND_PREVIOUS = 'previous';
 PlayerCore.PLAY_SOUND_FIRST = 'first';

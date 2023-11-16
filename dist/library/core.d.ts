@@ -5,8 +5,11 @@ declare const PLAYER_MODE_AJAX = "player_mode_ajax";
 declare const PLAYER_MODE_FETCH = "player_mode_fetch";
 declare const WHERE_IN_QUEUE_AT_START = "prepend";
 declare const WHERE_IN_QUEUE_AT_END = "append";
+declare const AFTER_LOADING_SEEK = "after_loading_seek";
+declare const AFTER_LOADING_PLAY = "after_loading_play";
 type typePlayerMode = typeof PLAYER_MODE_AUDIO | typeof PLAYER_MODE_AJAX | typeof PLAYER_MODE_FETCH;
 type typeWhereInQueue = typeof WHERE_IN_QUEUE_AT_START | typeof WHERE_IN_QUEUE_AT_END;
+type typeAfterLoadingAction = typeof AFTER_LOADING_SEEK | typeof AFTER_LOADING_PLAY;
 export interface ICoreOptions {
     volume?: number;
     loopQueue?: boolean;
@@ -52,6 +55,8 @@ export declare class PlayerCore {
     protected _options: ICoreOptions;
     static readonly WHERE_IN_QUEUE_AT_END = "append";
     static readonly WHERE_IN_QUEUE_AT_START = "prepend";
+    static readonly AFTER_LOADING_SEEK = "after_loading_seek";
+    static readonly AFTER_LOADING_PLAY = "after_loading_play";
     static readonly PLAY_SOUND_NEXT = "next";
     static readonly PLAY_SOUND_PREVIOUS = "previous";
     static readonly PLAY_SOUND_FIRST = "first";
@@ -78,11 +83,11 @@ export declare class PlayerCore {
     isMuted(): boolean;
     setPosition(soundPositionInPercent: number): Promise<void>;
     protected _setPosition(sound: ISound): void;
-    setPositionInSeconds(soundPositionInSeconds: number): Promise<void>;
-    loadSound(sound: ISound): Promise<ISound>;
-    protected _loadSoundUsingAudioElement(sound: ISound): Promise<void>;
-    protected _loadSoundUsingRequest(sound: ISound): Promise<void>;
-    protected _decodeSound(sound: ISound): Promise<void>;
+    setPositionInSeconds(soundPositionInSeconds: number, sound?: ISound): Promise<void>;
+    loadSound(sound: ISound, afterLoadingAction?: typeAfterLoadingAction): Promise<ISound>;
+    protected _loadSoundUsingAudioElement(sound: ISound, afterLoadingAction?: typeAfterLoadingAction): Promise<void>;
+    protected _loadSoundUsingRequest(sound: ISound, afterLoadingAction?: typeAfterLoadingAction): Promise<void>;
+    protected _decodeSound(sound: ISound, afterLoadingAction?: typeAfterLoadingAction): Promise<void>;
     play({ whichSound, playTimeOffset }?: IPlayOptions): Promise<ISound>;
     protected _play(sound: ISound): Promise<void>;
     protected _playAudioBuffer(sound: ISound): Promise<void>;
