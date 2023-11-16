@@ -12,8 +12,12 @@ const PLAYER_MODE_FETCH = 'player_mode_fetch';
 const WHERE_IN_QUEUE_AT_START = 'prepend';
 const WHERE_IN_QUEUE_AT_END = 'append';
 
+const AFTER_LOADING_SEEK = 'after_loading_seek';
+const AFTER_LOADING_PLAY = 'after_loading_play';
+
 type typePlayerMode = typeof PLAYER_MODE_AUDIO | typeof PLAYER_MODE_AJAX | typeof PLAYER_MODE_FETCH;
 type typeWhereInQueue = typeof WHERE_IN_QUEUE_AT_START | typeof WHERE_IN_QUEUE_AT_END;
+type typeAfterLoadingAction = typeof AFTER_LOADING_SEEK | typeof AFTER_LOADING_PLAY;
 
 export interface ICoreOptions {
     volume?: number;
@@ -81,6 +85,9 @@ export class PlayerCore {
     // constants
     static readonly WHERE_IN_QUEUE_AT_END = 'append';
     static readonly WHERE_IN_QUEUE_AT_START = 'prepend';
+
+    static readonly AFTER_LOADING_SEEK = 'after_loading_seek';
+    static readonly AFTER_LOADING_PLAY = 'after_loading_play';
 
     static readonly PLAY_SOUND_NEXT = 'next';
     static readonly PLAY_SOUND_PREVIOUS = 'previous';
@@ -293,7 +300,7 @@ export class PlayerCore {
 
                 // the user can set the sound duration manually but if he didn't the sound
                 // needs to get loaded first, to be able to know the duration it has
-                await this.loadSound(currentSound);
+                await this.loadSound(currentSound, PlayerCore.AFTER_LOADING_SEEK);
 
             } else {
 
@@ -307,24 +314,24 @@ export class PlayerCore {
 
     protected _setPosition(sound: ISound): void {
 
-        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+        const duration = sound.getDuration();
 
-        if (currentSound !== null) {
+        // calculate the position in seconds
+        const soundPositionInSeconds = (duration / 100) * sound.seekPercentage;
 
-            const duration = currentSound.getDuration();
-
-            // calculate the position in seconds
-            const soundPositionInSeconds = (duration / 100) * sound.seekPercentage;
-
-            this.setPositionInSeconds(soundPositionInSeconds);
-
-        }
+        this.setPositionInSeconds(soundPositionInSeconds, sound);
 
     }
 
-    public async setPositionInSeconds(soundPositionInSeconds: number): Promise<void> {
+    public async setPositionInSeconds(soundPositionInSeconds: number, sound?: ISound): Promise<void> {
 
-        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+        let currentSound: ISound = null;
+
+        if (typeof sound !== 'undefined') {
+            currentSound = sound;
+        } else {
+            currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+        }
 
         if (currentSound !== null) {
 
@@ -377,14 +384,14 @@ export class PlayerCore {
 
     }
 
-    public async loadSound(sound: ISound): Promise<ISound> {
+    public async loadSound(sound: ISound, afterLoadingAction?: typeAfterLoadingAction): Promise<ISound> {
 
         switch (this._options.loadPlayerMode) {
             case PlayerCore.PLAYER_MODE_AUDIO:
-                await this._loadSoundUsingAudioElement(sound);
+                await this._loadSoundUsingAudioElement(sound, afterLoadingAction);
                 break;
             case PlayerCore.PLAYER_MODE_AJAX:
-                await this._loadSoundUsingRequest(sound);
+                await this._loadSoundUsingRequest(sound, afterLoadingAction);
                 break;
             case PlayerCore.PLAYER_MODE_FETCH:
                 // TODO: implement fetch (?)
@@ -396,7 +403,7 @@ export class PlayerCore {
 
     }
 
-    protected async _loadSoundUsingAudioElement(sound: ISound): Promise<void> {
+    protected async _loadSoundUsingAudioElement(sound: ISound, afterLoadingAction?: typeAfterLoadingAction): Promise<void> {
 
         // extract the url and codec from sources
         const { url, codec = null } = this._findBestSource(sound.source);
@@ -414,10 +421,15 @@ export class PlayerCore {
 
                 if (sound.audioElement.buffered.length) {
 
-                    const duration = sound.getDuration()
-                    const buffered = sound.audioElement.buffered.end(0)
-                    const loadingPercentageRaw = 100 / (duration / buffered);
-                    const loadingPercentage = Math.round(loadingPercentageRaw);
+                    let loadingPercentage: number;
+
+                    const buffered = sound.audioElement.buffered.end(0);
+                    const duration = sound.getDuration();
+
+                    if (typeof duration !== 'undefined') {
+                        const loadingPercentageRaw = 100 / (duration / buffered);
+                        loadingPercentage = Math.round(loadingPercentageRaw);
+                    }
 
                     sound.loadingProgress = loadingPercentage;
 
@@ -446,11 +458,11 @@ export class PlayerCore {
                     sound.duration = sound.audioElement.duration;
                 }
 
-                switch (sound.state) {
-                    case PlayerSound.SOUND_STATE_SEEKING:
+                switch (afterLoadingAction) {
+                    case PlayerCore.AFTER_LOADING_SEEK:
                         this._setPosition(sound)
                         break;
-                    case PlayerSound.SOUND_STATE_PLAYING:
+                    case PlayerCore.AFTER_LOADING_PLAY:
                         this._play(sound);
                         break;
                 }
@@ -480,7 +492,7 @@ export class PlayerCore {
 
     }
 
-    protected async _loadSoundUsingRequest(sound: ISound): Promise<void> {
+    protected async _loadSoundUsingRequest(sound: ISound, afterLoadingAction?: typeAfterLoadingAction): Promise<void> {
 
         // check for audio buffer before array buffer, because if one exist the other
         // should exist too and is better for performance to reuse audio buffer then
@@ -512,7 +524,7 @@ export class PlayerCore {
             const arrayBuffer = await request.getArrayBuffer(sound);
             sound.arrayBuffer = arrayBuffer;
 
-            await this._decodeSound(sound);
+            await this._decodeSound(sound, afterLoadingAction);
 
         } else {
 
@@ -522,7 +534,7 @@ export class PlayerCore {
 
     }
 
-    protected async _decodeSound(sound: ISound): Promise<void> {
+    protected async _decodeSound(sound: ISound, afterLoadingAction?: typeAfterLoadingAction): Promise<void> {
 
         // make a copy of the array buffer first
         // because the decoding will detach the array buffer
@@ -531,8 +543,9 @@ export class PlayerCore {
 
         const audioBuffer = await this._playerAudio.decodeAudio(arrayBufferCopy);
 
-        // only update duration if it did not get set manually
-        if (!sound.durationSetManually) {
+        // duration should now be available
+        // if it got set manually don't overwrite it
+        if (!isNaN(audioBuffer.duration) && !sound.durationSetManually) {
             sound.duration = audioBuffer.duration;
         }
 
@@ -542,11 +555,11 @@ export class PlayerCore {
         sound.audioBufferDate = new Date();
         sound.isReadyToPLay = true;
 
-        switch (sound.state) {
-            case PlayerSound.SOUND_STATE_SEEKING:
+        switch (afterLoadingAction) {
+            case PlayerCore.AFTER_LOADING_SEEK:
                 this._setPosition(sound)
                 break;
-            case PlayerSound.SOUND_STATE_PLAYING:
+            case PlayerCore.AFTER_LOADING_PLAY:
                 this._play(sound);
                 break;
         }
@@ -614,7 +627,7 @@ export class PlayerCore {
 
         if (!sound.isReadyToPLay) {
 
-            await this.loadSound(sound);
+            await this.loadSound(sound, PlayerCore.AFTER_LOADING_PLAY);
 
         } else {
 
