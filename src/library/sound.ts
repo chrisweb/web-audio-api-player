@@ -48,7 +48,7 @@ export interface ISoundAttributes {
     audioBuffer?: AudioBuffer;
     arrayBuffer?: ArrayBuffer;
     duration?: number;
-    seekPercentage: number;
+    seekPercentage?: number;
 
     // callbacks
     onLoading?: IOnProgress;
