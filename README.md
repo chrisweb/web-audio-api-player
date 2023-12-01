@@ -61,8 +61,8 @@ const options: ICoreOptions = {
 
 > [!NOTE]  
 > the **soundsBaseUrl** is the first option we set, it will tell the player what the full URL for the songs source is (for example <https://www.example.com/songs/>) or if the player and songs are hosted on the same domain the path is enough, **loopQueue** by default is set to false, I enable it here, this means that at the end of a queue (a playlist) the player won't stop but instead go back to the first song and play that song
-
-Note 2: for a full list of all available player options check out the [player options chapter](#player-options)
+>
+> for a full list of all available player options check out the [player options chapter](#player-options)
 
 next we initialize the player using our options object and get a player instance in return:
 
