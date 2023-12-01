@@ -59,7 +59,8 @@ const options: ICoreOptions = {
 }
 ```
 
-Note: the **soundsBaseUrl** is the first option we set, it will tell the player what the full URL for the songs source is (for example <https://www.example.com/songs/>) or if the player and songs are hosted on the same domain the path is enough, **loopQueue** by default is set to false, I enable it here, this means that at the end of a queue (a playlist) the player won't stop but instead go back to the first song and play that song
+> [!NOTE]  
+> the **soundsBaseUrl** is the first option we set, it will tell the player what the full URL for the songs source is (for example <https://www.example.com/songs/>) or if the player and songs are hosted on the same domain the path is enough, **loopQueue** by default is set to false, I enable it here, this means that at the end of a queue (a playlist) the player won't stop but instead go back to the first song and play that song
 
 Note 2: for a full list of all available player options check out the [player options chapter](#player-options)
 
@@ -90,7 +91,8 @@ const firstSongAttributes: ISoundAttributes = {
 
 the only two attributes that are mandatory are the source array and the sound id, the source only needs one entry but for demonstration purposes I added two here, the first one is the song encoded as an mp3 and the second source is the same song but this time it has is encoded using the ogg codec, a third source option is **isPreferred**, it tells the player that if the browser has support for both codecs but that it should preferably use ogg over mp3, the id can be any numeric value, it can be useful if you have additional song data stored somewhere, for example if you have the related band name info, the songs music genre and so on, for example stored in a database and want to display that data in the UI while the song is being played
 
-Note: for a full list of all available sound attributes check out the [sound attributes chapter](#sound-attributes)
+> [!TIP]  
+> for a full list of all available sound attributes check out the [sound attributes chapter](#sound-attributes)
 
 after we have set the attributes for our first song we pass these attributes to the player queue:
 
@@ -167,7 +169,8 @@ or you want the queue to make a loop when the last song in the player queue (you
 player.setLoopQueue(true)
 ```
 
-Note: all of these setters have a corresponding getter, so if you want to now what the current value is, for example if you want to know what the current volume is set to:
+> [!NOTE]  
+> all of these setters have a corresponding getter, so if you want to now what the current value is, for example if you want to know what the current volume is set to:
 
 ```ts
 const volume = player.getVolume(volume)
@@ -219,7 +222,8 @@ const onChangePositionHandler = (positionInPercent: number): void => {
 
 ### player options
 
-Note: if you use typescript, import the **ICoreOptions** interface along with the playerCore, this makes it a lot easier to see what player options are available and what the type of each value is
+> [!TIP]  
+> if you use typescript, import the **ICoreOptions** interface along with the playerCore, this makes it a lot easier to see what player options are available and what the type of each value is
 
 * volume: [number] (default: 80) the current playback volume
 * loopQueue: [boolean] (default: false) after the last sound in the queue has finished to play should the player do a loop and continue to play by playing the first sound or stop playing
@@ -237,7 +241,8 @@ Note: if you use typescript, import the **ICoreOptions** interface along with th
 
 ### player functions
 
-Note: all player functions a promise, I recommend using a try catch and await the promise or call promise.catch to fetch eventual errors thrown by the player, like so:
+> [!TIP]  
+> all player functions return a promise, I recommend using a try catch and await the promise or call promise.catch to fetch eventual errors thrown by the player, like so:
 
 ```ts
 async function foo(): Promise<void> {
@@ -270,7 +275,8 @@ IPlayOptions {
 }
 ```
 
-Note: the playTimeOffset (if set) will always get honored, so if you want to resume after a pause don't set the playTimeOffset, if playTimeOffset is set the song will start at the specified position, if no playTimeOffset is set the player will use the songs playTime value, which is 0 for a song that gets played for the first time or a value > 0 for a song that was paused
+> [!NOTE]  
+> the playTimeOffset (if set) will always get honored, so if you want to resume after a pause don't set the playTimeOffset, if playTimeOffset is set the song will start at the specified position, if no playTimeOffset is set the player will use the songs playTime value, which is 0 for a song that gets played for the first time or a value > 0 for a song that was paused
 
 * pause() **pauses playback**, returns a promise that when resolved returns the current sound
 * stop() **stops playback**, returns a promise that when resolved returns the current sound
@@ -314,7 +320,8 @@ player.addSoundToQueue({ soundAttributes: mySoundAttributes })
 
 ### sound attributes
 
-Note: if you use typescript, import the **ISoundAttributes** interface along with the playerCore, this makes it a lot easier to see what sound attributes are available and what the type of each value is
+> [!TIP]  
+> if you use typescript, import the **ISoundAttributes** interface along with the playerCore, this makes it a lot easier to see what sound attributes are available and what the type of each value is
 
 **sound options:**
 
@@ -353,13 +360,17 @@ Note: if you use typescript, import the **ISoundAttributes** interface along wit
 
 All mobile browsers prevent playing sounds (songs) if no user gesture has happened yet. This means that on mobile you can NOT play sounds (songs) programmatically (this is also the reason why the autoplay attribute on an audio element does not auto play a song on mobile and also the reason videos will only autoplay if they are muted)
 
-Note: If the user clicks on a play button and call player.play() then audio will play just fine, this chapter is about audio not playing when calling player.play() before the user interacted with the page (app)
+> [!NOTE]  
+> If the user clicks on a play button and call player.play() then audio will play just fine, this chapter is about audio not playing when calling player.play() before the user interacted with the page (app)
 
 If you attempt play a sound (song) on mobile programmatically (before a user interaction) then the mobile browser will throw a **NotAllowedError** error:
 
 > The request is not allowed by the user agent or the platform in the current context, possibly because the user denied permission (No legacy code value and constant name).
 
-Note: iOS (iPhone) and android mobile devices will throw that error, in the past iPad tablets would throw an error too, however newer versions are considered a desktop device and do not need throw an error
+so if you encounter this error on iOS (iPhone) and android mobile devices, then it means that you tried to play the sound programmatically before the browser got "unlocked" by a user interaction
+
+> [!NOTE]  
+> in the past iPad tablets would throw an error too, however newer versions are considered a desktop device and do not need throw an error
 
 There is however a trick to unlock audio on mobile, the trick is to listen for events like a user clicking on something in your page and use that interaction to play a silent sound for a brief moment, after that audio will be unlocked and you will be able to trigger the play function at any time programmatically to play the song you want (even if it is not a direct action initiated by the user)
 
@@ -371,7 +382,8 @@ the web-audio-player has two options to unlock audio on mobile:
 
 ### player modes explained
 
-Note: You might have read (like I did) a lot of outdated web audio articles which stated the web audio element lacks a lot of features the web audio API and that hence it is not suited to create complex audio software or for example be used in games where you might want to add effects and filters to sounds. This is not true anymore and especially not true for this library. Yes the audio element if used as a standalone lacks a lot of features. But this library does combine the web audio element with the web audio API, meaning that no matter what mode you chose the sound will be converted to an AudioSourceNode.
+> [!NOTE]  
+> You might have read (like I did) a lot of outdated web audio articles which stated the web audio element lacks a lot of features the web audio API and that hence it is not suited to create complex audio software or for example be used in games where you might want to add effects and filters to sounds. This is not true anymore and especially not true for this library. Yes the audio element if used as a standalone lacks a lot of features. But this library does combine the web audio element with the web audio API, meaning that no matter what mode you chose the sound will be converted to an AudioSourceNode.
 
 If you use this library, you have two player modes you can chose to use, the main difference is how the sound (song) gets loaded:
 
