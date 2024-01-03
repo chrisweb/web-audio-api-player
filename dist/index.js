@@ -570,6 +570,7 @@ class PlayerRequest {
 
 const PLAYER_MODE_AUDIO = 'player_mode_audio';
 const WHERE_IN_QUEUE_AT_END = 'append';
+const VISIBILITY_HIDDEN_ACTION_PAUSE = 'visibility_hidden_action_pause';
 class PlayerCore {
     constructor(playerOptions = {}) {
         this._playingProgressRequestId = null;
@@ -606,7 +607,8 @@ class PlayerCore {
             playingProgressIntervalTime: 200,
             playNextOnEnded: true,
             stopOnReset: true,
-            visibilityAutoMute: false,
+            visibilityWatch: false,
+            visibilityHiddenAction: VISIBILITY_HIDDEN_ACTION_PAUSE,
             unlockAudioOnFirstUserInteraction: false,
             persistVolume: true,
             loadPlayerMode: PLAYER_MODE_AUDIO,
@@ -1315,17 +1317,23 @@ class PlayerCore {
             return yield this.play({ whichSound: PlayerCore.PLAY_SOUND_LAST });
         });
     }
-    setVisibilityAutoMute(visibilityAutoMute) {
-        this._options.visibilityAutoMute = visibilityAutoMute;
-        if (visibilityAutoMute) {
+    setVisibilityWatch(visibilityWatch) {
+        this._options.visibilityWatch = visibilityWatch;
+        if (visibilityWatch) {
             document.addEventListener('visibilitychange', this._handleVisibilityChange.bind(this), false);
         }
         else {
             document.removeEventListener('visibilitychange', this._handleVisibilityChange.bind(this), false);
         }
     }
-    getVisibilityAutoMute() {
-        return this._options.visibilityAutoMute;
+    getVisibilityWatch() {
+        return this._options.visibilityWatch;
+    }
+    setVisibilityHiddenAction(visibilityHiddenAction) {
+        this._options.visibilityHiddenAction = visibilityHiddenAction;
+    }
+    getVisibilityHiddenAction() {
+        return this._options.visibilityHiddenAction;
     }
     _handleVisibilityChange() {
         let hiddenKeyword;
@@ -1339,10 +1347,20 @@ class PlayerCore {
             hiddenKeyword = 'webkitHidden';
         }
         if (document[hiddenKeyword]) {
-            this.mute();
+            if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE) {
+                this.pause();
+            }
+            else {
+                this.mute();
+            }
         }
         else {
-            this.unMute();
+            if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE) {
+                this.play();
+            }
+            else {
+                this.unMute();
+            }
         }
     }
     manuallyUnlockAudio() {
@@ -1381,6 +1399,8 @@ PlayerCore.CURRENT_SOUND = 'current';
 PlayerCore.PLAYER_MODE_AUDIO = 'player_mode_audio';
 PlayerCore.PLAYER_MODE_AJAX = 'player_mode_ajax';
 PlayerCore.PLAYER_MODE_FETCH = 'player_mode_fetch';
+PlayerCore.VISIBILITY_HIDDEN_ACTION_MUTE = 'visibility_hidden_action_mute';
+PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE = 'visibility_hidden_action_pause';
 
 export { PlayerCore, PlayerSound };
 //# sourceMappingURL=index.js.map

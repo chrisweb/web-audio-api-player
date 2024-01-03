@@ -7,9 +7,12 @@ declare const WHERE_IN_QUEUE_AT_START = "prepend";
 declare const WHERE_IN_QUEUE_AT_END = "append";
 declare const AFTER_LOADING_SEEK = "after_loading_seek";
 declare const AFTER_LOADING_PLAY = "after_loading_play";
+declare const VISIBILITY_HIDDEN_ACTION_MUTE = "visibility_hidden_action_mute";
+declare const VISIBILITY_HIDDEN_ACTION_PAUSE = "visibility_hidden_action_pause";
 type typePlayerMode = typeof PLAYER_MODE_AUDIO | typeof PLAYER_MODE_AJAX | typeof PLAYER_MODE_FETCH;
 type typeWhereInQueue = typeof WHERE_IN_QUEUE_AT_START | typeof WHERE_IN_QUEUE_AT_END;
 type typeAfterLoadingAction = typeof AFTER_LOADING_SEEK | typeof AFTER_LOADING_PLAY;
+type typeVisibilityHiddenAction = typeof VISIBILITY_HIDDEN_ACTION_MUTE | typeof VISIBILITY_HIDDEN_ACTION_PAUSE;
 export interface ICoreOptions {
     volume?: number;
     loopQueue?: boolean;
@@ -18,7 +21,8 @@ export interface ICoreOptions {
     playingProgressIntervalTime?: number;
     playNextOnEnded?: boolean;
     stopOnReset?: boolean;
-    visibilityAutoMute?: boolean;
+    visibilityWatch?: boolean;
+    visibilityHiddenAction?: typeVisibilityHiddenAction;
     unlockAudioOnFirstUserInteraction?: boolean;
     persistVolume?: boolean;
     loadPlayerMode?: typePlayerMode;
@@ -65,6 +69,8 @@ export declare class PlayerCore {
     static readonly PLAYER_MODE_AUDIO = "player_mode_audio";
     static readonly PLAYER_MODE_AJAX = "player_mode_ajax";
     static readonly PLAYER_MODE_FETCH = "player_mode_fetch";
+    static readonly VISIBILITY_HIDDEN_ACTION_MUTE = "visibility_hidden_action_mute";
+    static readonly VISIBILITY_HIDDEN_ACTION_PAUSE = "visibility_hidden_action_pause";
     constructor(playerOptions?: ICoreOptions);
     protected _initialize(): void;
     protected _audioOptions(): IAudioOptions;
@@ -107,8 +113,10 @@ export declare class PlayerCore {
     previous(): Promise<ISound>;
     first(): Promise<ISound>;
     last(): Promise<ISound>;
-    setVisibilityAutoMute(visibilityAutoMute: boolean): void;
-    getVisibilityAutoMute(): boolean;
+    setVisibilityWatch(visibilityWatch: boolean): void;
+    getVisibilityWatch(): boolean;
+    setVisibilityHiddenAction(visibilityHiddenAction: typeVisibilityHiddenAction): void;
+    getVisibilityHiddenAction(): typeVisibilityHiddenAction;
     protected _handleVisibilityChange(): void;
     manuallyUnlockAudio(): Promise<void>;
     disconnect(): Promise<void>;
