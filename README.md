@@ -157,10 +157,16 @@ let volume = 90
 player.setVolume(volume)
 ```
 
-or you want to player to be muted when the browser of the user goes into the background then you can still enable the option:
+or you want to player to pause playing (or mute depending on what action you chose) the current song when the browser / app gets put into the background, then you can enable the option like this:
 
 ```ts
-player.setVisibilityAutoMute(true)
+player.setVisibilityWatch(true)
+```
+
+to change what happens when the visibility API detects that the player is hidden, you can use the following setter:
+
+```ts
+player.setVisibilityHiddenAction(PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE) // or PlayerCore.VISIBILITY_HIDDEN_ACTION_MUTE
 ```
 
 or you want the queue to make a loop when the last song in the player queue (your playlist) finishes playing, then you would enable / disable it like this:
@@ -231,7 +237,8 @@ const onChangePositionHandler = (positionInPercent: number): void => {
 * playingProgressIntervalTime: [number] (default: 200) the interval in milliseconds at which the player should trigger a sounds **onPlaying** callback which will tell you the playing progress in percent, this value is a minimum value because the player uses the [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) internally, meaning that if the browser is very busy it might take a bit longer than the defined interval time before the progress value is being reported, this helps to prevent that your UI uses resources that are needed more urgently somewhere else
 * playNextOnEnded: [boolean] (default: true) when a sound or song finishes playing should the player play the next sound that is in the queue or just stop playing
 * stopOnReset: [boolean] (default: true) when the queue gets reset and a sound is currently being played, should the player stop or continue playing that sound
-* visibilityAutoMute: [boolean] (default: false) tells the player if a sound is playing and the visibility API triggers a visibility change event, if the currently playing sound should get muted or not, uses the [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) internally
+* visibilityWatch: [boolean] (default: false) tells the player that if a sound is playing and the visibility API triggers a visibility change event, then the sound should get paused or muted (depending on what action is set to get executed on visibility is hidden), uses the [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) internally
+* visibilityHiddenAction: [typeVisibilityHiddenAction] (default: VISIBILITY_HIDDEN_ACTION_PAUSE) chose what action should get executed on visibility is hidden, if set to **VISIBILITY_HIDDEN_ACTION_PAUSE** the sound will get paused on visibility hidden and will start playing again when the visibility API triggers an event that tells the player that it is visible again, if set to **VISIBILITY_HIDDEN_ACTION_MUTE** the song will continue to play but the player will get muted on visibility hidden and unmuted when it becomes visible again
 * unlockAudioOnFirstUserInteraction: [boolean] (default: false) this tells the player to attempt to unlock audio as soon as possible, so that you can call the player play() method programmatically at any time, if you don't want to the player to handle this part and prefer to do it manually then you can use the [player function](#player-functions) called **manuallyUnlockAudio()**, for more info about this check out the chapter ["locked audio on mobile"](#locked-audio-on-mobile)
 * persistVolume: [boolean] (default: true) if this value is set to true the player will use the localstorage of the browser and save the value of the volume (localstorage entry key is **WebAudioAPIPlayerVolume**), if the page gets reloaded or the user comes back later the player will check if there is a value in the localstorage and automatically set the player volume to that value
 * loadPlayerMode: [typePlayerModes] (default: PLAYER_MODE_AUDIO) this is a constant you can import from player, currently you can choose between two modes, [PLAYER_MODE_AUDIO](#player-modes-explained) which uses the audio element to load sounds via the audio element and [PLAYER_MODE_AJAX](#player-modes-explained) to load sounds via the web audio API, for more info about the modes read the [player modes explained](#player-modes-explained) chapter
@@ -310,8 +317,10 @@ player.addSoundToQueue({ soundAttributes: mySoundAttributes })
 * isMuted() a boolean value, true if the volume is currently muted else false
 * setPosition(soundPositionInPercent: number) used to change the position of the song that is currently playing in percent, so a number ranging from 0 to 100, returns a promise
 * setPositionInSeconds(soundPositionInSeconds: number): used to change the position of the song that is currently playing in seconds, the number should be smaller than the duration of the song, returns a promise
-* setVisibilityAutoMute(visibilityAutoMute: boolean) a boolean value to change the **visibilityAutoMute** option of the player, if true the player will be muted when the visibility API [MDN visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) notices that the browser is in the background, will get unmuted when the visibility API notices that the browser is in the foreground again, if false the volume will not be automatically muted when the visibility changes
-* getVisibilityAutoMute() get the current boolean value that is set for the **visibilityAutoMute** option
+* setVisibilityWatch(visibilityWatch: boolean) a boolean value to change the **visibilityWatch** option of the player, if true the player will be paused / muted when the visibility API [MDN visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) triggers an event that tells the player that the browser / app is in the background, will start playing again or get unmuted when the visibility API notices that the browser is in the foreground again, if false visibility changes will get ignored by the player
+* getVisibilityWatch() get the current boolean value that is set for the **visibilityWatch** option
+* setVisibilityHiddenAction(visibilityHiddenAction: typeVisibilityHiddenAction) change what action will get executed when the visibility API detects that the player is hidden / visible again, see [player option](#player-options) for more details
+* getVisibilityHiddenAction() get the current action that is set for the **visibilityHiddenAction** option
 * disconnect() disconnects the player and destroys all songs in the queue, this function should get called for example in react when a component unmounts, call this function when you don't need the player anymore to free memory
 * getAudioContext() get the current audioContext that is being used by the player [MDN audiocontext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext)
 * getCurrentSound() returns the current sound, can be useful if you want to do things in your UI like getCurrentSound().getLoop() to check if the loop feature is on or off for the current song
