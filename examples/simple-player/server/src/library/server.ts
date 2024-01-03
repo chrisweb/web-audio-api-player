@@ -38,6 +38,7 @@ export class Server {
 
         this.application.use('/client', express.static(ROOTPATH + '/../client/build'));
         this.application.use('/dist', express.static(ROOTPATH + '/../../../dist'));
+        this.application.use('/static', express.static(ROOTPATH + '/../../../assets'));
 
         // streaming songs
         this.application.get('/music/:song', (request: express.Request, response: express.Response) => {
