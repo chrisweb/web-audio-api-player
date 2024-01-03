@@ -82,8 +82,10 @@ export class PlayerCore {
     protected _playingProgressRequestId: number = null;
     // time in milliseconds
     protected _playingProgressPreviousTimestamp: DOMHighResTimeStamp;
-    // value of the volume before we muted
+    // value of the volume before it got muted
     protected _postMuteVolume: number = null;
+    // is playing before visibility is hidden event
+    protected _postVisibilityHiddenPlaying: boolean = null;
     // user player options
     protected _options: ICoreOptions;
 
@@ -1279,15 +1281,29 @@ export class PlayerCore {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((document as any)[hiddenKeyword]) {
+
             if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE) {
-                this.pause();
-            } else {
+
+                const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+
+                if (currentSound === null) {
+                    return;
+                }
+        
+                if (currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
+                    this.pause();
+                    this._postVisibilityHiddenPlaying = true;
+                } else {
+                    this._postVisibilityHiddenPlaying = false;
+                }
+
+            } else if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_MUTE) {
                 this.mute();
             }
         } else {
-            if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE) {
+            if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE && this._postVisibilityHiddenPlaying === true) {
                 this.play();
-            } else {
+            } else if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_MUTE) {
                 this.unMute();
             }
         }
