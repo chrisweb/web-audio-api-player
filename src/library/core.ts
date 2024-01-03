@@ -15,9 +15,13 @@ const WHERE_IN_QUEUE_AT_END = 'append';
 const AFTER_LOADING_SEEK = 'after_loading_seek';
 const AFTER_LOADING_PLAY = 'after_loading_play';
 
+const VISIBILITY_HIDDEN_ACTION_MUTE = 'visibility_hidden_action_mute';
+const VISIBILITY_HIDDEN_ACTION_PAUSE = 'visibility_hidden_action_pause';
+
 type typePlayerMode = typeof PLAYER_MODE_AUDIO | typeof PLAYER_MODE_AJAX | typeof PLAYER_MODE_FETCH;
 type typeWhereInQueue = typeof WHERE_IN_QUEUE_AT_START | typeof WHERE_IN_QUEUE_AT_END;
 type typeAfterLoadingAction = typeof AFTER_LOADING_SEEK | typeof AFTER_LOADING_PLAY;
+type typeVisibilityHiddenAction = typeof VISIBILITY_HIDDEN_ACTION_MUTE | typeof VISIBILITY_HIDDEN_ACTION_PAUSE;
 
 export interface ICoreOptions {
     volume?: number;
@@ -27,7 +31,8 @@ export interface ICoreOptions {
     playingProgressIntervalTime?: number;
     playNextOnEnded?: boolean;
     stopOnReset?: boolean;
-    visibilityAutoMute?: boolean;
+    visibilityWatch?: boolean;
+    visibilityHiddenAction?: typeVisibilityHiddenAction;
     unlockAudioOnFirstUserInteraction?: boolean;
     persistVolume?: boolean;
     loadPlayerMode?: typePlayerMode;
@@ -100,6 +105,9 @@ export class PlayerCore {
     static readonly PLAYER_MODE_AJAX = 'player_mode_ajax';
     static readonly PLAYER_MODE_FETCH = 'player_mode_fetch';
 
+    static readonly VISIBILITY_HIDDEN_ACTION_MUTE = 'visibility_hidden_action_mute';
+    static readonly VISIBILITY_HIDDEN_ACTION_PAUSE = 'visibility_hidden_action_pause';
+
     constructor(playerOptions: ICoreOptions = {}) {
 
         const defaultOptions: ICoreOptions = {
@@ -110,7 +118,8 @@ export class PlayerCore {
             playingProgressIntervalTime: 200,
             playNextOnEnded: true,
             stopOnReset: true,
-            visibilityAutoMute: false,
+            visibilityWatch: false,
+            visibilityHiddenAction: VISIBILITY_HIDDEN_ACTION_PAUSE,
             unlockAudioOnFirstUserInteraction: false,
             persistVolume: true,
             loadPlayerMode: PLAYER_MODE_AUDIO,
@@ -1227,11 +1236,11 @@ export class PlayerCore {
 
     }
 
-    public setVisibilityAutoMute(visibilityAutoMute: boolean): void {
+    public setVisibilityWatch(visibilityWatch: boolean): void {
 
-        this._options.visibilityAutoMute = visibilityAutoMute;
+        this._options.visibilityWatch = visibilityWatch;
 
-        if (visibilityAutoMute) {
+        if (visibilityWatch) {
             document.addEventListener('visibilitychange', this._handleVisibilityChange.bind(this), false);
         } else {
             document.removeEventListener('visibilitychange', this._handleVisibilityChange.bind(this), false);
@@ -1239,8 +1248,16 @@ export class PlayerCore {
 
     }
 
-    public getVisibilityAutoMute(): boolean {
-        return this._options.visibilityAutoMute;
+    public getVisibilityWatch(): boolean {
+        return this._options.visibilityWatch;
+    }
+
+    public setVisibilityHiddenAction(visibilityHiddenAction: typeVisibilityHiddenAction): void {
+        this._options.visibilityHiddenAction = visibilityHiddenAction;
+    }
+
+    public getVisibilityHiddenAction(): typeVisibilityHiddenAction {
+        return this._options.visibilityHiddenAction;
     }
 
     protected _handleVisibilityChange(): void {
@@ -1262,9 +1279,17 @@ export class PlayerCore {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((document as any)[hiddenKeyword]) {
-            this.mute();
+            if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE) {
+                this.pause();
+            } else {
+                this.mute();
+            }
         } else {
-            this.unMute();
+            if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE) {
+                this.play();
+            } else {
+                this.unMute();
+            }
         }
 
     }
