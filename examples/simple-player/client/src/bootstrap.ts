@@ -25,8 +25,10 @@ const options: ICoreOptions = {
 const player = new PlayerCore(options)
 
 // several functions are available to change options even after the player got initialized
-// for example here we turn the automute feature on (if the browser (app) is put in the background, the player will get muted and when it comes back the player will get unmuted)  
-player.setVisibilityAutoMute(true)
+// for example here we turn the visibility watch feature on (if the browser (app) is put in the background, the player will get paused or muted and when it comes back the player will start playing again or be unmuted)  
+player.setVisibilityWatch(true)
+// we can also change what action gets performed (pausing the song or just muting the player) when the visibility api detects that the player is hidden
+player.setVisibilityHiddenAction(PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE)
 
 // songs data (fetched from a database or any storage)
 const myPlaylist = [
