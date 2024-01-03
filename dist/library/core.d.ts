@@ -56,6 +56,7 @@ export declare class PlayerCore {
     protected _playingProgressRequestId: number;
     protected _playingProgressPreviousTimestamp: DOMHighResTimeStamp;
     protected _postMuteVolume: number;
+    protected _postVisibilityHiddenPlaying: boolean;
     protected _options: ICoreOptions;
     static readonly WHERE_IN_QUEUE_AT_END = "append";
     static readonly WHERE_IN_QUEUE_AT_START = "prepend";

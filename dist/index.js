@@ -575,6 +575,7 @@ class PlayerCore {
     constructor(playerOptions = {}) {
         this._playingProgressRequestId = null;
         this._postMuteVolume = null;
+        this._postVisibilityHiddenPlaying = null;
         this._progressTrigger = (sound, timestamp) => {
             const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
             if (sound.id !== currentSound.id || currentSound.state !== PlayerSound.SOUND_STATE_PLAYING) {
@@ -1348,17 +1349,27 @@ class PlayerCore {
         }
         if (document[hiddenKeyword]) {
             if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE) {
-                this.pause();
+                const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+                if (currentSound === null) {
+                    return;
+                }
+                if (currentSound.state === PlayerSound.SOUND_STATE_PLAYING) {
+                    this.pause();
+                    this._postVisibilityHiddenPlaying = true;
+                }
+                else {
+                    this._postVisibilityHiddenPlaying = false;
+                }
             }
-            else {
+            else if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_MUTE) {
                 this.mute();
             }
         }
         else {
-            if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE) {
+            if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE && this._postVisibilityHiddenPlaying === true) {
                 this.play();
             }
-            else {
+            else if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_MUTE) {
                 this.unMute();
             }
         }
