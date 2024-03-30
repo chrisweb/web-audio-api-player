@@ -484,8 +484,8 @@ class PlayerAudio {
             }
         });
     }
-    setVolume(volume, forceUpdateUserVolume = true) {
-        return __awaiter(this, void 0, void 0, function* () {
+    setVolume(volume_1) {
+        return __awaiter(this, arguments, void 0, function* (volume, forceUpdateUserVolume = true) {
             if (this._options.persistVolume && forceUpdateUserVolume) {
                 localStorage.setItem('WebAudioAPIPlayerVolume', volume.toString());
             }
@@ -893,8 +893,8 @@ class PlayerCore {
             }
         });
     }
-    play({ whichSound, playTimeOffset } = {}) {
-        return __awaiter(this, void 0, void 0, function* () {
+    play() {
+        return __awaiter(this, arguments, void 0, function* ({ whichSound, playTimeOffset } = {}) {
             const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
             const sound = this._getSoundFromQueue({ whichSound, updateIndex: true });
             if (sound === null) {
