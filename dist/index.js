@@ -807,6 +807,9 @@ class PlayerCore {
             if (sound.url !== null) {
                 sound.audioElement = yield this._playerAudio.getAudioElement();
                 sound.audioElement.onprogress = () => {
+                    if (!sound.audioElement) {
+                        return;
+                    }
                     if (sound.audioElement.buffered.length) {
                         let loadingPercentage;
                         const buffered = sound.audioElement.buffered.end(0);
@@ -827,6 +830,9 @@ class PlayerCore {
                     }
                 };
                 const canPlayThroughHandler = () => __awaiter(this, void 0, void 0, function* () {
+                    if (!sound.audioElement) {
+                        return;
+                    }
                     sound.audioElement.removeEventListener('canplaythrough', canPlayThroughHandler);
                     sound.isReadyToPLay = true;
                     if (!isNaN(sound.audioElement.duration) && !sound.durationSetManually) {

@@ -430,6 +430,12 @@ export class PlayerCore {
             // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
             sound.audioElement.onprogress = () => {
 
+                // if for some external reason the audio element
+                // has disappred, then we exit early 
+                if (!sound.audioElement) {
+                    return
+                }
+
                 if (sound.audioElement.buffered.length) {
 
                     let loadingPercentage: number;
@@ -459,6 +465,12 @@ export class PlayerCore {
             }
 
             const canPlayThroughHandler = async () => {
+
+                // if for some external reason the audio element
+                // has disappred, then we exit early 
+                if (!sound.audioElement) {
+                    return
+                }
 
                 // we don't need the listener anymore
                 sound.audioElement.removeEventListener('canplaythrough', canPlayThroughHandler);
