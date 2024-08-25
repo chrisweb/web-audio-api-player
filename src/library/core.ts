@@ -5,18 +5,18 @@ import {
 } from './audio';
 import { PlayerRequest } from './request';
 
-const PLAYER_MODE_AUDIO = 'player_mode_audio';
-const PLAYER_MODE_AJAX = 'player_mode_ajax';
-const PLAYER_MODE_FETCH = 'player_mode_fetch';
+export const PLAYER_MODE_AUDIO = 'player_mode_audio';
+export const PLAYER_MODE_AJAX = 'player_mode_ajax';
+export const PLAYER_MODE_FETCH = 'player_mode_fetch';
 
-const WHERE_IN_QUEUE_AT_START = 'prepend';
-const WHERE_IN_QUEUE_AT_END = 'append';
+export const WHERE_IN_QUEUE_AT_START = 'prepend';
+export const WHERE_IN_QUEUE_AT_END = 'append';
 
-const AFTER_LOADING_SEEK = 'after_loading_seek';
-const AFTER_LOADING_PLAY = 'after_loading_play';
+export const AFTER_LOADING_SEEK = 'after_loading_seek';
+export const AFTER_LOADING_PLAY = 'after_loading_play';
 
-const VISIBILITY_HIDDEN_ACTION_MUTE = 'visibility_hidden_action_mute';
-const VISIBILITY_HIDDEN_ACTION_PAUSE = 'visibility_hidden_action_pause';
+export const VISIBILITY_HIDDEN_ACTION_MUTE = 'visibility_hidden_action_mute';
+export const VISIBILITY_HIDDEN_ACTION_PAUSE = 'visibility_hidden_action_pause';
 
 type typePlayerMode = typeof PLAYER_MODE_AUDIO | typeof PLAYER_MODE_AJAX | typeof PLAYER_MODE_FETCH;
 type typeWhereInQueue = typeof WHERE_IN_QUEUE_AT_START | typeof WHERE_IN_QUEUE_AT_END;

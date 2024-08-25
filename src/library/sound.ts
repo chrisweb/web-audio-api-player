@@ -1,7 +1,7 @@
-const SOUND_STATE_STOPPED = 'sound_state_stopped';
-const SOUND_STATE_PAUSED = 'sound_state_paused';
-const SOUND_STATE_PLAYING = 'sound_state_playing';
-const SOUND_STATE_SEEKING = 'sound_state_seeking';
+export const SOUND_STATE_STOPPED = 'sound_state_stopped';
+export const SOUND_STATE_PAUSED = 'sound_state_paused';
+export const SOUND_STATE_PLAYING = 'sound_state_playing';
+export const SOUND_STATE_SEEKING = 'sound_state_seeking';
 
 export type typeSoundStates = typeof SOUND_STATE_STOPPED | typeof SOUND_STATE_PAUSED | typeof SOUND_STATE_PLAYING | typeof SOUND_STATE_SEEKING;
 
