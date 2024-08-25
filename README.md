@@ -20,6 +20,10 @@ Any contribution, even things not listed on the TODO list are of course welcome.
 
 If you found a bug or want to request a new feature please go to the [issues page](https://github.com/chrisweb/web-audio-api-player/issues) and if you have a question please use the [dicussions page](https://github.com/chrisweb/web-audio-api-player/discussions)  
 
+### Demo
+
+I use the player on my personal blog [chris.lu](https://chris.lu), there is a **"jukebox"** in the header on the top right where you can try out the player. The **source code** for my blog is on GitHub in the [chris.lu repository](https://github.com/chrisweb/chris.lu), the [player UI](https://github.com/chrisweb/chris.lu/blob/main/components/neonRoad/player/UI.tsx) is a React component in which I use the **web audio API player**
+
 ## installation
 
 web audio API player is published to the [npm registry](https://npm.im/web-audio-api-player) so you can install it with either [npm](https://www.npmjs.com/get-npm) or [yarn](https://yarnpkg.com)  
