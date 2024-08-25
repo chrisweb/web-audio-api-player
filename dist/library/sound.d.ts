@@ -1,7 +1,7 @@
-declare const SOUND_STATE_STOPPED = "sound_state_stopped";
-declare const SOUND_STATE_PAUSED = "sound_state_paused";
-declare const SOUND_STATE_PLAYING = "sound_state_playing";
-declare const SOUND_STATE_SEEKING = "sound_state_seeking";
+export declare const SOUND_STATE_STOPPED = "sound_state_stopped";
+export declare const SOUND_STATE_PAUSED = "sound_state_paused";
+export declare const SOUND_STATE_PLAYING = "sound_state_playing";
+export declare const SOUND_STATE_SEEKING = "sound_state_seeking";
 export type typeSoundStates = typeof SOUND_STATE_STOPPED | typeof SOUND_STATE_PAUSED | typeof SOUND_STATE_PLAYING | typeof SOUND_STATE_SEEKING;
 export interface IOnProgress {
     (playingPercentage: number, duration: number, playTime: number): void;
@@ -117,4 +117,3 @@ export declare class PlayerSound implements ISound {
     getLoop(): boolean;
     protected _generateSoundId(): string;
 }
-export {};
