@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 
 // vendor
-import express from 'express';
+import express, { Response, Request } from 'express';
 import { contentType } from 'mime-types';
 
 // hack because __dirname is not defined
@@ -41,7 +41,7 @@ export class Server {
         this.application.use('/static', express.static(ROOTPATH + '/../../../assets'));
 
         // streaming songs
-        this.application.get('/music/:song', (request: express.Request, response: express.Response) => {
+        this.application.get('/music/:song', (request: Request, response: Response) => {
 
             const fullPath = ROOTPATH + '/../../../assets/music/' + request.params.song
             const size = fs.statSync(fullPath).size
@@ -117,7 +117,7 @@ export class Server {
         this.application.get('/', (request: express.Request, response: express.Response) => {
 
             // options list: http://expressjs.com/en/api.html#res.sendFile
-            const mainPageSendfileOptions = {
+            const mainPageSendfileOptions: unknown = {
                 root: path.join(ROOTPATH, '..', 'html'),
                 dotfiles: 'deny',
                 headers: {
