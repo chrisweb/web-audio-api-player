@@ -12,7 +12,7 @@ update npm to latest version
 
 ### build the player
 
-first, use the VSCode terminal (or your favorite command line tool) and go into the root of this project:
+first, use the VSCode terminal (or your favorite command line tool), then use the following command to go into the root of the project:
 
 ```shell
 cd /YOUR_REPOSITORIES_PATH/web-audio-api-player
@@ -28,19 +28,19 @@ then, build the example (server & client) itself...
 
 ### example client
 
-#### go into the client folder
+go into the client folder
 
 ```shell
 cd /examples/simple-player/client
 ```
 
-#### install the client dependencies
+install the client dependencies
 
 ```shell
 npm i
 ```
 
-### build the client
+build the client
 
 ```shell
 npm run build
@@ -48,25 +48,23 @@ npm run build
 
 ### example server
 
-#### go into the server folder
+go into the server folder
 
 ```shell
 cd /examples/simple-player/server
 ```
 
-#### install the server dependencies
+install the server dependencies
 
 ```shell
 npm i
 ```
 
-#### build the server
+build the server
 
 ```shell
 npm run build
 ```
-
-#### start the server
 
 start the server
 
