@@ -47,7 +47,7 @@ the best way to get started is to check out the examples folder, check out the s
 in this chapter I will try to explain how to set up the most important parts of a player, but I also recommend you have a look at the [simple player example](examples/simple-player) which is an HTML / Javascript client and has an express.js server, to demonstrate how to build an UI, you can explore and run the example locally if you want to know more about how to use this package and see a working example
 
 > [!NOTE]  
-> I will use Typescript in this example (in the code examples below), if you prefer to write Javascript, then ignore the types I import and use, meaning the `import { PlayerCore, ICoreOptions, ISoundAttributes } from 'web-audio-api-player'{:ts}` import below would become `import { PlayerCore } from 'web-audio-api-player'{:js}` and later the `const options: ICoreOptions = {{:ts}` options code would become `const options = {{:js}`
+> I will use **Typescript** in this example (in the code examples below); if you prefer to write **Javascript**, then ignore the types I import and use, meaning the `import { PlayerCore, ICoreOptions, ISoundAttributes } from 'web-audio-api-player'` import below would become `import { PlayerCore } from 'web-audio-api-player'` and later the `const options: ICoreOptions = {` options code would become `const options = {`
 
 After having [installed](#installation) the package you need to import it, like so:
 
