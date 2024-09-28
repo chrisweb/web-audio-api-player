@@ -5,7 +5,8 @@ import path from 'path';
 import fs from 'fs';
 
 // vendor
-import express, { Response, Request } from 'express';
+import express from 'express';
+import type { Response, Request, SendFileOptions } from 'express-serve-static-core'
 import { contentType } from 'mime-types';
 
 // hack because __dirname is not defined
@@ -103,7 +104,7 @@ export class Server {
                     stream.pipe(response);
 
                 } else {
-                    
+
                     response.sendFile(path.resolve(fullPath))
 
                 }
@@ -114,10 +115,10 @@ export class Server {
 
         })
 
-        this.application.get('/', (request: express.Request, response: express.Response) => {
+        this.application.get('/', (/*request: Request,*/ response: Response) => {
 
             // options list: http://expressjs.com/en/api.html#res.sendFile
-            const mainPageSendfileOptions: unknown = {
+            const mainPageSendfileOptions: SendFileOptions = {
                 root: path.join(ROOTPATH, '..', 'html'),
                 dotfiles: 'deny',
                 headers: {
