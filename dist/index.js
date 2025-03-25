@@ -1,35 +1,3 @@
-/******************************************************************************
-Copyright (c) Microsoft Corporation.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-/* global Reflect, Promise, SuppressedError, Symbol */
-
-
-function __awaiter(thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-}
-
-typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
-    var e = new Error(message);
-    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
-};
-
 const SOUND_STATE_STOPPED = 'sound_state_stopped';
 class PlayerSound {
     constructor(soundAttributes) {
@@ -55,7 +23,12 @@ class PlayerSound {
         this.durationSetManually = false;
         this.firstTimePlayed = true;
         this.isConnectToPlayerGain = false;
+        // elapsedPlayTime is used to adjust the playtime
+        // when playing audio buffers
+        // on seek, pause or when there is a playTimeOffset
+        // see getCurrentTime function
         this.elapsedPlayTime = 0;
+        // the percentage to seek to
         this.seekPercentage = 0;
         if (!Array.isArray(soundAttributes.source)) {
             this.source = [soundAttributes.source];
@@ -71,6 +44,9 @@ class PlayerSound {
         }
         this.loop = soundAttributes.loop || false;
         this.seekPercentage = soundAttributes.seekPercentage || 0;
+        // the user can set the duration manually
+        // this is usefull if we need to convert the position percentage into seconds but don't want to preload the song
+        // to get the duration the song has to get preloaded as the duration is a property of the audioBuffer
         if (!isNaN(soundAttributes.duration)) {
             this.duration = soundAttributes.duration;
             this.durationSetManually = true;
@@ -131,6 +107,7 @@ class PlayerSound {
             this.isBuffering = false;
             this.isBuffered = true;
             this.audioBufferDate = new Date();
+            // only update duration if it did not get set manually
             if (!this.durationSetManually) {
                 this.duration = this.audioBuffer.duration;
             }
@@ -177,6 +154,7 @@ class PlayerSound {
         return Date.now().toString(36) + Math.random().toString(36).substring(2);
     }
 }
+// static constants
 PlayerSound.SOUND_STATE_STOPPED = 'sound_state_stopped';
 PlayerSound.SOUND_STATE_PAUSED = 'sound_state_paused';
 PlayerSound.SOUND_STATE_PLAYING = 'sound_state_playing';
@@ -197,6 +175,11 @@ class PlayerAudio {
         this._initialize();
     }
     _initialize() {
+        // I was planning on using the "first user interaction hack" only (on mobile)
+        // to check if the autoplay policy prevents me from playing a sound
+        // programmatically (without user click)
+        // https://developer.mozilla.org/en-US/docs/Web/API/Navigator/getAutoplayPolicy
+        // but this feature is only implemented on firefox (as of 19.09.2023)
         if (this._options.unlockAudioOnFirstUserInteraction) {
             this._addFirstUserInteractionEventListeners();
         }
@@ -204,17 +187,21 @@ class PlayerAudio {
     getAudioNodes() {
         return this._audioNodes;
     }
-    decodeAudio(arrayBuffer) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const audioContext = yield this.getAudioContext();
-            return yield audioContext.decodeAudioData(arrayBuffer);
-        });
+    async decodeAudio(arrayBuffer) {
+        const audioContext = await this.getAudioContext();
+        // Note to self:
+        // the new decodeAudioData returns a promise, older versions accept as second
+        // and third parameter, which are a success and an error callback funtion
+        // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/decodeAudioData
+        return await audioContext.decodeAudioData(arrayBuffer);
     }
     _createAudioContext() {
         if (this._audioContext instanceof AudioContext) {
             return;
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const WebAudioContext = window.AudioContext || window.webkitAudioContext;
+        // initialize the audio context
         if (this._options.audioContext !== null) {
             this._audioContext = this._options.audioContext;
         }
@@ -249,16 +236,31 @@ class PlayerAudio {
                 return resolve();
             }
             this._isAudioUnlocking = true;
+            // it is important to create the audio element before attempting
+            // to play the empty buffer, if creation is done after the
+            // element will get created but as no sound has been played
+            // it will not get unlocked
+            // meaning to unlock an audio element it is not enough to create
+            // one on user interaction but you also need to play a sound
             if (this._options.loadPlayerMode === 'player_mode_audio') {
+                // force the creation to be sure we have a new audio element
+                // and don't use one that got created previously
                 const forceCreate = true;
+                // on iOS (mobile) the audio element you want to use needs to have been created
+                // as a direct result of an user interaction
+                // after it got unlocked we re-use that element for all sounds
                 this._createAudioElement(forceCreate).catch((error) => {
                     console.error(error);
                     this._isAudioUnlocking = false;
                     return reject();
                 });
             }
+            // make sure the audio context is not suspended
+            // on android this is what unlocks audio
             this.getAudioContext().then(() => {
+                // create an (empty) buffer
                 const placeholderBuffer = this._audioContext.createBuffer(1, 1, 22050);
+                // https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createBufferSource
                 let bufferSource = this._audioContext.createBufferSource();
                 bufferSource.onended = () => {
                     bufferSource.disconnect(0);
@@ -272,6 +274,8 @@ class PlayerAudio {
                 };
                 bufferSource.buffer = placeholderBuffer;
                 bufferSource.connect(this._audioContext.destination);
+                // attempt to play the empty buffer to check if there is an error
+                // or if it can be played, in which case audio is unlocked
                 bufferSource.start(0);
             }).catch((error) => {
                 console.error(error);
@@ -280,60 +284,61 @@ class PlayerAudio {
             });
         });
     }
-    _createAudioElementAndSource() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this._createAudioElement();
-            yield this._createMediaElementAudioSourceNode();
-        });
+    async _createAudioElementAndSource() {
+        await this._createAudioElement();
+        await this._createMediaElementAudioSourceNode();
     }
-    _createAudioElement(forceCreate) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this._audioElement === null || forceCreate === true) {
-                const audioElement = new Audio();
-                audioElement.controls = false;
-                audioElement.autoplay = false;
-                audioElement.preload = 'auto';
-                audioElement.volume = 1;
-                audioElement.id = 'web-audio-api-player';
-                this._audioElement = audioElement;
-                if (this._options.addAudioElementsToDom) {
-                    document.body.appendChild(audioElement);
-                }
+    async _createAudioElement(forceCreate) {
+        if (this._audioElement === null || forceCreate === true) {
+            const audioElement = new Audio();
+            audioElement.controls = false;
+            audioElement.autoplay = false;
+            audioElement.preload = 'auto';
+            audioElement.volume = 1;
+            audioElement.id = 'web-audio-api-player';
+            this._audioElement = audioElement;
+            if (this._options.addAudioElementsToDom) {
+                document.body.appendChild(audioElement);
             }
-        });
+        }
     }
-    getAudioElement() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this._audioElement === null) {
-                yield this._createAudioElementAndSource();
-            }
-            return this._audioElement;
-        });
+    async getAudioElement() {
+        if (this._audioElement === null) {
+            await this._createAudioElementAndSource();
+        }
+        return this._audioElement;
     }
-    getAudioContext() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this._audioContext === null || this._audioContext.state === 'closed') {
-                yield this._createAudioContext();
-            }
-            else if (this._audioContext.state === 'suspended') {
-                yield this.unfreezeAudioContext();
-            }
-            return this._audioContext;
-        });
+    async getAudioContext() {
+        if (this._audioContext === null || this._audioContext.state === 'closed') {
+            await this._createAudioContext();
+        }
+        else if (this._audioContext.state === 'suspended') {
+            await this.unfreezeAudioContext();
+        }
+        return this._audioContext;
     }
     unfreezeAudioContext() {
+        // did resume get implemented
         if (typeof this._audioContext.resume === 'undefined') {
+            // this browser does not support resume
+            // just send back a promise as resume would do
             return Promise.resolve();
         }
         else {
+            // resume the audio hardware access
+            // audio context resume returns a promise
+            // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/resume
             return this._audioContext.resume();
         }
     }
     freezeAudioContext() {
+        // did suspend get implemented
         if (typeof this._audioContext.suspend === 'undefined') {
             return Promise.resolve();
         }
         else {
+            // halt the audio hardware access temporarily to reduce CPU and battery usage
+            // especially useful on mobile to prevent battery drain
             return this._audioContext.suspend();
         }
     }
@@ -341,7 +346,9 @@ class PlayerAudio {
         return this._audioContext.state === 'suspended' ? true : false;
     }
     detectAudioContextSupport() {
+        // basic audio context detection
         let audioContextSupported = false;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (typeof window.webkitAudioContext !== 'undefined') {
             audioContextSupported = true;
         }
@@ -351,21 +358,19 @@ class PlayerAudio {
         return audioContextSupported;
     }
     detectAudioElementSupport() {
+        // basic audio element detection
         return !!document.createElement('audio').canPlayType;
     }
-    _createAudioBufferSourceNode() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const audioContext = yield this.getAudioContext();
-            return audioContext.createBufferSource();
-        });
+    async _createAudioBufferSourceNode() {
+        const audioContext = await this.getAudioContext();
+        return audioContext.createBufferSource();
     }
-    _createMediaElementAudioSourceNode() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this._mediaElementAudioSourceNode === null && this._audioElement !== null) {
-                const audioContext = yield this.getAudioContext();
-                this._mediaElementAudioSourceNode = audioContext.createMediaElementSource(this._audioElement);
-            }
-        });
+    async _createMediaElementAudioSourceNode() {
+        if (this._mediaElementAudioSourceNode === null && this._audioElement !== null) {
+            const audioContext = await this.getAudioContext();
+            // createMediaElementSource: https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaElementSource
+            this._mediaElementAudioSourceNode = audioContext.createMediaElementSource(this._audioElement);
+        }
     }
     _destroyMediaElementAudioSourceNode() {
         if (this._mediaElementAudioSourceNode !== null) {
@@ -381,41 +386,40 @@ class PlayerAudio {
             this._mediaElementAudioSourceNode.disconnect();
         }
     }
-    _destroyAudioContext() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this._audioContext !== null && this._audioContext.state !== 'closed') {
-                yield this._audioContext.close();
-                this._audioContext = null;
-            }
-        });
+    async _destroyAudioContext() {
+        if (this._audioContext !== null && this._audioContext.state !== 'closed') {
+            await this._audioContext.close();
+            this._audioContext = null;
+        }
     }
-    shutDown(songsQueue) {
-        return __awaiter(this, void 0, void 0, function* () {
-            this._removeFirstUserInteractionEventListeners();
-            songsQueue.forEach((sound) => {
-                this.disconnectSound(sound);
-            });
-            this._destroyMediaElementAudioSourceNode();
-            this._destroyAudioBufferSourceNode();
-            this._disconnectPlayerGainNode();
-            yield this._destroyAudioContext();
+    async shutDown(songsQueue) {
+        this._removeFirstUserInteractionEventListeners();
+        songsQueue.forEach((sound) => {
+            this.disconnectSound(sound);
         });
+        this._destroyMediaElementAudioSourceNode();
+        this._destroyAudioBufferSourceNode();
+        this._disconnectPlayerGainNode();
+        await this._destroyAudioContext();
     }
-    _getPlayerGainNode() {
-        return __awaiter(this, void 0, void 0, function* () {
-            let gainNode;
-            if (this._audioNodes.gainNode instanceof GainNode) {
-                gainNode = this._audioNodes.gainNode;
-            }
-            else {
-                const audioContext = yield this.getAudioContext();
-                gainNode = audioContext.createGain();
-                this._initializeVolume(gainNode);
-                gainNode.connect(audioContext.destination);
-                this._audioNodes.gainNode = gainNode;
-            }
-            return gainNode;
-        });
+    async _getPlayerGainNode() {
+        // the player (master) gain node
+        let gainNode;
+        if (this._audioNodes.gainNode instanceof GainNode) {
+            gainNode = this._audioNodes.gainNode;
+        }
+        else {
+            const audioContext = await this.getAudioContext();
+            // Note: a volume control (GainNode) should always
+            // be the last node that gets connected
+            // so that volume changes take immediate effect
+            gainNode = audioContext.createGain();
+            this._initializeVolume(gainNode);
+            // final audio graph step: connect the gain node to the audio destination node
+            gainNode.connect(audioContext.destination);
+            this._audioNodes.gainNode = gainNode;
+        }
+        return gainNode;
     }
     _disconnectPlayerGainNode() {
         if (this._audioNodes.gainNode !== null) {
@@ -423,92 +427,117 @@ class PlayerAudio {
             this._audioNodes.gainNode = null;
         }
     }
-    connectSound(sound, onEndedCallback) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (sound.isConnectToPlayerGain) {
-                return;
-            }
-            if (this._options.loadPlayerMode === 'player_mode_ajax') {
-                const audioBufferSourceNode = yield this._createAudioBufferSourceNode();
-                sound.gainNode = audioBufferSourceNode.context.createGain();
-                audioBufferSourceNode.connect(sound.gainNode);
-                audioBufferSourceNode.loop = sound.loop;
-                audioBufferSourceNode.onended = onEndedCallback;
-                sound.sourceNode = audioBufferSourceNode;
-            }
-            else if (this._options.loadPlayerMode === 'player_mode_audio') {
-                yield this._createAudioElementAndSource();
-                sound.gainNode = this._mediaElementAudioSourceNode.context.createGain();
-                this._mediaElementAudioSourceNode.connect(sound.gainNode);
-                this._mediaElementAudioSourceNode.mediaElement.loop = sound.loop;
-                this._mediaElementAudioSourceNode.mediaElement.onended = onEndedCallback;
-                sound.sourceNode = this._mediaElementAudioSourceNode;
-            }
-            sound.gainNode.gain.value = 1;
-            const playerGainNode = yield this._getPlayerGainNode();
-            sound.gainNode.connect(playerGainNode);
-            sound.isConnectToPlayerGain = true;
-        });
+    async connectSound(sound, onEndedCallback) {
+        if (sound.isConnectToPlayerGain) {
+            return;
+        }
+        if (this._options.loadPlayerMode === 'player_mode_ajax') {
+            // get a new audio buffer source node
+            // Note: remember these are "one use" only
+            // https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode
+            const audioBufferSourceNode = await this._createAudioBufferSourceNode();
+            // create the sound gain node
+            sound.gainNode = audioBufferSourceNode.context.createGain();
+            // connect the source to the sound gain node
+            audioBufferSourceNode.connect(sound.gainNode);
+            // do we loop this song?
+            audioBufferSourceNode.loop = sound.loop;
+            // NOTE: the source nodes onended handler won't have any effect if the loop property
+            // is set to true, as the audio won't stop playing
+            audioBufferSourceNode.onended = onEndedCallback;
+            sound.sourceNode = audioBufferSourceNode;
+        }
+        else if (this._options.loadPlayerMode === 'player_mode_audio') {
+            await this._createAudioElementAndSource();
+            // create the sound gain node
+            sound.gainNode = this._mediaElementAudioSourceNode.context.createGain();
+            // connect the source to the sound gain node
+            this._mediaElementAudioSourceNode.connect(sound.gainNode);
+            // do we loop this song
+            this._mediaElementAudioSourceNode.mediaElement.loop = sound.loop;
+            // NOTE: the source nodes onended handler won't have any effect if the loop property
+            // is set to true, as the audio won't stop playing
+            this._mediaElementAudioSourceNode.mediaElement.onended = onEndedCallback;
+            sound.sourceNode = this._mediaElementAudioSourceNode;
+        }
+        // set the gain by default always to 1
+        sound.gainNode.gain.value = 1;
+        const playerGainNode = await this._getPlayerGainNode();
+        sound.gainNode.connect(playerGainNode);
+        sound.isConnectToPlayerGain = true;
     }
-    disconnectSound(sound) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!sound.isConnectToPlayerGain) {
-                return;
-            }
-            if (sound.sourceNode !== null) {
-                sound.sourceNode.disconnect();
-                sound.sourceNode = null;
-            }
-            if (sound.gainNode !== null) {
-                sound.gainNode.disconnect();
-                sound.gainNode = null;
-                sound.isConnectToPlayerGain = false;
-            }
-            if (sound.audioElement !== null) {
-                sound.audioElement = null;
-            }
-        });
+    async disconnectSound(sound) {
+        if (!sound.isConnectToPlayerGain) {
+            return;
+        }
+        if (sound.sourceNode !== null) {
+            sound.sourceNode.disconnect();
+            // we set the source node to null, so that it can get garbage collected
+            // as specified in the specs: you can't reuse an audio buffer source node,
+            // after it got stopped
+            sound.sourceNode = null;
+        }
+        if (sound.gainNode !== null) {
+            sound.gainNode.disconnect();
+            sound.gainNode = null;
+            sound.isConnectToPlayerGain = false;
+        }
+        if (sound.audioElement !== null) {
+            sound.audioElement = null;
+        }
     }
-    _changePlayerGainValue(gainValue) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this._audioNodes.gainNode instanceof GainNode) {
-                const audioContext = yield this.getAudioContext();
-                const timeConstantInMilliseconds = (!isNaN(this._options.volumeTransitionTime) && this._options.volumeTransitionTime > 0) ? this._options.volumeTransitionTime : 100;
-                const timeConstantInSeconds = timeConstantInMilliseconds / 1000;
-                try {
-                    this._audioNodes.gainNode.gain.setTargetAtTime(gainValue, audioContext.currentTime, timeConstantInSeconds);
-                }
-                catch (error) {
-                    console.error('gainValue: ' + gainValue + ' ' + error);
-                }
+    async _changePlayerGainValue(gainValue) {
+        if (this._audioNodes.gainNode instanceof GainNode) {
+            const audioContext = await this.getAudioContext();
+            const timeConstantInMilliseconds = (!isNaN(this._options.volumeTransitionTime) && this._options.volumeTransitionTime > 0) ? this._options.volumeTransitionTime : 100;
+            const timeConstantInSeconds = timeConstantInMilliseconds / 1000;
+            try {
+                this._audioNodes.gainNode.gain.setTargetAtTime(gainValue, audioContext.currentTime, timeConstantInSeconds);
             }
-        });
+            catch (error) {
+                console.error('gainValue: ' + gainValue + ' ' + error);
+            }
+        }
     }
-    setVolume(volume_1) {
-        return __awaiter(this, arguments, void 0, function* (volume, forceUpdateUserVolume = true) {
-            if (this._options.persistVolume && forceUpdateUserVolume) {
-                localStorage.setItem('WebAudioAPIPlayerVolume', volume.toString());
+    async setVolume(volume, forceUpdateUserVolume = true) {
+        // we sometimes change the volume, for a fade in/out or when muting, but
+        // in this cases we don't want to update the user's persisted volume, in
+        // which case forceUpdateUserVolume is false else it would be true
+        if (this._options.persistVolume && forceUpdateUserVolume) {
+            localStorage.setItem('WebAudioAPIPlayerVolume', volume.toString());
+        }
+        // the gain values we use range from 0 to 1
+        // so we need to divide the volume (in percent) by 100 to get the gain value
+        const newGainValue = volume / 100;
+        if (this._audioNodes.gainNode instanceof GainNode) {
+            // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON
+            const currentGainRounded = Math.round((this._audioNodes.gainNode.gain.value + Number.EPSILON) * 100) / 100;
+            // check if the volume changed
+            if (newGainValue !== currentGainRounded) {
+                // Note to self: the gain value changes the amplitude of the sound wave
+                // a gain value set to 1 does nothing
+                // values between 0 and 1 reduce the loudness, above 1 they amplify the loudness
+                // negative values work too, but they invert the waveform
+                // so -1 is as loud as 1 but with -1 the waveform is inverted
+                await this._changePlayerGainValue(newGainValue);
             }
-            const newGainValue = volume / 100;
-            if (this._audioNodes.gainNode instanceof GainNode) {
-                const currentGainRounded = Math.round((this._audioNodes.gainNode.gain.value + Number.EPSILON) * 100) / 100;
-                if (newGainValue !== currentGainRounded) {
-                    yield this._changePlayerGainValue(newGainValue);
-                }
-            }
-            this._volume = volume;
-            return volume;
-        });
+        }
+        this._volume = volume;
+        return volume;
     }
     getVolume() {
         let volume;
+        // check if volume has already been set
         if (this._volume !== null) {
             volume = this._volume;
         }
         else if (this._options.persistVolume) {
+            // if persist volume is enabled
+            // check if there already is a user volume in localstorage
             const userVolumeInPercent = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
             volume = userVolumeInPercent;
         }
+        // if still no value, fallback to default options value
         if (typeof volume === 'undefined' || isNaN(volume)) {
             if (!isNaN(this._options.volume)) {
                 volume = this._options.volume;
@@ -523,6 +552,8 @@ class PlayerAudio {
     }
     _initializeVolume(gainNode) {
         if (this._options.persistVolume) {
+            // if persist volume is enabled
+            // check if there already is a user volume in localstorage
             const userVolumeInPercent = parseInt(localStorage.getItem('WebAudioAPIPlayerVolume'));
             const gainValue = userVolumeInPercent / 100;
             if (!isNaN(userVolumeInPercent)) {
@@ -530,6 +561,8 @@ class PlayerAudio {
             }
             this._volume = userVolumeInPercent;
         }
+        // if no "user volume" got found
+        // take the default options volume
         if (this._volume === null) {
             const gainValue = this._options.volume / 100;
             gainNode.gain.value = gainValue;
@@ -542,24 +575,32 @@ class PlayerRequest {
     getArrayBuffer(requested) {
         return new Promise(function (resolve, reject) {
             const xhr = new XMLHttpRequest();
+            // third parameter is for "async", should already be "true" by default
+            // but who knows maybe a browser vendor decides to change it
+            // so I prefer to explicitly set it to "true" just in case
             xhr.open('GET', requested.url, true);
+            // set the expected response type from the server to arraybuffer
             xhr.responseType = 'arraybuffer';
             xhr.onload = function () {
+                // gets called even for example a code 404, so check the status is in the 2xx range
                 if (xhr.status >= 200 && xhr.status <= 299) {
                     resolve(xhr.response);
                 }
                 else {
+                    // status code is not 2xx, reject with an error
                     reject(new Error(xhr.statusText + '(status:' + xhr.status + ')'));
                 }
             };
             xhr.onprogress = function (event) {
                 const loadingPercentageRaw = 100 / (event.total / event.loaded);
                 const loadingPercentage = Math.round(loadingPercentageRaw);
+                // update value on sound object
                 requested.loadingProgress = loadingPercentage;
                 if (requested.onLoading !== null) {
                     requested.onLoading(loadingPercentage, event.total, event.loaded);
                 }
             };
+            // also reject for any kind of network errors
             xhr.onerror = function (error) {
                 reject(error);
             };
@@ -573,14 +614,23 @@ const WHERE_IN_QUEUE_AT_END = 'append';
 const VISIBILITY_HIDDEN_ACTION_PAUSE = 'visibility_hidden_action_pause';
 class PlayerCore {
     constructor(playerOptions = {}) {
+        // playing progress animation frame request id
         this._playingProgressRequestId = null;
+        // value of the volume before it got muted
         this._postMuteVolume = null;
+        // is playing before visibility is hidden event
         this._postVisibilityHiddenPlaying = null;
         this._progressTrigger = (sound, timestamp) => {
             const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+            // I had a lot of trouble cancelling the animation frame
+            // this is why I added this check
+            // often onended would get called by even though I do
+            // a cancel in _stop() the animation frame would still repeat
             if (sound.id !== currentSound.id || currentSound.state !== PlayerSound.SOUND_STATE_PLAYING) {
                 return;
             }
+            // throttle requests, use time set in options and
+            // make sure that at least that amount is elapsed 
             if ((timestamp - this._playingProgressPreviousTimestamp) >= this._options.playingProgressIntervalTime) {
                 const currentTime = sound.getCurrentTime();
                 const duration = sound.getDuration();
@@ -592,10 +642,12 @@ class PlayerCore {
                     }
                     sound.playedTimePercentage = playingPercentage;
                     sound.playTime = currentTime;
+                    // execute playing progress callback
                     sound.onPlaying(playingPercentage, duration, currentTime);
                     this._playingProgressPreviousTimestamp = timestamp;
                 }
             }
+            // request animation frame loop
             this._playingProgressRequestId = window.requestAnimationFrame((timestamp) => {
                 this._progressTrigger(sound, timestamp);
             });
@@ -673,16 +725,14 @@ class PlayerCore {
     _prependSoundToQueue(sound) {
         this._queue.unshift(sound);
     }
-    resetQueue() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this._options.stopOnReset) {
-                yield this.stop();
-            }
-            this._queue.forEach((sound) => {
-                this._playerAudio.disconnectSound(sound);
-            });
-            this._queue = [];
+    async resetQueue() {
+        if (this._options.stopOnReset) {
+            await this.stop();
+        }
+        this._queue.forEach((sound) => {
+            this._playerAudio.disconnectSound(sound);
         });
+        this._queue = [];
     }
     reset() {
         this.resetQueue().catch((error) => {
@@ -722,302 +772,362 @@ class PlayerCore {
     isMuted() {
         return this._postMuteVolume === null ? false : true;
     }
-    setPosition(soundPositionInPercent) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (soundPositionInPercent < 0 || soundPositionInPercent > 100) {
-                throw new Error('soundPositionInPercent must be a number >= 0 and <= 100');
+    async setPosition(soundPositionInPercent) {
+        if (soundPositionInPercent < 0 || soundPositionInPercent > 100) {
+            throw new Error('soundPositionInPercent must be a number >= 0 and <= 100');
+        }
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+        if (currentSound !== null) {
+            currentSound.seekPercentage = Math.round(soundPositionInPercent);
+            const duration = currentSound.getDuration();
+            // if the duration did not get set manually or is not a number
+            if (duration === null || isNaN(duration)) {
+                // the user can set the sound duration manually but if he didn't the sound
+                // needs to get loaded first, to be able to know the duration it has
+                await this.loadSound(currentSound, PlayerCore.AFTER_LOADING_SEEK);
             }
-            const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
-            if (currentSound !== null) {
-                currentSound.seekPercentage = Math.round(soundPositionInPercent);
-                const duration = currentSound.getDuration();
-                if (duration === null || isNaN(duration)) {
-                    yield this.loadSound(currentSound, PlayerCore.AFTER_LOADING_SEEK);
-                }
-                else {
-                    this._setPosition(currentSound);
-                }
+            else {
+                this._setPosition(currentSound);
             }
-        });
+        }
     }
     _setPosition(sound) {
         const duration = sound.getDuration();
+        // calculate the position in seconds
         const soundPositionInSeconds = (duration / 100) * sound.seekPercentage;
         this.setPositionInSeconds(soundPositionInSeconds, sound);
     }
-    setPositionInSeconds(soundPositionInSeconds, sound) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let currentSound = null;
-            if (typeof sound !== 'undefined') {
-                currentSound = sound;
+    async setPositionInSeconds(soundPositionInSeconds, sound) {
+        let currentSound = null;
+        if (typeof sound !== 'undefined') {
+            currentSound = sound;
+        }
+        else {
+            currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+        }
+        if (currentSound !== null) {
+            // if the given position > duration, set position to duration
+            if (!isNaN(currentSound.duration) && (soundPositionInSeconds >= currentSound.duration)) {
+                // duration - 0.1 because in safari if currentTime = duration
+                // the onended event does not get triggered
+                soundPositionInSeconds = currentSound.duration - 0.1;
+            }
+            const previousState = currentSound.state;
+            currentSound.state = PlayerSound.SOUND_STATE_SEEKING;
+            if (currentSound.onSeeking !== null) {
+                const playTime = soundPositionInSeconds;
+                const duration = currentSound.getDuration();
+                const seekingPercentageRaw = (playTime / duration) * 100;
+                const seekingPercentage = Math.round(seekingPercentageRaw);
+                currentSound.onSeeking(seekingPercentage, duration, playTime);
+            }
+            if (previousState === PlayerSound.SOUND_STATE_PLAYING) {
+                // already playing so just change the position
+                currentSound.playTime = soundPositionInSeconds;
+                if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX) {
+                    // in ajax mode (when source is AudioBufferSourceNode) we
+                    // need to stop the song and start again at new position
+                    currentSound.elapsedPlayTime = soundPositionInSeconds;
+                    await this._stop(currentSound);
+                }
+                else if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AUDIO) {
+                    // in audio (element) mode it is easier we can just change the position
+                    await this._play(currentSound);
+                }
             }
             else {
-                currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+                // setPositionInSeconds got called and sound is currently not playing
+                // only set the sound position but don't play
+                currentSound.playTime = soundPositionInSeconds;
             }
-            if (currentSound !== null) {
-                if (!isNaN(currentSound.duration) && (soundPositionInSeconds >= currentSound.duration)) {
-                    soundPositionInSeconds = currentSound.duration - 0.1;
-                }
-                const previousState = currentSound.state;
-                currentSound.state = PlayerSound.SOUND_STATE_SEEKING;
-                if (currentSound.onSeeking !== null) {
-                    const playTime = soundPositionInSeconds;
-                    const duration = currentSound.getDuration();
-                    const seekingPercentageRaw = (playTime / duration) * 100;
-                    const seekingPercentage = Math.round(seekingPercentageRaw);
-                    currentSound.onSeeking(seekingPercentage, duration, playTime);
-                }
-                if (previousState === PlayerSound.SOUND_STATE_PLAYING) {
-                    currentSound.playTime = soundPositionInSeconds;
-                    if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX) {
-                        currentSound.elapsedPlayTime = soundPositionInSeconds;
-                        yield this._stop(currentSound);
-                    }
-                    else if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AUDIO) {
-                        yield this._play(currentSound);
-                    }
-                }
-                else {
-                    currentSound.playTime = soundPositionInSeconds;
-                }
-            }
-        });
+        }
     }
-    loadSound(sound, afterLoadingAction) {
-        return __awaiter(this, void 0, void 0, function* () {
-            switch (this._options.loadPlayerMode) {
-                case PlayerCore.PLAYER_MODE_AUDIO:
-                    yield this._loadSoundUsingAudioElement(sound, afterLoadingAction);
-                    break;
-                case PlayerCore.PLAYER_MODE_AJAX:
-                    yield this._loadSoundUsingRequest(sound, afterLoadingAction);
-                    break;
-                case PlayerCore.PLAYER_MODE_FETCH:
-                    console.warn(PlayerCore.PLAYER_MODE_FETCH + ' is not implemented yet');
-                    break;
-            }
+    async loadSound(sound, afterLoadingAction) {
+        switch (this._options.loadPlayerMode) {
+            case PlayerCore.PLAYER_MODE_AUDIO:
+                await this._loadSoundUsingAudioElement(sound, afterLoadingAction);
+                break;
+            case PlayerCore.PLAYER_MODE_AJAX:
+                await this._loadSoundUsingRequest(sound, afterLoadingAction);
+                break;
+            case PlayerCore.PLAYER_MODE_FETCH:
+                // TODO: implement fetch (?)
+                console.warn(PlayerCore.PLAYER_MODE_FETCH + ' is not implemented yet');
+                break;
+        }
+        return sound;
+    }
+    async _loadSoundUsingAudioElement(sound, afterLoadingAction) {
+        // extract the url and codec from sources
+        const { url, codec = null } = this._findBestSource(sound.source);
+        sound.url = url;
+        sound.codec = codec;
+        if (sound.url !== null) {
+            sound.audioElement = await this._playerAudio.getAudioElement();
+            // loading progress
+            // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
+            sound.audioElement.onprogress = () => {
+                // if for some external reason the audio element
+                // has disappred, then we exit early 
+                if (!sound.audioElement) {
+                    return;
+                }
+                if (sound.audioElement.buffered.length) {
+                    let loadingPercentage;
+                    const buffered = sound.audioElement.buffered.end(0);
+                    const duration = sound.getDuration();
+                    if (typeof duration !== 'undefined') {
+                        const loadingPercentageRaw = 100 / (duration / buffered);
+                        loadingPercentage = Math.round(loadingPercentageRaw);
+                    }
+                    sound.loadingProgress = loadingPercentage;
+                    if (sound.onLoading !== null) {
+                        sound.onLoading(loadingPercentage, duration, buffered);
+                    }
+                    if (loadingPercentage === 100) {
+                        sound.isBuffering = false;
+                        sound.isBuffered = true;
+                        sound.audioBufferDate = new Date();
+                    }
+                }
+            };
+            const canPlayThroughHandler = async () => {
+                // if for some external reason the audio element
+                // has disappred, then we exit early 
+                if (!sound.audioElement) {
+                    return;
+                }
+                // we don't need the listener anymore
+                sound.audioElement.removeEventListener('canplaythrough', canPlayThroughHandler);
+                sound.isReadyToPLay = true;
+                // duration should now be available
+                // if it got set manually don't overwrite it
+                if (!isNaN(sound.audioElement.duration) && !sound.durationSetManually) {
+                    sound.duration = sound.audioElement.duration;
+                }
+                switch (afterLoadingAction) {
+                    case PlayerCore.AFTER_LOADING_SEEK:
+                        this._setPosition(sound);
+                        break;
+                    case PlayerCore.AFTER_LOADING_PLAY:
+                        this._play(sound);
+                        break;
+                }
+            };
+            sound.audioElement.addEventListener('canplaythrough', canPlayThroughHandler);
+            // in chrome you will get this error message in the console:
+            // "MediaElementAudioSource outputs zeroes due to CORS access restrictions"
+            // to fix this put crossOrigin to anonymous or change the cors
+            // Access-Control-Allow-Origin header of the server to *
+            // "crossOrigin" has to be set before "src"
+            sound.audioElement.crossOrigin = 'anonymous';
+            sound.audioElement.src = sound.url;
+            // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/load
+            sound.audioElement.load();
+        }
+        else {
+            //reject(new Error('sound has no url'));
+            throw new Error('sound has no url');
+        }
+    }
+    async _loadSoundUsingRequest(sound, afterLoadingAction) {
+        // check for audio buffer before array buffer, because if one exist the other
+        // should exist too and is better for performance to reuse audio buffer then
+        // to redecode array buffer into an audio buffer
+        // user provided audio buffer
+        // decoding an array buffer is an expensive task even on modern hardware
+        // TODO: commented out for now, there is a weird bug when reusing the
+        // audio buffer, somehow the onended callback gets triggered in a loop
+        /*if (sound.audioBuffer !== null) {
+            return;
+        }*/
+        // user provided array buffer
+        if (sound.arrayBuffer !== null) {
+            return await this._decodeSound(sound);
+        }
+        // extract the url and codec from sources
+        const { url, codec = null } = this._findBestSource(sound.source);
+        sound.url = url;
+        sound.codec = codec;
+        if (sound.url !== null) {
+            const request = new PlayerRequest();
+            sound.isBuffering = true;
+            const arrayBuffer = await request.getArrayBuffer(sound);
+            sound.arrayBuffer = arrayBuffer;
+            await this._decodeSound(sound, afterLoadingAction);
+        }
+        else {
+            throw new Error('sound has no url');
+        }
+    }
+    async _decodeSound(sound, afterLoadingAction) {
+        // make a copy of the array buffer first
+        // because the decoding will detach the array buffer
+        // https://github.com/WebAudio/web-audio-api/issues/1175
+        const arrayBufferCopy = sound.arrayBuffer.slice(0);
+        const audioBuffer = await this._playerAudio.decodeAudio(arrayBufferCopy);
+        // duration should now be available
+        // if it got set manually don't overwrite it
+        if (!isNaN(audioBuffer.duration) && !sound.durationSetManually) {
+            sound.duration = audioBuffer.duration;
+        }
+        sound.audioBuffer = audioBuffer;
+        sound.isBuffering = false;
+        sound.isBuffered = true;
+        sound.audioBufferDate = new Date();
+        sound.isReadyToPLay = true;
+        switch (afterLoadingAction) {
+            case PlayerCore.AFTER_LOADING_SEEK:
+                this._setPosition(sound);
+                break;
+            case PlayerCore.AFTER_LOADING_PLAY:
+                this._play(sound);
+                break;
+        }
+    }
+    async play({ whichSound, playTimeOffset } = {}) {
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+        // whichSound is optional, if set it can be the sound id (string or number)
+        // or it can be these 4 constants: PLAY_SOUND_NEXT, PLAY_SOUND_PREVIOUS,
+        // PLAY_SOUND_FIRST, PLAY_SOUND_LAST
+        const sound = this._getSoundFromQueue({ whichSound, updateIndex: true });
+        // if there is no sound we could play, do nothing
+        if (sound === null) {
             return sound;
-        });
-    }
-    _loadSoundUsingAudioElement(sound, afterLoadingAction) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const { url, codec = null } = this._findBestSource(sound.source);
-            sound.url = url;
-            sound.codec = codec;
-            if (sound.url !== null) {
-                sound.audioElement = yield this._playerAudio.getAudioElement();
-                sound.audioElement.onprogress = () => {
-                    if (!sound.audioElement) {
-                        return;
-                    }
-                    if (sound.audioElement.buffered.length) {
-                        let loadingPercentage;
-                        const buffered = sound.audioElement.buffered.end(0);
-                        const duration = sound.getDuration();
-                        if (typeof duration !== 'undefined') {
-                            const loadingPercentageRaw = 100 / (duration / buffered);
-                            loadingPercentage = Math.round(loadingPercentageRaw);
-                        }
-                        sound.loadingProgress = loadingPercentage;
-                        if (sound.onLoading !== null) {
-                            sound.onLoading(loadingPercentage, duration, buffered);
-                        }
-                        if (loadingPercentage === 100) {
-                            sound.isBuffering = false;
-                            sound.isBuffered = true;
-                            sound.audioBufferDate = new Date();
-                        }
-                    }
-                };
-                const canPlayThroughHandler = () => __awaiter(this, void 0, void 0, function* () {
-                    if (!sound.audioElement) {
-                        return;
-                    }
-                    sound.audioElement.removeEventListener('canplaythrough', canPlayThroughHandler);
-                    sound.isReadyToPLay = true;
-                    if (!isNaN(sound.audioElement.duration) && !sound.durationSetManually) {
-                        sound.duration = sound.audioElement.duration;
-                    }
-                    switch (afterLoadingAction) {
-                        case PlayerCore.AFTER_LOADING_SEEK:
-                            this._setPosition(sound);
-                            break;
-                        case PlayerCore.AFTER_LOADING_PLAY:
-                            this._play(sound);
-                            break;
-                    }
-                });
-                sound.audioElement.addEventListener('canplaythrough', canPlayThroughHandler);
-                sound.audioElement.crossOrigin = 'anonymous';
-                sound.audioElement.src = sound.url;
-                sound.audioElement.load();
-            }
-            else {
-                throw new Error('sound has no url');
-            }
-        });
-    }
-    _loadSoundUsingRequest(sound, afterLoadingAction) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (sound.arrayBuffer !== null) {
-                return yield this._decodeSound(sound);
-            }
-            const { url, codec = null } = this._findBestSource(sound.source);
-            sound.url = url;
-            sound.codec = codec;
-            if (sound.url !== null) {
-                const request = new PlayerRequest();
-                sound.isBuffering = true;
-                const arrayBuffer = yield request.getArrayBuffer(sound);
-                sound.arrayBuffer = arrayBuffer;
-                yield this._decodeSound(sound, afterLoadingAction);
-            }
-            else {
-                throw new Error('sound has no url');
-            }
-        });
-    }
-    _decodeSound(sound, afterLoadingAction) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const arrayBufferCopy = sound.arrayBuffer.slice(0);
-            const audioBuffer = yield this._playerAudio.decodeAudio(arrayBufferCopy);
-            if (!isNaN(audioBuffer.duration) && !sound.durationSetManually) {
-                sound.duration = audioBuffer.duration;
-            }
-            sound.audioBuffer = audioBuffer;
-            sound.isBuffering = false;
-            sound.isBuffered = true;
-            sound.audioBufferDate = new Date();
-            sound.isReadyToPLay = true;
-            switch (afterLoadingAction) {
-                case PlayerCore.AFTER_LOADING_SEEK:
-                    this._setPosition(sound);
-                    break;
-                case PlayerCore.AFTER_LOADING_PLAY:
-                    this._play(sound);
-                    break;
-            }
-        });
-    }
-    play() {
-        return __awaiter(this, arguments, void 0, function* ({ whichSound, playTimeOffset } = {}) {
-            const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
-            const sound = this._getSoundFromQueue({ whichSound, updateIndex: true });
-            if (sound === null) {
+        }
+        // if there is a sound currently being played
+        // AND the current sound is the same sound as the one that will now be played
+        if (currentSound !== null
+            && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING)
+            && (currentSound.id === sound.id)) {
+            if (!isNaN(playTimeOffset)) {
+                // sound is already playing but a playTimeOffset got set
+                // so we just need to seek
+                this.setPositionInSeconds(playTimeOffset);
                 return sound;
             }
-            if (currentSound !== null
-                && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING)
-                && (currentSound.id === sound.id)) {
-                if (!isNaN(playTimeOffset)) {
-                    this.setPositionInSeconds(playTimeOffset);
-                    return sound;
-                }
-                else {
-                    return sound;
-                }
-            }
-            if (currentSound !== null
-                && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING || currentSound.state === PlayerSound.SOUND_STATE_PAUSED)
-                && (currentSound.id !== sound.id)) {
-                currentSound.state = PlayerSound.SOUND_STATE_STOPPED;
-                yield this._stop(currentSound);
-            }
-            if (!isNaN(playTimeOffset)) {
-                sound.playTimeOffset = playTimeOffset;
-            }
             else {
-                sound.playTimeOffset = 0;
+                // sound is already playing, do nothing
+                return sound;
             }
-            if (sound.sourceNode === null) {
-                yield this._playerAudio.connectSound(sound, () => {
-                    this._onEnded();
-                });
-            }
-            if (!sound.isReadyToPLay) {
-                yield this.loadSound(sound, PlayerCore.AFTER_LOADING_PLAY);
-            }
-            else {
-                yield this._play(sound);
-            }
-            return sound;
-        });
+        }
+        // if there is a sound currently being played OR paused
+        // AND the current sound is NOT the same sound as the one that will now be played
+        if (currentSound !== null
+            && (currentSound.state === PlayerSound.SOUND_STATE_PLAYING || currentSound.state === PlayerSound.SOUND_STATE_PAUSED)
+            && (currentSound.id !== sound.id)) {
+            // stop the current sound
+            currentSound.state = PlayerSound.SOUND_STATE_STOPPED;
+            await this._stop(currentSound);
+        }
+        // if the user wants to play the sound from a certain position
+        // then playTimeOffset should be a number and not undefined
+        if (!isNaN(playTimeOffset)) {
+            sound.playTimeOffset = playTimeOffset;
+        }
+        else {
+            sound.playTimeOffset = 0;
+        }
+        if (sound.sourceNode === null) {
+            // connect the source to the gain (graph) node
+            await this._playerAudio.connectSound(sound, () => {
+                this._onEnded();
+            });
+        }
+        if (!sound.isReadyToPLay) {
+            await this.loadSound(sound, PlayerCore.AFTER_LOADING_PLAY);
+        }
+        else {
+            await this._play(sound);
+        }
+        return sound;
     }
-    _play(sound) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (sound.state === PlayerSound.SOUND_STATE_PLAYING) {
-                return;
-            }
-            if (this._playerAudio.isAudioContextFrozen()) {
-                yield this._playerAudio.unfreezeAudioContext();
-            }
-            if (sound.playTimeOffset > 0) {
-                sound.playTime = sound.playTimeOffset;
-            }
-            if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX) {
-                yield this._playAudioBuffer(sound);
-            }
-            else if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AUDIO) {
-                yield this._playMediaElementAudio(sound);
-            }
-            sound.state = PlayerSound.SOUND_STATE_PLAYING;
-            this._triggerSoundCallbacks(sound);
-        });
+    async _play(sound) {
+        if (sound.state === PlayerSound.SOUND_STATE_PLAYING) {
+            return;
+        }
+        if (this._playerAudio.isAudioContextFrozen()) {
+            await this._playerAudio.unfreezeAudioContext();
+        }
+        if (sound.playTimeOffset > 0) {
+            sound.playTime = sound.playTimeOffset;
+        }
+        if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX) {
+            await this._playAudioBuffer(sound);
+        }
+        else if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AUDIO) {
+            await this._playMediaElementAudio(sound);
+        }
+        // the AudioBufferSourceNode does not have events (other than onended)
+        // the playbackState got removed:
+        // https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Migrating_from_webkitAudioContext#changes_to_determining_playback_state
+        // for the AudioElement we could use the play event to trigger the next two lines!?
+        // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement#events
+        sound.state = PlayerSound.SOUND_STATE_PLAYING;
+        this._triggerSoundCallbacks(sound);
     }
-    _playAudioBuffer(sound) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (sound.sourceNode instanceof AudioBufferSourceNode) {
-                sound.startTime = sound.sourceNode.context.currentTime;
-                sound.sourceNode.buffer = sound.audioBuffer;
-                try {
-                    if (sound.state === PlayerSound.SOUND_STATE_SEEKING) {
-                        sound.sourceNode.start(0, sound.playTime);
-                    }
-                    else if (sound.state === PlayerSound.SOUND_STATE_PAUSED && sound.playTimeOffset === 0) {
-                        sound.sourceNode.start(0, sound.playTime);
-                    }
-                    else {
-                        if (sound.playTimeOffset > 0) {
-                            if (sound.playTimeOffset > Math.ceil(sound.duration)) {
-                                console.warn('playTimeOffset > sound duration');
-                            }
-                            sound.elapsedPlayTime = sound.playTimeOffset;
-                            sound.sourceNode.start(0, sound.playTimeOffset);
-                        }
-                        else {
-                            sound.sourceNode.start();
-                        }
-                    }
-                }
-                catch (error) {
-                    throw new Error(error);
-                }
-            }
-        });
-    }
-    _playMediaElementAudio(sound) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
+    async _playAudioBuffer(sound) {
+        // AudioBufferSourceNode type guard
+        if (sound.sourceNode instanceof AudioBufferSourceNode) {
+            // on play, seek, pause, always reset the sound startTime (current context time)
+            sound.startTime = sound.sourceNode.context.currentTime;
+            // add the audio buffer to the source node
+            sound.sourceNode.buffer = sound.audioBuffer;
+            // start playback
+            // start(when, offset, duration)
+            try {
                 if (sound.state === PlayerSound.SOUND_STATE_SEEKING) {
-                    sound.audioElement.currentTime = sound.playTime;
+                    sound.sourceNode.start(0, sound.playTime);
                 }
                 else if (sound.state === PlayerSound.SOUND_STATE_PAUSED && sound.playTimeOffset === 0) {
-                    sound.audioElement.currentTime = sound.playTime;
+                    sound.sourceNode.start(0, sound.playTime);
                 }
                 else {
                     if (sound.playTimeOffset > 0) {
+                        // round duration up as numbers are not integers
+                        // so sometimes it is a tiny bit above
                         if (sound.playTimeOffset > Math.ceil(sound.duration)) {
-                            console.warn('playTimeOffset > duration');
+                            console.warn('playTimeOffset > sound duration');
                         }
-                        sound.audioElement.currentTime = sound.playTimeOffset;
+                        // if an offset is defined start playing at that position
+                        sound.elapsedPlayTime = sound.playTimeOffset;
+                        sound.sourceNode.start(0, sound.playTimeOffset);
                     }
                     else {
-                        sound.audioElement.currentTime = 0;
+                        sound.sourceNode.start();
                     }
                 }
-                return yield sound.audioElement.play();
             }
-        });
+            catch (error) {
+                throw new Error(error);
+            }
+        }
+    }
+    async _playMediaElementAudio(sound) {
+        // MediaElementAudioSourceNode type guard
+        if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
+            if (sound.state === PlayerSound.SOUND_STATE_SEEKING) {
+                sound.audioElement.currentTime = sound.playTime;
+            }
+            else if (sound.state === PlayerSound.SOUND_STATE_PAUSED && sound.playTimeOffset === 0) {
+                sound.audioElement.currentTime = sound.playTime;
+            }
+            else {
+                // if an offset is defined start playing at that position
+                if (sound.playTimeOffset > 0) {
+                    // round duration up as numbers are not integers
+                    // so sometimes it is a tiny bit above
+                    if (sound.playTimeOffset > Math.ceil(sound.duration)) {
+                        console.warn('playTimeOffset > duration');
+                    }
+                    sound.audioElement.currentTime = sound.playTimeOffset;
+                }
+                else {
+                    sound.audioElement.currentTime = 0;
+                }
+            }
+            return await sound.audioElement.play();
+        }
     }
     _triggerSoundCallbacks(sound) {
         if (sound.onResumed !== null && !sound.firstTimePlayed) {
@@ -1028,7 +1138,11 @@ class PlayerCore {
             sound.onStarted(sound.playTimeOffset);
         }
         if (sound.onPlaying !== null) {
+            // reset progress timestamp
             this._playingProgressPreviousTimestamp = 0;
+            // "request animation frame" callback has an argument, which
+            // is the timestamp when the callback gets called
+            // as this is the first call set timestamp manually to zero
             this._progressTrigger(sound, 0);
         }
         else {
@@ -1036,51 +1150,61 @@ class PlayerCore {
         }
         return;
     }
-    _onEnded() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this._options.playNextOnEnded) {
-                const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
-                if (currentSound !== null) {
-                    if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AUDIO ||
-                        (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX && currentSound.state === PlayerSound.SOUND_STATE_PLAYING)) {
-                        const nextSound = this._getSoundFromQueue({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
-                        let willPlayNext = false;
-                        if (nextSound !== null) {
-                            willPlayNext = true;
-                        }
-                        if (!willPlayNext) {
-                            yield this._playerAudio.freezeAudioContext();
-                        }
-                        if (currentSound.onEnded !== null) {
-                            currentSound.onEnded(willPlayNext);
-                        }
-                        try {
-                            if (willPlayNext) {
-                                yield this.next();
-                            }
-                        }
-                        catch (error) {
-                            console.error(error);
+    async _onEnded() {
+        if (this._options.playNextOnEnded) {
+            const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+            if (currentSound !== null) {
+                // when we set the sound to paused...
+                // audio buffer will trigger onEnded because we actually stop the song
+                // audio element will not trigger onEnded as we pause the song
+                // this is why, for audio buffer (ajax) sounds we check if they have
+                // the playing state before triggering the next sound
+                // if stopped, seeking or pause we do nothing
+                if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AUDIO ||
+                    (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX && currentSound.state === PlayerSound.SOUND_STATE_PLAYING)) {
+                    const nextSound = this._getSoundFromQueue({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
+                    let willPlayNext = false;
+                    // check if there is another sound in the queue
+                    if (nextSound !== null) {
+                        willPlayNext = true;
+                    }
+                    if (!willPlayNext) {
+                        await this._playerAudio.freezeAudioContext();
+                    }
+                    if (currentSound.onEnded !== null) {
+                        currentSound.onEnded(willPlayNext);
+                    }
+                    try {
+                        if (willPlayNext) {
+                            await this.next();
                         }
                     }
-                    if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX && currentSound.state === PlayerSound.SOUND_STATE_SEEKING) {
-                        try {
-                            yield this.play(currentSound);
-                        }
-                        catch (error) {
-                            console.error(error);
-                        }
+                    catch (error) {
+                        console.error(error);
+                    }
+                }
+                if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX && currentSound.state === PlayerSound.SOUND_STATE_SEEKING) {
+                    try {
+                        // audio buffer source nodes get destroyed on stop
+                        // this is why in ajax mode we need to do a fresh start when seeking
+                        await this.play(currentSound);
+                    }
+                    catch (error) {
+                        console.error(error);
                     }
                 }
             }
-        });
+        }
     }
     _getSoundFromQueue({ whichSound, updateIndex = false } = {}) {
         let sound = null;
         let soundIndex = null;
+        // check if the queue is empty
         if (this._queue.length === 0) {
             return sound;
         }
+        // if which sound to play did not get specified
+        // we set it to the current sound by default
         if (typeof whichSound === 'undefined') {
             whichSound = PlayerCore.CURRENT_SOUND;
         }
@@ -1095,6 +1219,8 @@ class PlayerCore {
                     sound = this._queue[soundIndex];
                 }
                 else if (this._options.loopQueue) {
+                    // if last sound is playing and loop queue is enabled
+                    // then on onEnded we go from last to first sound
                     soundIndex = 0;
                     sound = this._queue[soundIndex];
                 }
@@ -1105,6 +1231,8 @@ class PlayerCore {
                     sound = this._queue[soundIndex];
                 }
                 else if (this._options.loopQueue) {
+                    // if first sound of the queue is playing and loop queue is enabled
+                    // then if previous() gets used, we jump to last sound in queue
                     soundIndex = this._queue.length - 1;
                     sound = this._queue[soundIndex];
                 }
@@ -1122,6 +1250,8 @@ class PlayerCore {
                 }
                 break;
             default:
+                // if "which sound to play" is a soundId
+                // Note: soundId can be a string or number
                 [sound, soundIndex] = this._findSoundById({ soundId: whichSound });
         }
         if (soundIndex !== null && updateIndex) {
@@ -1147,6 +1277,8 @@ class PlayerCore {
             codec: null
         };
         let sources;
+        // if the source is not an array but a single source object
+        // we first transform it into an array
         if (!Array.isArray(soundSource)) {
             sources = [soundSource];
         }
@@ -1157,23 +1289,36 @@ class PlayerCore {
         while (i < sources.length) {
             const source = sources[i];
             let soundUrl = '';
+            // if the player has set the baseUrl option for sounds, use it now
             if (this._options.soundsBaseUrl !== '') {
                 soundUrl = this._options.soundsBaseUrl;
             }
             soundUrl += source.url;
+            // check if the codec (if any got specified) is supported
+            // by the device
             let isCodecSupported = true;
             if (source.codec !== null) {
                 isCodecSupported = this._checkCodecSupport(source.codec);
             }
             if (isCodecSupported) {
                 if (source.isPreferred) {
+                    // if multiple sources but this one if preferred and if previous
+                    // sources also had a supported codec we still overwrite the
+                    // previous match
                     bestSource.url = soundUrl;
                     bestSource.codec = source.codec;
+                    // as the source is marked as preferred and it is supported
+                    // so we can exit early
                     break;
                 }
                 else {
+                    // if no best source has been found so far, we don't
+                    // care if it's preferred it's automatically chosen
+                    // as being the best
                     bestSource.url = soundUrl;
                     bestSource.codec = source.codec;
+                    // source is supported, but maybe there is preferred & supported
+                    // so we don't exit the loop just yet and continue searching
                 }
             }
             i++;
@@ -1238,91 +1383,86 @@ class PlayerCore {
         });
         return isSupported;
     }
-    pause() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
-            if (currentSound === null) {
-                return;
-            }
-            if (currentSound.state === PlayerSound.SOUND_STATE_PAUSED) {
-                return;
-            }
-            const currentTime = currentSound.getCurrentTime();
-            currentSound.playTime = currentTime;
-            if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX) {
-                currentSound.elapsedPlayTime = currentTime;
-            }
-            if (currentSound.onPaused !== null) {
-                currentSound.onPaused(currentSound.playTime);
-            }
-            currentSound.state = PlayerSound.SOUND_STATE_PAUSED;
-            yield this._stop(currentSound);
-            return currentSound;
-        });
+    async pause() {
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+        if (currentSound === null) {
+            return;
+        }
+        if (currentSound.state === PlayerSound.SOUND_STATE_PAUSED) {
+            return;
+        }
+        const currentTime = currentSound.getCurrentTime();
+        currentSound.playTime = currentTime;
+        if (this._options.loadPlayerMode === PlayerCore.PLAYER_MODE_AJAX) {
+            currentSound.elapsedPlayTime = currentTime;
+        }
+        if (currentSound.onPaused !== null) {
+            currentSound.onPaused(currentSound.playTime);
+        }
+        currentSound.state = PlayerSound.SOUND_STATE_PAUSED;
+        await this._stop(currentSound);
+        return currentSound;
     }
-    stop() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
-            if (currentSound === null) {
-                return;
-            }
-            if (currentSound.state === PlayerSound.SOUND_STATE_STOPPED) {
-                return;
-            }
-            yield this._playerAudio.freezeAudioContext();
-            if (currentSound.onStopped !== null) {
-                currentSound.onStopped(currentSound.playTime);
-            }
-            currentSound.state = PlayerSound.SOUND_STATE_STOPPED;
-            yield this._stop(currentSound);
-            return currentSound;
-        });
+    async stop() {
+        const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
+        if (currentSound === null) {
+            return;
+        }
+        if (currentSound.state === PlayerSound.SOUND_STATE_STOPPED) {
+            return;
+        }
+        // on stop we freeze the audio context
+        // as we assume it won't be needed right away
+        await this._playerAudio.freezeAudioContext();
+        if (currentSound.onStopped !== null) {
+            currentSound.onStopped(currentSound.playTime);
+        }
+        currentSound.state = PlayerSound.SOUND_STATE_STOPPED;
+        await this._stop(currentSound);
+        return currentSound;
     }
-    _stop(sound) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this._playingProgressRequestId !== null) {
-                cancelAnimationFrame(this._playingProgressRequestId);
-                this._playingProgressRequestId = null;
+    async _stop(sound) {
+        if (this._playingProgressRequestId !== null) {
+            cancelAnimationFrame(this._playingProgressRequestId);
+            this._playingProgressRequestId = null;
+        }
+        if (sound.sourceNode !== null) {
+            if (sound.sourceNode instanceof AudioBufferSourceNode) {
+                // if using the AudioBufferSourceNode use the stop method
+                sound.sourceNode.stop(0);
+                // the "audio buffer" CAN be reused for multiple plays
+                // however the "audio buffer source" CAN NOT, so we disconnect
+                await this._playerAudio.disconnectSound(sound);
             }
-            if (sound.sourceNode !== null) {
-                if (sound.sourceNode instanceof AudioBufferSourceNode) {
-                    sound.sourceNode.stop(0);
-                    yield this._playerAudio.disconnectSound(sound);
-                }
-                if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
-                    sound.audioElement.pause();
-                }
+            if (sound.sourceNode instanceof MediaElementAudioSourceNode) {
+                // if using the MediaElementAudioSourceNode use the pause method
+                sound.audioElement.pause();
             }
-            if (sound.state === PlayerSound.SOUND_STATE_STOPPED) {
-                sound.isReadyToPLay = false;
-                sound.firstTimePlayed = true;
-                sound.startTime = 0;
-                sound.elapsedPlayTime = 0;
-                sound.playTime = 0;
-                sound.playedTimePercentage = 0;
-                yield this._playerAudio.disconnectSound(sound);
-            }
-        });
+        }
+        // if it is fully stopped, not just paused (or seeking)
+        if (sound.state === PlayerSound.SOUND_STATE_STOPPED) {
+            // reset sound values
+            sound.isReadyToPLay = false;
+            sound.firstTimePlayed = true;
+            sound.startTime = 0;
+            sound.elapsedPlayTime = 0;
+            sound.playTime = 0;
+            sound.playedTimePercentage = 0;
+            // disconnect the sound
+            await this._playerAudio.disconnectSound(sound);
+        }
     }
-    next() {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.play({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
-        });
+    async next() {
+        return await this.play({ whichSound: PlayerCore.PLAY_SOUND_NEXT });
     }
-    previous() {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.play({ whichSound: PlayerCore.PLAY_SOUND_PREVIOUS });
-        });
+    async previous() {
+        return await this.play({ whichSound: PlayerCore.PLAY_SOUND_PREVIOUS });
     }
-    first() {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.play({ whichSound: PlayerCore.PLAY_SOUND_FIRST });
-        });
+    async first() {
+        return await this.play({ whichSound: PlayerCore.PLAY_SOUND_FIRST });
     }
-    last() {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.play({ whichSound: PlayerCore.PLAY_SOUND_LAST });
-        });
+    async last() {
+        return await this.play({ whichSound: PlayerCore.PLAY_SOUND_LAST });
     }
     setVisibilityWatch(visibilityWatch) {
         this._options.visibilityWatch = visibilityWatch;
@@ -1345,14 +1485,18 @@ class PlayerCore {
     _handleVisibilityChange() {
         let hiddenKeyword;
         if (typeof document.hidden !== 'undefined') {
+            // Opera 12.10 and Firefox 18 and later support
             hiddenKeyword = 'hidden';
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }
         else if (typeof document.msHidden !== 'undefined') {
             hiddenKeyword = 'msHidden';
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }
         else if (typeof document.webkitHidden !== 'undefined') {
             hiddenKeyword = 'webkitHidden';
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (document[hiddenKeyword]) {
             if (this._options.visibilityHiddenAction === PlayerCore.VISIBILITY_HIDDEN_ACTION_PAUSE) {
                 const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
@@ -1380,30 +1524,28 @@ class PlayerCore {
             }
         }
     }
-    manuallyUnlockAudio() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this._playerAudio.unlockAudio();
-        });
+    async manuallyUnlockAudio() {
+        await this._playerAudio.unlockAudio();
     }
-    disconnect() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this._playingProgressRequestId !== null) {
-                cancelAnimationFrame(this._playingProgressRequestId);
-                this._playingProgressRequestId = null;
-            }
-            yield this._playerAudio.shutDown(this._queue);
-        });
+    async disconnect() {
+        // adding another check here to cancel animation frame because:
+        // a player can be disconnect while song is paused or playing
+        // which means the cancelAnimationFrame in _stop would never get triggered
+        if (this._playingProgressRequestId !== null) {
+            cancelAnimationFrame(this._playingProgressRequestId);
+            this._playingProgressRequestId = null;
+        }
+        await this._playerAudio.shutDown(this._queue);
     }
-    getAudioContext() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const audioContext = yield this._playerAudio.getAudioContext();
-            return audioContext;
-        });
+    async getAudioContext() {
+        const audioContext = await this._playerAudio.getAudioContext();
+        return audioContext;
     }
     getCurrentSound() {
         return this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
     }
 }
+// constants
 PlayerCore.WHERE_IN_QUEUE_AT_END = 'append';
 PlayerCore.WHERE_IN_QUEUE_AT_START = 'prepend';
 PlayerCore.AFTER_LOADING_SEEK = 'after_loading_seek';

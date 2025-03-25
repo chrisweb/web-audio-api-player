@@ -5,25 +5,21 @@
         "emitDecoratorMetadata": true,
         "module": "esnext",
         "moduleResolution": "node",
-        "rootDir": "./src",
-        "outDir": "dist",
-        "sourceMap": true,
         "declarationDir": "dist",
-        "noImplicitAny": true,
         "noFallthroughCasesInSwitch": true,
         "skipDefaultLibCheck": true,
-        "removeComments": true,
+        "resolveJsonModule": true,
+        "allowSyntheticDefaultImports": true,
         "skipLibCheck": true,
         "lib": [
-            "dom",
-            "es2016"
+            "es2020",
+            "dom"
         ],
-        "target": "es2016"
+        "target": "es2020"
     },
     "exclude": [
         "node_modules",
         "examples",
-        "scripts",
         "dist"
     ]
 }

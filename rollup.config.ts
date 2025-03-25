@@ -1,6 +1,7 @@
-import typescript from 'rollup-plugin-typescript2'
+import pkg from './package.json' with { type: 'json' }
+import typescript from '@rollup/plugin-typescript'
+import { nodeResolve } from '@rollup/plugin-node-resolve'
 import terser from '@rollup/plugin-terser'
-import pkg from '../package.json' assert { type: "json" }
 
 export default {
     input: 'src/index.ts',
@@ -31,9 +32,17 @@ export default {
         },
     ],
     plugins: [
-        typescript({
-            tsconfig: "tsconfig.json",
-            useTsconfigDeclarationDir: true
+        nodeResolve({
+            extensions: ['.ts', '.js']
         }),
+        typescript({
+            compilerOptions: {
+                declaration: true,
+                declarationDir: './dist',
+                sourceMap: true
+            },
+            include: ['src/**/*.ts'],
+            exclude: ['node_modules', 'dist', 'examples']
+        })
     ],
 }

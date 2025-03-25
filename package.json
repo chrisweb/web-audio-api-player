@@ -34,21 +34,22 @@
         "example": "examples"
     },
     "scripts": {
-        "build": "rollup -c ./scripts/dist.js",
+        "build": "rollup --config rollup.config.ts --configPlugin typescript --configImportAttributesKey with",
         "lint": "npx eslint src/**/* examples/simple-player/client/**/* examples/simple-player/server/**/*",
         "watch": "rollup -cw ./scripts/dist.js"
     },
     "devDependencies": {
-        "@eslint/eslintrc": "3.1.0",
-        "@eslint/js": "9.11.1",
+        "@eslint/eslintrc": "3.3.1",
+        "@eslint/js": "9.23.0",
+        "@rollup/plugin-node-resolve": "16.0.1",
         "@rollup/plugin-terser": "0.4.4",
-        "@typescript-eslint/eslint-plugin": "8.7.0",
-        "@typescript-eslint/parser": "8.7.0",
-        "eslint": "9.11.1",
-        "globals": "15.9.0",
-        "rollup": "4.22.5",
-        "rollup-plugin-typescript2": "0.36.0",
-        "typescript": "5.6.2"
+        "@rollup/plugin-typescript": "12.1.2",
+        "@typescript-eslint/eslint-plugin": "8.28.0",
+        "@typescript-eslint/parser": "8.28.0",
+        "eslint": "9.23.0",
+        "globals": "16.0.0",
+        "rollup": "4.37.0",
+        "typescript": "5.8.2"
     },
     "type": "module"
 }
