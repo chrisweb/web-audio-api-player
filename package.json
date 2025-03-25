@@ -33,6 +33,7 @@
     "directories": {
         "example": "examples"
     },
+    "type": "module",
     "scripts": {
         "build": "rollup --config rollup.config.ts --configPlugin typescript --configImportAttributesKey with",
         "lint": "npx eslint src/**/* examples/simple-player/client/**/* examples/simple-player/server/**/*",
@@ -51,5 +52,7 @@
         "rollup": "4.37.0",
         "typescript": "5.8.2"
     },
-    "type": "module"
+    "overrides": {
+        "serialize-javascript": "6.0.2"
+    }
 }
