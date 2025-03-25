@@ -44,7 +44,7 @@ export interface IAudioNodes {
 
 export class PlayerAudio {
 
-    protected _options;
+    protected _options: IAudioOptions;
     protected _audioContext: AudioContext = null;
     protected _volume: number = null;
     protected _audioNodes: IAudioNodes = {
