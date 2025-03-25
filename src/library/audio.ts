@@ -87,7 +87,7 @@ export class PlayerAudio {
 
         // Note to self:
         // the new decodeAudioData returns a promise, older versions accept as second
-        // and third parameter, which are a success and an error callback funtion
+        // and third parameter, which are a success and an error callback function
         // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/decodeAudioData
 
         return await audioContext.decodeAudioData(arrayBuffer);
@@ -97,7 +97,7 @@ export class PlayerAudio {
     protected _createAudioContext(): Promise<void> {
 
         if (this._audioContext instanceof AudioContext) {
-            return;
+            return Promise.resolve();
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,6 +109,8 @@ export class PlayerAudio {
         } else {
             this._audioContext = new WebAudioContext();
         }
+
+        return Promise.resolve();
 
     }
 

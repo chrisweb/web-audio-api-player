@@ -252,9 +252,9 @@ export class PlayerCore {
 
     }
 
-    public setLoopQueue(loppQueue: boolean): void {
+    public setLoopQueue(loopQueue: boolean): void {
 
-        this._options.loopQueue = loppQueue;
+        this._options.loopQueue = loopQueue;
 
     }
 
@@ -431,7 +431,7 @@ export class PlayerCore {
             sound.audioElement.onprogress = () => {
 
                 // if for some external reason the audio element
-                // has disappred, then we exit early 
+                // has disappeared, then we exit early 
                 if (!sound.audioElement) {
                     return
                 }
@@ -467,7 +467,7 @@ export class PlayerCore {
             const canPlayThroughHandler = async () => {
 
                 // if for some external reason the audio element
-                // has disappred, then we exit early 
+                // has disappeared, then we exit early 
                 if (!sound.audioElement) {
                     return
                 }
@@ -518,9 +518,7 @@ export class PlayerCore {
     protected async _loadSoundUsingRequest(sound: ISound, afterLoadingAction?: typeAfterLoadingAction): Promise<void> {
 
         // check for audio buffer before array buffer, because if one exist the other
-        // should exist too and is better for performance to reuse audio buffer then
-        // to redecode array buffer into an audio buffer
-        // user provided audio buffer
+        // should exist too and is better for performance to reuse audio buffer
         // decoding an array buffer is an expensive task even on modern hardware
         // TODO: commented out for now, there is a weird bug when reusing the
         // audio buffer, somehow the onended callback gets triggered in a loop
@@ -971,13 +969,13 @@ export class PlayerCore {
         let soundIndex = 0;
 
         this._queue.some((soundFromQueue, index) => {
-
             if (soundFromQueue.id === soundId) {
                 sound = soundFromQueue;
                 soundIndex = index;
                 return true;
+            } else {
+                return false;
             }
-
         });
 
         return [sound, soundIndex];
@@ -1095,7 +1093,7 @@ export class PlayerCore {
                 mediaMimeTypes = ['audio/flac;', 'audio/x-flac;'];
                 break;
             default:
-                error = 'unrecognised codec';
+                error = 'unrecognized codec';
                 break;
         }
 
@@ -1132,11 +1130,11 @@ export class PlayerCore {
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         if (currentSound === null) {
-            return;
+            return currentSound;
         }
 
         if (currentSound.state === PlayerSound.SOUND_STATE_PAUSED) {
-            return;
+            return currentSound;
         }
 
         const currentTime = currentSound.getCurrentTime();
@@ -1164,11 +1162,11 @@ export class PlayerCore {
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
 
         if (currentSound === null) {
-            return;
+            return currentSound;
         }
 
         if (currentSound.state === PlayerSound.SOUND_STATE_STOPPED) {
-            return;
+            return currentSound;
         }
 
         // on stop we freeze the audio context

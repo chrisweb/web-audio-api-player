@@ -191,13 +191,13 @@ class PlayerAudio {
         const audioContext = await this.getAudioContext();
         // Note to self:
         // the new decodeAudioData returns a promise, older versions accept as second
-        // and third parameter, which are a success and an error callback funtion
+        // and third parameter, which are a success and an error callback function
         // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/decodeAudioData
         return await audioContext.decodeAudioData(arrayBuffer);
     }
     _createAudioContext() {
         if (this._audioContext instanceof AudioContext) {
-            return;
+            return Promise.resolve();
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const WebAudioContext = window.AudioContext || window.webkitAudioContext;
@@ -208,6 +208,7 @@ class PlayerAudio {
         else {
             this._audioContext = new WebAudioContext();
         }
+        return Promise.resolve();
     }
     _addFirstUserInteractionEventListeners() {
         if (this._options.unlockAudioOnFirstUserInteraction) {
@@ -750,8 +751,8 @@ class PlayerCore {
     getVolume() {
         return this._playerAudio.getVolume();
     }
-    setLoopQueue(loppQueue) {
-        this._options.loopQueue = loppQueue;
+    setLoopQueue(loopQueue) {
+        this._options.loopQueue = loopQueue;
     }
     getLoopQueue() {
         return this._options.loopQueue;
@@ -868,7 +869,7 @@ class PlayerCore {
             // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
             sound.audioElement.onprogress = () => {
                 // if for some external reason the audio element
-                // has disappred, then we exit early 
+                // has disappeared, then we exit early 
                 if (!sound.audioElement) {
                     return;
                 }
@@ -893,7 +894,7 @@ class PlayerCore {
             };
             const canPlayThroughHandler = async () => {
                 // if for some external reason the audio element
-                // has disappred, then we exit early 
+                // has disappeared, then we exit early 
                 if (!sound.audioElement) {
                     return;
                 }
@@ -932,9 +933,7 @@ class PlayerCore {
     }
     async _loadSoundUsingRequest(sound, afterLoadingAction) {
         // check for audio buffer before array buffer, because if one exist the other
-        // should exist too and is better for performance to reuse audio buffer then
-        // to redecode array buffer into an audio buffer
-        // user provided audio buffer
+        // should exist too and is better for performance to reuse audio buffer
         // decoding an array buffer is an expensive task even on modern hardware
         // TODO: commented out for now, there is a weird bug when reusing the
         // audio buffer, somehow the onended callback gets triggered in a loop
@@ -1268,6 +1267,9 @@ class PlayerCore {
                 soundIndex = index;
                 return true;
             }
+            else {
+                return false;
+            }
         });
         return [sound, soundIndex];
     }
@@ -1364,7 +1366,7 @@ class PlayerCore {
                 mediaMimeTypes = ['audio/flac;', 'audio/x-flac;'];
                 break;
             default:
-                error = 'unrecognised codec';
+                error = 'unrecognized codec';
                 break;
         }
         if (error) {
@@ -1386,10 +1388,10 @@ class PlayerCore {
     async pause() {
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
         if (currentSound === null) {
-            return;
+            return currentSound;
         }
         if (currentSound.state === PlayerSound.SOUND_STATE_PAUSED) {
-            return;
+            return currentSound;
         }
         const currentTime = currentSound.getCurrentTime();
         currentSound.playTime = currentTime;
@@ -1406,10 +1408,10 @@ class PlayerCore {
     async stop() {
         const currentSound = this._getSoundFromQueue({ whichSound: PlayerCore.CURRENT_SOUND });
         if (currentSound === null) {
-            return;
+            return currentSound;
         }
         if (currentSound.state === PlayerSound.SOUND_STATE_STOPPED) {
-            return;
+            return currentSound;
         }
         // on stop we freeze the audio context
         // as we assume it won't be needed right away
