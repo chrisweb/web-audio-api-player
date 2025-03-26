@@ -38,7 +38,7 @@ export class Server {
 
     constructor() {
 
-        // create a new expressjs application
+        // create a new express.js application
         this.application = express();
 
     }
