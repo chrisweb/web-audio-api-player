@@ -6,8 +6,8 @@ import fs from 'fs';
 
 // vendor
 import express from 'express';
-import type { Response, Request, SendFileOptions } from 'express-serve-static-core'
-import { contentType } from 'mime-types';
+import type { Response as ExpressResponse, Request as ExpressRequest } from 'express';
+import type { SendFileOptions } from 'express-serve-static-core';
 
 // hack because __dirname is not defined
 // https://github.com/nodejs/node/issues/16844
@@ -19,6 +19,18 @@ interface IImportMeta extends ImportMeta {
     url: string;
 }
 //}
+
+// Define the contentType function that was missing
+function contentType(extension: string): string | false {
+    const types: Record<string, string> = {
+        '.mp3': 'audio/mpeg',
+        '.ogg': 'audio/ogg',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png'
+    };
+    return types[extension] || false;
+}
 
 export class Server {
 
@@ -37,12 +49,26 @@ export class Server {
         const DIRNAME = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(META.url));
         const ROOTPATH = path.join(DIRNAME, '..', '..');
 
+        // CORS middleware
+        this.application.use((req, res, next) => {
+            res.header('Access-Control-Allow-Origin', '*');
+            res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+            res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Range');
+            
+            // Handle preflight requests
+            if (req.method === 'OPTIONS') {
+                return res.status(200).end();
+            }
+            
+            next();
+        });
+
         this.application.use('/client', express.static(ROOTPATH + '/../client/build'));
         this.application.use('/dist', express.static(ROOTPATH + '/../../../dist'));
         this.application.use('/static', express.static(ROOTPATH + '/../../../assets'));
 
         // streaming songs
-        this.application.get('/music/:song', (request: Request, response: Response) => {
+        this.application.get('/music/:song', (request: ExpressRequest, response: ExpressResponse) => {
 
             const fullPath = ROOTPATH + '/../../../assets/music/' + request.params.song
             const size = fs.statSync(fullPath).size
@@ -105,7 +131,12 @@ export class Server {
 
                 } else {
 
-                    response.sendFile(path.resolve(fullPath))
+                    response.sendFile(path.resolve(fullPath), {
+                        headers: {
+                            'Content-Type': mimeType,
+                            'Content-Length': contentLength
+                        }
+                    });
 
                 }
 
@@ -115,25 +146,35 @@ export class Server {
 
         })
 
-        this.application.get('/', (/*request: Request,*/ response: Response) => {
+        this.application.get('/', (request: ExpressRequest, response: ExpressResponse) => {
 
-            // options list: http://expressjs.com/en/api.html#res.sendFile
-            const mainPageSendfileOptions: SendFileOptions = {
-                root: path.join(ROOTPATH, '..', 'html'),
-                dotfiles: 'deny',
-                headers: {
-                    'x-timestamp': Date.now(),
-                    'x-sent': true
-                }
-            };
+            if (request.method === 'GET') {
+                // options list: http://expressjs.com/en/api.html#res.sendFile
+                const mainPageSendfileOptions: SendFileOptions = {
+                    root: path.join(ROOTPATH, '..', 'html'),
+                    dotfiles: 'deny',
+                    headers: {
+                        'x-timestamp': Date.now(),
+                        'x-sent': true
+                    }
+                };
 
-            response.sendFile('main.html', mainPageSendfileOptions);
+                response.sendFile('main.html', mainPageSendfileOptions);
+            }
 
         });
 
         const port = process.env.PORT || 35000;
 
-        this.application.listen(port, () => console.log(`Example app listening on port ${port}!`));
+        // Try to start the server, with fallback ports if the main one is in use
+        this.application.listen(port, () => console.log(`Server listening on port ${port}!`))
+            .on('error', (error: Error) => {
+                if (error.message.includes('EADDRINUSE')) {
+                    console.log(`Port ${port} is in use`);
+                } else {
+                    console.error('Server error:', error);
+                }
+            });
 
     }
 
